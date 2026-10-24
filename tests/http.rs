@@ -16,7 +16,7 @@ async fn spawn() -> (String, String) {
     config.journal_dir = Some(FIXTURES.into());
     config.dry_run = true;
     let token = config.token.clone();
-    let ship = Arc::new(Ship::new(config).unwrap());
+    let ship = Arc::new(Ship::new(config, None).unwrap());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     tokio::spawn(async move { axum::serve(listener, app(ship)).await.unwrap() });
@@ -111,6 +111,8 @@ async fn lists_and_calls_tools() {
         .map(|t| t["name"].as_str().unwrap())
         .collect();
     for want in [
+        "cursor_position",
+        "record_click_target",
         "status",
         "market",
         "cargo",

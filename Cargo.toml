@@ -1,6 +1,6 @@
 [package]
 name = "holtzman"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "An MCP server that lets an AI co-pilot read Elite Dangerous journals and drive galaxy-map chores (route plotting) via keypresses."
 license = "MIT"
@@ -27,6 +27,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 arboard = { version = "3", default-features = false }
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_HiDpi",
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_WindowsAndMessaging",
 ] }

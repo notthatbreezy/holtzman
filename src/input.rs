@@ -13,7 +13,20 @@ use anyhow::Result;
 
 use crate::keys::ScanCode;
 
-/// Something that can press keys and set the clipboard.
+/// Where the mouse is, relative to the game window.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize)]
+pub struct CursorPos {
+    /// 0.0 = left edge of the game window, 1.0 = right edge.
+    pub x: f64,
+    /// 0.0 = top edge of the game window, 1.0 = bottom edge.
+    pub y: f64,
+    pub x_px: i32,
+    pub y_px: i32,
+    pub window_width: i32,
+    pub window_height: i32,
+}
+
+/// Something that can press keys, click, and set the clipboard.
 pub trait KeySender: Send + Sync {
     fn key_down(&self, key: ScanCode) -> Result<()>;
     fn key_up(&self, key: ScanCode) -> Result<()>;
@@ -21,6 +34,25 @@ pub trait KeySender: Send + Sync {
     /// Bring the game window to the foreground. Keystrokes go to whatever
     /// window has focus, so this matters.
     fn focus_game(&self) -> Result<()>;
+    /// Move the mouse to a point given as fractions of the game window.
+    fn move_mouse(&self, x: f64, y: f64) -> Result<()>;
+    fn left_button(&self, down: bool) -> Result<()>;
+    /// Current mouse position relative to the game window.
+    fn cursor(&self) -> Result<CursorPos>;
+}
+
+/// Move to (x, y) in game-window fractions and left-click.
+pub async fn click(sender: &dyn KeySender, x: f64, y: f64, hold: Duration) -> Result<()> {
+    if !(0.0..=1.0).contains(&x) || !(0.0..=1.0).contains(&y) {
+        anyhow::bail!("click target ({x}, {y}) is outside the game window");
+    }
+    sender.move_mouse(x, y)?;
+    // Give the UI a moment to register hover before pressing.
+    tokio::time::sleep(Duration::from_millis(120)).await;
+    sender.left_button(true)?;
+    tokio::time::sleep(hold).await;
+    sender.left_button(false)?;
+    Ok(())
 }
 
 /// Press a chord: modifiers down, key down, hold, key up, modifiers up.
@@ -78,6 +110,24 @@ impl KeySender for Recorder {
         self.push("focus".into());
         Ok(())
     }
+    fn move_mouse(&self, x: f64, y: f64) -> Result<()> {
+        self.push(format!("move {x:.3},{y:.3}"));
+        Ok(())
+    }
+    fn left_button(&self, down: bool) -> Result<()> {
+        self.push(if down { "click down" } else { "click up" }.into());
+        Ok(())
+    }
+    fn cursor(&self) -> Result<CursorPos> {
+        Ok(CursorPos {
+            x: 0.5,
+            y: 0.5,
+            x_px: 960,
+            y_px: 540,
+            window_width: 1920,
+            window_height: 1080,
+        })
+    }
 }
 
 /// The real sender for the current platform, or a recorder in dry-run mode.
@@ -87,7 +137,7 @@ pub fn platform_sender(dry_run: bool) -> Arc<dyn KeySender> {
     }
     #[cfg(windows)]
     {
-        Arc::new(windows::WindowsSender)
+        Arc::new(windows::WindowsSender::new())
     }
     #[cfg(not(windows))]
     {
@@ -101,10 +151,19 @@ mod windows {
     use anyhow::{Result, anyhow, bail};
     use windows_sys::Win32::UI::{
         Input::KeyboardAndMouse::{
-            INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP,
-            KEYEVENTF_SCANCODE, SendInput,
+            INPUT, INPUT_0, INPUT_KEYBOARD, INPUT_MOUSE, KEYBDINPUT, KEYEVENTF_EXTENDEDKEY,
+            KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP,
+            MOUSEEVENTF_MOVE, MOUSEINPUT, SendInput,
         },
         WindowsAndMessaging::{FindWindowW, GetForegroundWindow, SetForegroundWindow},
+    };
+    use windows_sys::Win32::{
+        Foundation::{HWND, POINT, RECT},
+        Graphics::Gdi::ClientToScreen,
+        UI::{
+            HiDpi::{DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, SetProcessDpiAwarenessContext},
+            WindowsAndMessaging::{GetClientRect, GetCursorPos, SetCursorPos},
+        },
     };
 
     use crate::keys::ScanCode;
@@ -113,6 +172,72 @@ mod windows {
     const GAME_WINDOW_CLASS: &str = "FrontierDevelopmentsAppWinClass";
 
     pub struct WindowsSender;
+
+    impl WindowsSender {
+        pub fn new() -> Self {
+            // Work in physical pixels so cursor and window coordinates agree
+            // on scaled (125%/150%) displays.
+            // SAFETY: process-wide setting; fails harmlessly if already set.
+            unsafe {
+                SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+            }
+            Self
+        }
+    }
+
+    fn game_window() -> Result<HWND> {
+        let class = wide(GAME_WINDOW_CLASS);
+        // SAFETY: null-terminated UTF-16 class name; null window name.
+        let hwnd = unsafe { FindWindowW(class.as_ptr(), std::ptr::null()) };
+        if hwnd.is_null() {
+            bail!("Elite Dangerous window not found; is the game running?");
+        }
+        Ok(hwnd)
+    }
+
+    /// Screen-space origin and size of the game window's client area.
+    fn client_area(hwnd: HWND) -> Result<(i32, i32, i32, i32)> {
+        let mut rect = RECT {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+        };
+        let mut origin = POINT { x: 0, y: 0 };
+        // SAFETY: valid window handle and out-pointers to initialized structs.
+        unsafe {
+            if GetClientRect(hwnd, &mut rect) == 0 || ClientToScreen(hwnd, &mut origin) == 0 {
+                bail!("could not read the game window's size");
+            }
+        }
+        let (w, h) = (rect.right - rect.left, rect.bottom - rect.top);
+        if w <= 0 || h <= 0 {
+            bail!("game window has no size (minimized?)");
+        }
+        Ok((origin.x, origin.y, w, h))
+    }
+
+    fn send_mouse(flags: u32) -> Result<()> {
+        let input = INPUT {
+            r#type: INPUT_MOUSE,
+            Anonymous: INPUT_0 {
+                mi: MOUSEINPUT {
+                    dx: 0,
+                    dy: 0,
+                    mouseData: 0,
+                    dwFlags: flags,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        };
+        // SAFETY: one fully initialized INPUT, correct size.
+        let sent = unsafe { SendInput(1, &input, std::mem::size_of::<INPUT>() as i32) };
+        if sent != 1 {
+            bail!("SendInput (mouse) failed");
+        }
+        Ok(())
+    }
 
     fn send(key: ScanCode, up: bool) -> Result<()> {
         let mut flags = KEYEVENTF_SCANCODE;
@@ -164,12 +289,7 @@ mod windows {
         }
 
         fn focus_game(&self) -> Result<()> {
-            let class = wide(GAME_WINDOW_CLASS);
-            // SAFETY: null-terminated UTF-16 class name; null window name.
-            let hwnd = unsafe { FindWindowW(class.as_ptr(), std::ptr::null()) };
-            if hwnd.is_null() {
-                bail!("Elite Dangerous window not found; is the game running?");
-            }
+            let hwnd = game_window()?;
             // SAFETY: plain Win32 calls on a valid window handle.
             unsafe {
                 if GetForegroundWindow() == hwnd {
@@ -192,6 +312,65 @@ mod windows {
                 }
             }
             Ok(())
+        }
+
+        fn move_mouse(&self, x: f64, y: f64) -> Result<()> {
+            let (ox, oy, w, h) = client_area(game_window()?)?;
+            let px = ox + (x * f64::from(w)).round() as i32;
+            let py = oy + (y * f64::from(h)).round() as i32;
+            // SAFETY: plain Win32 call.
+            if unsafe { SetCursorPos(px, py) } == 0 {
+                bail!("SetCursorPos failed");
+            }
+            // A tiny relative wiggle so the game sees real mouse movement and
+            // updates its hover state.
+            let wiggle = |dx: i32| -> Result<()> {
+                let input = INPUT {
+                    r#type: INPUT_MOUSE,
+                    Anonymous: INPUT_0 {
+                        mi: MOUSEINPUT {
+                            dx,
+                            dy: 0,
+                            mouseData: 0,
+                            dwFlags: MOUSEEVENTF_MOVE,
+                            time: 0,
+                            dwExtraInfo: 0,
+                        },
+                    },
+                };
+                // SAFETY: one fully initialized INPUT, correct size.
+                unsafe { SendInput(1, &input, std::mem::size_of::<INPUT>() as i32) };
+                Ok(())
+            };
+            wiggle(1)?;
+            wiggle(-1)?;
+            Ok(())
+        }
+
+        fn left_button(&self, down: bool) -> Result<()> {
+            send_mouse(if down {
+                MOUSEEVENTF_LEFTDOWN
+            } else {
+                MOUSEEVENTF_LEFTUP
+            })
+        }
+
+        fn cursor(&self) -> Result<super::CursorPos> {
+            let (ox, oy, w, h) = client_area(game_window()?)?;
+            let mut p = POINT { x: 0, y: 0 };
+            // SAFETY: out-pointer to an initialized POINT.
+            if unsafe { GetCursorPos(&mut p) } == 0 {
+                bail!("GetCursorPos failed");
+            }
+            let (x_px, y_px) = (p.x - ox, p.y - oy);
+            Ok(super::CursorPos {
+                x: f64::from(x_px) / f64::from(w),
+                y: f64::from(y_px) / f64::from(h),
+                x_px,
+                y_px,
+                window_width: w,
+                window_height: h,
+            })
         }
     }
 }

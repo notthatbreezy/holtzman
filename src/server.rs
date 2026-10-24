@@ -1,7 +1,10 @@
 //! The MCP server: tool definitions plus the HTTP plumbing (bearer auth,
 //! host allow-list).
 
-use std::sync::Arc;
+use std::{
+    path::PathBuf,
+    sync::{Arc, RwLock},
+};
 
 use anyhow::Result;
 use axum::{
@@ -27,14 +30,17 @@ use tokio::sync::Mutex;
 use crate::{
     automation::Pilot,
     bindings::Bindings,
-    config::Config,
+    config::{ClickTarget, Config},
     input::{KeySender, platform_sender},
     journal::JournalDir,
 };
 
 /// Shared state behind every MCP session.
 pub struct Ship {
-    pub config: Config,
+    /// Live config; tools like `record_click_target` update it and persist
+    /// it to `config_path`.
+    pub config: RwLock<Config>,
+    pub config_path: Option<PathBuf>,
     pub journal: JournalDir,
     pub sender: Arc<dyn KeySender>,
     /// Only one keypress recipe may run at a time.
@@ -42,7 +48,7 @@ pub struct Ship {
 }
 
 impl Ship {
-    pub fn new(config: Config) -> Result<Self> {
+    pub fn new(config: Config, config_path: Option<PathBuf>) -> Result<Self> {
         let dir = config
             .journal_dir()
             .ok_or_else(|| anyhow::anyhow!("set journal_dir in holtzman.toml"))?;
@@ -51,14 +57,20 @@ impl Ship {
             journal: JournalDir::new(dir),
             sender,
             controls: Mutex::new(()),
-            config,
+            config: RwLock::new(config),
+            config_path,
         })
+    }
+
+    /// A copy of the current config (cheap; keeps locks off await points).
+    pub fn config(&self) -> Config {
+        self.config.read().expect("config lock").clone()
     }
 
     /// Bindings are re-read on every use so control changes apply without a restart.
     fn bindings(&self) -> Result<Bindings, String> {
         let dir = self
-            .config
+            .config()
             .bindings_dir()
             .ok_or("set bindings_dir in holtzman.toml")?;
         Bindings::discover(&dir).map_err(|e| format!("{e:#}"))
@@ -90,6 +102,12 @@ pub struct EventsArgs {
 pub struct PlotArgs {
     #[schemars(description = "Exact star system name, e.g. \"Ross 248\"")]
     pub system: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct RecordArgs {
+    #[schemars(description = "Target name, e.g. \"plot_route_button\"")]
+    pub name: String,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -171,8 +189,9 @@ impl Holtzman {
             .try_lock()
             .map_err(|_| "another keypress sequence is already running".to_string())?;
         let bindings = self.ship.bindings()?;
+        let config = self.ship.config();
         let pilot = Pilot {
-            config: &self.ship.config,
+            config: &config,
             bindings: &bindings,
             journal: &self.ship.journal,
             sender: self.ship.sender.as_ref(),
@@ -189,7 +208,7 @@ impl Holtzman {
     ) -> Result<String, String> {
         if !self
             .ship
-            .config
+            .config()
             .pressable
             .iter()
             .any(|p| p == &args.binding)
@@ -206,8 +225,9 @@ impl Holtzman {
             .map_err(|_| "another keypress sequence is already running".to_string())?;
         let bindings = self.ship.bindings()?;
         self.ship.sender.focus_game().map_err(err)?;
+        let config = self.ship.config();
         let pilot = Pilot {
-            config: &self.ship.config,
+            config: &config,
             bindings: &bindings,
             journal: &self.ship.journal,
             sender: self.ship.sender.as_ref(),
@@ -216,6 +236,56 @@ impl Holtzman {
             .press_binding(&args.binding, args.hold_ms)
             .await
             .map_err(err)
+    }
+
+    #[tool(
+        description = "Where the mouse cursor is on the gaming PC, as fractions (0..1) of the game window plus pixels. Use while the commander hovers over a button."
+    )]
+    async fn cursor_position(&self) -> Result<String, String> {
+        let pos = self.ship.sender.cursor().map_err(err)?;
+        Ok(serde_json::to_string_pretty(&pos).unwrap_or_default())
+    }
+
+    #[tool(
+        description = "Save the current mouse position (relative to the game window) as a named click target and persist it to holtzman.toml. Ask the commander to hover over the button first. The plot_route recipe uses `plot_route_button`."
+    )]
+    async fn record_click_target(
+        &self,
+        Parameters(args): Parameters<RecordArgs>,
+    ) -> Result<String, String> {
+        let name = args.name.trim();
+        if name.is_empty()
+            || !name
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        {
+            return Err("name must be lowercase letters, digits and underscores".into());
+        }
+        let pos = self.ship.sender.cursor().map_err(err)?;
+        if !(0.0..=1.0).contains(&pos.x) || !(0.0..=1.0).contains(&pos.y) {
+            return Err(format!(
+                "the cursor is outside the game window ({:.3}, {:.3}); hover over the button in-game",
+                pos.x, pos.y
+            ));
+        }
+        let snapshot = {
+            let mut config = self.ship.config.write().expect("config lock");
+            config
+                .click_targets
+                .insert(name.to_string(), ClickTarget { x: pos.x, y: pos.y });
+            config.clone()
+        };
+        let saved = match &self.ship.config_path {
+            Some(path) => {
+                snapshot.save(path).map_err(err)?;
+                format!("saved to {}", path.display())
+            }
+            None => "not persisted (no config file)".into(),
+        };
+        Ok(format!(
+            "recorded `{name}` at ({:.3}, {:.3}) of a {}x{} window; {saved}",
+            pos.x, pos.y, pos.window_width, pos.window_height
+        ))
     }
 }
 
@@ -251,9 +321,10 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 
 /// Build the axum app: `/mcp` behind bearer auth.
 pub fn app(ship: Arc<Ship>) -> Router {
+    let config = ship.config();
     let mcp_config =
-        StreamableHttpServerConfig::default().with_allowed_hosts(ship.config.allowed_hosts.clone());
-    let token = Arc::new(ship.config.token.clone());
+        StreamableHttpServerConfig::default().with_allowed_hosts(config.allowed_hosts.clone());
+    let token = Arc::new(config.token.clone());
     let service: StreamableHttpService<Holtzman, LocalSessionManager> = StreamableHttpService::new(
         move || Ok(Holtzman::new(ship.clone())),
         Default::default(),
@@ -264,9 +335,16 @@ pub fn app(ship: Arc<Ship>) -> Router {
         .layer(middleware::from_fn_with_state(token, require_token))
 }
 
-pub async fn serve(config: Config) -> Result<()> {
+pub async fn serve(config: Config, config_path: PathBuf) -> Result<()> {
     let listen = config.listen.clone();
-    let ship = Arc::new(Ship::new(config)?);
+    let ship = Arc::new(Ship::new(config, Some(config_path))?);
+    let missing = ship.config().missing_click_targets();
+    if !missing.is_empty() {
+        tracing::warn!(
+            ?missing,
+            "plot_route needs click targets; record them with the record_click_target tool"
+        );
+    }
     tracing::info!(journal = %ship.journal.dir.display(), "journal folder");
     if !crate::journal::looks_like_journal_dir(&ship.journal.dir) {
         tracing::warn!("that doesn't look like an Elite journal folder; set journal_dir");

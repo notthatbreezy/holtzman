@@ -32,6 +32,11 @@ enum Command {
     Status,
     /// List the keyboard bindings holtzman found.
     Bindings,
+    /// Replace the plot_route recipe in holtzman.toml with the current default
+    /// (keeps your token, hosts and recorded click targets).
+    ResetRecipe,
+    /// Print the mouse position relative to the game window (for click targets).
+    Cursor,
     /// Run the plot-route recipe once, without MCP (for tuning).
     Plot {
         system: String,
@@ -62,7 +67,7 @@ async fn main() -> Result<()> {
             println!("token: {}", config.token);
             println!("add this PC's LAN IP to allowed_hosts if clients connect by IP");
         }
-        Command::Serve => server::serve(Config::load(&cli.config)?).await?,
+        Command::Serve => server::serve(Config::load(&cli.config)?, cli.config.clone()).await?,
         Command::Status => {
             let config = Config::load(&cli.config)?;
             let dir = config
@@ -88,6 +93,24 @@ async fn main() -> Result<()> {
                     println!("!! {needed} has no keyboard binding; plot_route needs one");
                 }
             }
+        }
+        Command::ResetRecipe => {
+            let mut config = Config::load(&cli.config)?;
+            config.plot_route = holtzman::config::PlotRoute::default();
+            config.save(&cli.config)?;
+            println!("plot_route recipe reset in {}", cli.config.display());
+            let missing = config.missing_click_targets();
+            if !missing.is_empty() {
+                println!(
+                    "still needed: {missing:?}. Hover over the button and run the \
+                     record_click_target tool (or `holtzman cursor` to see coordinates)"
+                );
+            }
+        }
+        Command::Cursor => {
+            let sender = platform_sender(false);
+            let pos = sender.cursor()?;
+            println!("{}", serde_json::to_string_pretty(&pos)?);
         }
         Command::Plot { system, dry_run } => {
             let mut config = Config::load(&cli.config)?;

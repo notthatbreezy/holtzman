@@ -7,7 +7,7 @@ use anyhow::{Result, bail};
 use crate::{
     bindings::Bindings,
     config::{Config, Step},
-    input::{KeySender, press},
+    input::{KeySender, click, press},
     journal::{JournalDir, gui},
     keys::scan_code,
 };
@@ -55,6 +55,12 @@ impl Pilot<'_> {
                 press(self.sender, v, &[ctrl], self.tap(None)).await?;
             }
             Step::Wait { ms } => tokio::time::sleep(Duration::from_millis(*ms)).await,
+            Step::Click { target, hold_ms } => {
+                let t = self.config.click_targets.get(target).ok_or_else(|| {
+                    anyhow::anyhow!("click target `{target}` hasn't been recorded")
+                })?;
+                click(self.sender, t.x, t.y, self.tap(*hold_ms)).await?;
+            }
             Step::WaitForGui { focus, timeout_ms } => {
                 let deadline = Instant::now() + Duration::from_millis(*timeout_ms);
                 loop {
@@ -91,6 +97,13 @@ impl Pilot<'_> {
             bail!(
                 "a panel or map is open ({}); close it first so the recipe starts from the cockpit",
                 gui::name(self.journal.gui_focus().unwrap_or(0))
+            );
+        }
+        let missing = self.config.missing_click_targets();
+        if !missing.is_empty() {
+            bail!(
+                "click target(s) {missing:?} not recorded yet. Open the galaxy map on a system, \
+                 hover the mouse over the button, and call record_click_target with that name."
             );
         }
         let before = std::fs::metadata(self.journal.dir.join("NavRoute.json"))
@@ -163,6 +176,10 @@ mod tests {
         let mut config = Config::generate();
         config.dry_run = true;
         config.tap_ms = 1;
+        config.click_targets.insert(
+            crate::config::PLOT_ROUTE_BUTTON.into(),
+            crate::config::ClickTarget { x: 0.8, y: 0.3 },
+        );
         // Shrink waits so the test is fast.
         for s in &mut config.plot_route.steps {
             if let Step::Wait { ms } = s {
@@ -202,6 +219,28 @@ mod tests {
         assert!(log.contains(&"clipboard Ross 248".to_string()));
         assert!(log.contains(&"down 0x1d".to_string())); // ctrl for paste
         assert!(log.contains(&"down 0x1c".to_string())); // enter
+        let mv = log.iter().position(|l| l == "move 0.800,0.300").unwrap();
+        assert_eq!(log[mv + 1], "click down");
+        assert_eq!(log[mv + 2], "click up");
+    }
+
+    #[tokio::test]
+    async fn refuses_without_recorded_click_target() {
+        let config = Config::generate();
+        let bindings = Bindings::default();
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("Status.json"), r#"{"GuiFocus":0}"#).unwrap();
+        let journal = JournalDir::new(dir.path());
+        let rec = Recorder::default();
+        let pilot = Pilot {
+            config: &config,
+            bindings: &bindings,
+            journal: &journal,
+            sender: &rec,
+        };
+        let err = pilot.plot_route("Sol").await.unwrap_err().to_string();
+        assert!(err.contains("record_click_target"), "{err}");
+        assert!(rec.entries().is_empty());
     }
 
     #[tokio::test]

@@ -29,6 +29,8 @@ plotting a route, by pressing your own key bindings.
 | `recent_events` | Latest journal events (noise filtered), optionally by type |
 | `plot_route` | Galaxy map → search → plot → close, then **verifies** the destination in `NavRoute.json` |
 | `press_binding` | Press one allow-listed binding (for stepping through menus / tuning recipes) |
+| `cursor_position` | Mouse position relative to the game window |
+| `record_click_target` | Save the hovered position as a named click target in `holtzman.toml` |
 
 Read tools are side-effect free. Action tools take the keyboard for a few
 seconds, so the server's instructions tell the model to announce them first.
@@ -46,7 +48,9 @@ seconds, so the server's instructions tell the model to announce them first.
    - set `journal_dir` / `bindings_dir` only if they aren't in the default places
 3. **Keyboard bindings.** holtzman can only press keyboard keys. If your
    HOTAS owns `GalaxyMapOpen`, `UI_Up`, `UI_Select`, etc., add keyboard keys as
-   the *Secondary* binding in Options → Controls. Check with:
+   the *Secondary* binding in Options → Controls. **The UI Up/Down/Left/Right
+   keys must not share keys with galaxy-map camera panning** (WASD by default);
+   arrow keys work well. Check with:
    ```powershell
    holtzman bindings
    ```
@@ -82,6 +86,25 @@ Desktop to the LAN server. In `claude_desktop_config.json`:
 }
 ```
 
+## Calibrating the Plot Route button
+
+The galaxy map's Plot Route button doesn't take keyboard focus, so the recipe
+clicks it. Record its position once (stored as fractions of the game window,
+so it survives resolution changes as long as the UI layout is the same):
+
+1. Open the galaxy map, search for any system, and let its info panel open.
+2. Hover the mouse over **Plot Route**.
+3. Ask the assistant to run `record_click_target` with name
+   `plot_route_button` (or run `holtzman cursor` and add it by hand):
+   ```toml
+   [click_targets.plot_route_button]
+   x = 0.82
+   y = 0.31
+   ```
+
+Upgrading from 0.1? `holtzman reset-recipe` swaps in the new default recipe
+and keeps your token and targets.
+
 ## Tuning `plot_route`
 
 The recipe lives in `holtzman.toml` as a list of steps:
@@ -104,9 +127,8 @@ do = "key"                # raw key by Elite name
 key = "Key_Enter"
 
 [[plot_route.steps]]
-do = "binding"
-name = "UI_Select"
-hold_ms = 1200            # hold-to-confirm
+do = "click"              # left-click a recorded [click_targets] position
+target = "plot_route_button"
 
 [[plot_route.steps]]
 do = "wait"

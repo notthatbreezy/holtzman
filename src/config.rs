@@ -1,7 +1,10 @@
 //! `holtzman.toml`: where to listen, who may connect, where the game files
 //! are, and the keypress recipes for automated chores.
 
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{Context, Result};
 use rand::{Rng, distr::Alphanumeric};
@@ -34,6 +37,18 @@ pub struct Config {
     #[serde(default = "default_pressable")]
     pub pressable: Vec<String>,
     pub plot_route: PlotRoute,
+    /// Named screen positions for `click` steps, as fractions (0..1) of the
+    /// game window, so they survive resolution changes. Record them with the
+    /// `record_click_target` tool while hovering the mouse over the button.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub click_targets: BTreeMap<String, ClickTarget>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ClickTarget {
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,7 +83,16 @@ pub enum Step {
     Wait { ms: u64 },
     /// Poll Status.json until `GuiFocus` matches (6 = galaxy map), or fail.
     WaitForGui { focus: i64, timeout_ms: u64 },
+    /// Left-click a named position from `[click_targets]`.
+    Click {
+        target: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        hold_ms: Option<u64>,
+    },
 }
+
+/// The click target the default plot-route recipe uses.
+pub const PLOT_ROUTE_BUTTON: &str = "plot_route_button";
 
 fn default_tap_ms() -> u64 {
     80
@@ -97,8 +121,11 @@ fn default_pressable() -> Vec<String> {
 }
 
 impl Default for PlotRoute {
-    /// A starting recipe for the Odyssey galaxy map. Menu layouts shift between
-    /// game updates, so expect to tune this on your machine.
+    /// The Odyssey galaxy map recipe, as calibrated on a real game (4.4):
+    /// UI_Up focuses the search box (UI keys must not share keys with map
+    /// camera panning), Select opens it, paste + Enter flies to the system and
+    /// opens its info panel, and the Plot Route button there only takes a
+    /// mouse click.
     fn default() -> Self {
         use Step::*;
         let b = |name: &str| Binding {
@@ -127,14 +154,13 @@ impl Default for PlotRoute {
                     modifiers: vec![],
                     hold_ms: None,
                 },
-                // The camera flies to the system.
-                Wait { ms: 2500 },
-                // Hold select on "Plot Route".
-                Binding {
-                    name: "UI_Select".into(),
-                    hold_ms: Some(1200),
+                // The camera flies to the system and its info panel opens.
+                Wait { ms: 3000 },
+                Click {
+                    target: PLOT_ROUTE_BUTTON.into(),
+                    hold_ms: None,
                 },
-                Wait { ms: 800 },
+                Wait { ms: 1000 },
                 b("GalaxyMapOpen"),
             ],
         }
@@ -161,6 +187,7 @@ impl Config {
             tap_ms: default_tap_ms(),
             pressable: default_pressable(),
             plot_route: PlotRoute::default(),
+            click_targets: BTreeMap::new(),
         }
     }
 
@@ -172,6 +199,29 @@ impl Config {
 
     pub fn to_toml(&self) -> Result<String> {
         Ok(toml::to_string_pretty(self)?)
+    }
+
+    /// Write atomically-ish: temp file, then rename over the original.
+    pub fn save(&self, path: &Path) -> Result<()> {
+        let tmp = path.with_extension("toml.tmp");
+        std::fs::write(&tmp, self.to_toml()?)
+            .with_context(|| format!("writing {}", tmp.display()))?;
+        std::fs::rename(&tmp, path).with_context(|| format!("replacing {}", path.display()))?;
+        Ok(())
+    }
+
+    /// Click targets referenced by the plot-route recipe that haven't been recorded.
+    pub fn missing_click_targets(&self) -> Vec<String> {
+        self.plot_route
+            .steps
+            .iter()
+            .filter_map(|s| match s {
+                Step::Click { target, .. } if !self.click_targets.contains_key(target) => {
+                    Some(target.clone())
+                }
+                _ => None,
+            })
+            .collect()
     }
 
     pub fn journal_dir(&self) -> Option<PathBuf> {
@@ -206,5 +256,35 @@ mod tests {
         let back: Config = toml::from_str(&text).unwrap();
         assert_eq!(back.plot_route.steps, c.plot_route.steps);
         assert!(text.contains("do = \"wait_for_gui\""));
+        assert_eq!(
+            c.missing_click_targets(),
+            vec![PLOT_ROUTE_BUTTON.to_string()]
+        );
+    }
+
+    #[test]
+    fn old_configs_without_click_targets_still_load() {
+        let mut c = Config::generate();
+        c.plot_route
+            .steps
+            .retain(|s| !matches!(s, Step::Click { .. }));
+        let text = c.to_toml().unwrap();
+        assert!(!text.contains("click_targets"));
+        let back: Config = toml::from_str(&text).unwrap();
+        assert!(back.click_targets.is_empty());
+        assert!(back.missing_click_targets().is_empty());
+    }
+
+    #[test]
+    fn saves_and_reloads_click_targets() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("holtzman.toml");
+        let mut c = Config::generate();
+        c.click_targets
+            .insert(PLOT_ROUTE_BUTTON.into(), ClickTarget { x: 0.82, y: 0.31 });
+        c.save(&path).unwrap();
+        let back = Config::load(&path).unwrap();
+        assert_eq!(back.click_targets, c.click_targets);
+        assert!(back.missing_click_targets().is_empty());
     }
 }
