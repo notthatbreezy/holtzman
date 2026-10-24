@@ -1,0 +1,1 @@
+{ "timestamp":"2026-01-02T00:05:02Z", "event":"Status", "Flags":151060485, "Flags2":0, "Pips":[2,8,2], "FireGroup":0, "GuiFocus":5, "Fuel":{ "FuelMain":56.2, "FuelReservoir":0.65 }, "Cargo":776.0, "LegalState":"Clean", "Balance":154870296, "Destination":{ "System":1, "Body":19, "Name":"Pratchett Port" } }

@@ -1,0 +1,36 @@
+[package]
+name = "holtzman"
+version = "0.1.0"
+edition = "2024"
+description = "An MCP server that lets an AI co-pilot read Elite Dangerous journals and drive galaxy-map chores (route plotting) via keypresses."
+license = "MIT"
+repository = "https://github.com/notthatbreezy/holtzman"
+readme = "README.md"
+keywords = ["elite-dangerous", "mcp", "model-context-protocol"]
+
+[dependencies]
+anyhow = "1"
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio"] }
+clap = { version = "4", features = ["derive"] }
+rand = "0.9"
+rmcp = { version = "3.7", features = ["server", "macros", "transport-streamable-http-server"] }
+roxmltree = "0.21"
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "net", "signal"] }
+toml = "0.9"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[target.'cfg(windows)'.dependencies]
+arboard = { version = "3", default-features = false }
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+tempfile = "3"

@@ -1,0 +1,4 @@
+{ "timestamp":"2026-01-02T00:06:00Z", "event":"NavRoute", "Route":[
+{ "StarSystem":"Veli", "SystemAddress":1, "StarPos":[-83.375,136.0,-21.21875], "StarClass":"K" },
+{ "StarSystem":"Ross 248", "SystemAddress":2, "StarPos":[-9.0,-3.0,0.0], "StarClass":"M" }
+] }

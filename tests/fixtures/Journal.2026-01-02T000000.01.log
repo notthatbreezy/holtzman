@@ -1,0 +1,13 @@
+{ "timestamp":"2026-01-02T00:00:00Z", "event":"Fileheader", "part":1, "language":"English/UK", "Odyssey":true, "gameversion":"4.4.2.1", "build":"r0" }
+{ "timestamp":"2026-01-02T00:00:01Z", "event":"Commander", "FID":"F0000001", "Name":"TESTCMDR" }
+{ "timestamp":"2026-01-02T00:00:02Z", "event":"Rank", "Combat":0, "Trade":7, "Explore":4, "Soldier":0, "Exobiologist":0, "Empire":2, "Federation":0, "CQC":0 }
+{ "timestamp":"2026-01-02T00:00:03Z", "event":"LoadGame", "FID":"F0000001", "Commander":"TESTCMDR", "Ship":"type9", "Credits":150000000 }
+{ "timestamp":"2026-01-02T00:00:04Z", "event":"Location", "Docked":true, "StationName":"Pinnacle Station Training Facility", "StarSystem":"Col 285 Sector RZ-N c7-6", "StarPos":[-78.78125,137.71875,-32.0] }
+{ "timestamp":"2026-01-02T00:00:05Z", "event":"Loadout", "Ship":"type9", "ShipID":3, "ShipName":"", "ShipIdent":"NO-25T", "HullHealth":1.0, "CargoCapacity":776, "MaxJumpRange":21.733061, "Rebuy":5109399, "Modules":[] }
+{ "timestamp":"2026-01-02T00:00:06Z", "event":"Music", "MusicTrack":"Starport" }
+{ "timestamp":"2026-01-02T00:01:00Z", "event":"MarketBuy", "MarketID":1, "Type":"cobalt", "Count":776, "BuyPrice":4677, "TotalCost":3629352 }
+{ "timestamp":"2026-01-02T00:02:00Z", "event":"Undocked", "StationName":"Pinnacle Station Training Facility", "StationType":"Dodec", "MarketID":1 }
+{ "timestamp":"2026-01-02T00:03:00Z", "event":"FSDJump", "StarSystem":"Veli", "StarPos":[-83.375,136.0,-21.21875], "JumpDist":11.8 }
+{ "timestamp":"2026-01-02T00:04:00Z", "event":"SupercruiseExit", "StarSystem":"Veli", "Body":"Pratchett Port", "BodyType":"Station" }
+{ "timestamp":"2026-01-02T00:05:00Z", "event":"Docked", "StationName":"Pratchett Port", "StationType":"Coriolis", "StarSystem":"Veli", "MarketID":2 }
+{ "timestamp":"2026-01-02T00:05:01Z", "event":"Music", "MusicTrack":"Starport" }

@@ -1,0 +1,5 @@
+{ "timestamp":"2026-01-02T00:05:10Z", "event":"Market", "MarketID":2, "StationName":"Pratchett Port", "StationType":"Coriolis", "StarSystem":"Veli", "Items":[
+{ "id":128049162, "Name":"$cobalt_name;", "Name_Localised":"Cobalt", "Category":"$MARKET_category_metals;", "Category_Localised":"Metals", "BuyPrice":0, "SellPrice":19770, "MeanPrice":3546, "StockBracket":0, "DemandBracket":3, "Stock":0, "Demand":210934, "Consumer":true, "Producer":false, "Rare":false },
+{ "id":128049234, "Name":"$battleweapons_name;", "Name_Localised":"Battle Weapons", "Category":"$MARKET_category_weapons;", "Category_Localised":"Weapons", "BuyPrice":5813, "SellPrice":5728, "MeanPrice":7137, "StockBracket":3, "DemandBracket":0, "Stock":933, "Demand":1, "Consumer":false, "Producer":true, "Rare":false },
+{ "id":128672312, "Name":"$landmines_name;", "Name_Localised":"Landmines", "Category":"$MARKET_category_weapons;", "Category_Localised":"Weapons", "BuyPrice":2789, "SellPrice":2781, "MeanPrice":4776, "StockBracket":0, "DemandBracket":0, "Stock":0, "Demand":0, "Consumer":false, "Producer":false, "Rare":false }
+] }
