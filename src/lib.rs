@@ -9,3 +9,4 @@ pub mod journal;
 pub mod keys;
 pub mod screen;
 pub mod server;
+pub mod spansh;

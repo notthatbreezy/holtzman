@@ -34,6 +34,7 @@ use crate::{
     input::{KeySender, platform_sender},
     journal::JournalDir,
     screen::{Format, Region, Screen, platform_screen},
+    spansh::{CommodityArgs, MarketSearch, RouteArgs, Spansh},
 };
 use image::RgbaImage;
 
@@ -49,6 +50,7 @@ pub struct Ship {
     pub controls: Mutex<()>,
     /// Captures the game window for the `screenshot` tool.
     pub screen: Arc<dyn Screen>,
+    pub spansh: Spansh,
 }
 
 impl Ship {
@@ -62,6 +64,7 @@ impl Ship {
             sender,
             controls: Mutex::new(()),
             screen: platform_screen(),
+            spansh: Spansh::new()?,
             config: RwLock::new(config),
             config_path,
         })
@@ -213,6 +216,61 @@ impl Holtzman {
     }
 
     #[tool(
+        description = "Look up canonical Spansh commodity names by case-insensitive substring. Read-only external request; no game input or commander identity is sent. Use before find_commodity_market when a name is uncertain.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = true
+        )
+    )]
+    async fn trade_commodities(
+        &self,
+        Parameters(args): Parameters<CommodityArgs>,
+    ) -> Result<String, String> {
+        self.ship
+            .spansh
+            .commodities(args)
+            .await
+            .map(pretty)
+            .map_err(err)
+    }
+
+    #[tool(
+        description = "Find price-ranked nearby stations where the commander can BUY or SELL a named commodity. Sends only explicit search arguments to Spansh. Requires a reference system; defaults to large pads, no carriers/planetary stations, and markets at most 24 hours old. Returns prices, supply/demand, market ages and distances. Read-only advice; never plots, trades or sends game input.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = true
+        )
+    )]
+    async fn find_commodity_market(
+        &self,
+        Parameters(args): Parameters<MarketSearch>,
+    ) -> Result<String, String> {
+        self.ship
+            .spansh
+            .markets(args)
+            .await
+            .map(pretty)
+            .map_err(err)
+    }
+
+    #[tool(
+        description = "Plan a short profitable commodity-trading itinerary from an explicit system AND station, with explicit empty cargo space and purchasing budget. Sends those parameters to Spansh; may take up to 45 seconds. Returns trade legs, prices, quantities, estimated profits and market ages. Leg distance is not ship jump range. Read-only advice; never moves the ship, buys/sells or plots automatically. Ask for missing budget/constraints rather than assuming all credits are spendable.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = true
+        )
+    )]
+    async fn plan_trade_route(
+        &self,
+        Parameters(args): Parameters<RouteArgs>,
+    ) -> Result<String, String> {
+        self.ship.spansh.route(args).await.map(pretty).map_err(err)
+    }
+
+    #[tool(
         description = "Plot a route to a star system: opens the galaxy map, searches for the system, plots, closes the map, then confirms via NavRoute.json. Takes control of the keyboard for ~10 s, so tell the commander first. The game must be focused with no panel open."
     )]
     async fn plot_route(&self, Parameters(args): Parameters<PlotArgs>) -> Result<String, String> {
@@ -300,7 +358,12 @@ impl Holtzman {
     }
 
     #[tool(
-        description = "Look at the game: a picture of the Elite Dangerous window (never the rest of the desktop) plus the open panel and status flags from Status.json. Use it to orient before UI actions, e.g. to see which tab or row is highlighted. Crop with `region`/`rect` to read small text; rect coordinates are game-window fractions, the same space as click targets and cursor_position. Read-only; sends no input. Images cost context: prefer press_binding's `observe` while stepping through menus."
+        description = "Look at the game: a picture of the Elite Dangerous window (never the rest of the desktop) plus the open panel and status flags from Status.json. Use it to orient before UI actions, e.g. to see which tab or row is highlighted. Crop with `region`/`rect` to read small text; rect coordinates are game-window fractions, the same space as click targets and cursor_position. Read-only; sends no input. Images cost context: prefer press_binding's `observe` while stepping through menus.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
     )]
     async fn screenshot(
         &self,
@@ -442,7 +505,9 @@ impl ServerHandler for Holtzman {
         ServerConfig::new(ServerCapabilities::builder().enable_tools().build()).with_instructions(
             "Ship computer for an Elite Dangerous commander. Read tools reflect the live game \
              journal on the gaming PC; `screenshot` shows the game window when the journal \
-             can't tell you what is on screen. Action tools press keys in the running game: say what \
+             can't tell you what is on screen. Spansh trade tools send explicit planning arguments \
+             externally and return advice; never automatically chain them to game actions. \
+             Ask for the trading budget and cargo space when unknown. Action tools press keys in the running game: say what \
              you're about to do before calling them, and never chain them without the \
              commander in the loop.",
         )
