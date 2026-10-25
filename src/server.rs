@@ -15,9 +15,14 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use rmcp::{
-    ServerHandler,
+    ErrorData, RoleServer, ServerHandler,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{CallToolResult, ContentBlock, ServerCapabilities, ServerConfig},
+    model::{
+        CallToolResult, ContentBlock, GetPromptRequestParams, GetPromptResponse, GetPromptResult,
+        ListPromptsResult, PaginatedRequestParams, Prompt, PromptMessage, Role, ServerCapabilities,
+        ServerConfig,
+    },
+    service::RequestContext,
     tool, tool_handler, tool_router,
     transport::streamable_http_server::{
         StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
@@ -499,10 +504,75 @@ impl Holtzman {
     }
 }
 
+/// The ship computer's personality and rules of engagement, served as the
+/// `ship_computer` prompt. `ship_prompt` in holtzman.toml can replace it.
+pub const SHIP_COMPUTER_PROMPT: &str = include_str!("../prompts/ship-computer.md");
+const SHIP_COMPUTER: &str = "ship_computer";
+
+impl Holtzman {
+    /// The prompt text: the configured override file if set, else the built-in one.
+    fn ship_prompt(&self) -> Result<String, ErrorData> {
+        let Some(path) = self.ship.config().ship_prompt else {
+            return Ok(SHIP_COMPUTER_PROMPT.to_string());
+        };
+        // Relative paths are relative to holtzman.toml.
+        let path = match self.ship.config_path.as_deref().and_then(|c| c.parent()) {
+            Some(dir) if path.is_relative() => dir.join(path),
+            _ => path,
+        };
+        std::fs::read_to_string(&path).map_err(|e| {
+            ErrorData::internal_error(format!("reading ship_prompt {}: {e}", path.display()), None)
+        })
+    }
+}
+
 #[tool_handler]
 impl ServerHandler for Holtzman {
+    async fn list_prompts(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ListPromptsResult, ErrorData> {
+        let mut prompt = Prompt::new(
+            SHIP_COMPUTER,
+            Some(
+                "The ship's droid: personality, chain of command, and rules of engagement \
+                 for the controls. Use it as the system prompt.",
+            ),
+            None,
+        );
+        prompt.title = Some("Ship computer".into());
+        Ok(ListPromptsResult::with_all_items(vec![prompt]))
+    }
+
+    async fn get_prompt(
+        &self,
+        request: GetPromptRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<GetPromptResponse, ErrorData> {
+        if request.name != SHIP_COMPUTER {
+            return Err(ErrorData::invalid_params(
+                format!("unknown prompt `{}`", request.name),
+                None,
+            ));
+        }
+        // MCP prompts have no system role; harnesses use this as their system prompt.
+        let text = self.ship_prompt()?;
+        Ok(
+            GetPromptResult::new(vec![PromptMessage::new_text(Role::User, text)])
+                .with_description("Ship computer system prompt")
+                .into(),
+        )
+    }
+
     fn get_info(&self) -> ServerConfig {
-        ServerConfig::new(ServerCapabilities::builder().enable_tools().build()).with_instructions(
+        ServerConfig::new(
+            ServerCapabilities::builder()
+                .enable_tools()
+                .enable_prompts()
+                .build(),
+        )
+        .with_instructions(
             "Ship computer for an Elite Dangerous commander. Read tools reflect the live game \
              journal on the gaming PC; `screenshot` shows the game window when the journal \
              can't tell you what is on screen. Spansh trade tools send explicit planning arguments \

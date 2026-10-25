@@ -24,11 +24,19 @@ impl Screen for TestPattern {
 }
 
 async fn spawn() -> (String, String) {
+    spawn_with(|_| {}, None).await
+}
+
+async fn spawn_with(
+    tweak: impl FnOnce(&mut Config),
+    config_path: Option<std::path::PathBuf>,
+) -> (String, String) {
     let mut config = Config::generate();
     config.journal_dir = Some(FIXTURES.into());
     config.dry_run = true;
+    tweak(&mut config);
     let token = config.token.clone();
-    let mut ship = Ship::new(config, None).unwrap();
+    let mut ship = Ship::new(config, config_path).unwrap();
     ship.screen = Arc::new(TestPattern);
     let ship = Arc::new(ship);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -164,6 +172,38 @@ async fn lists_and_calls_tools() {
     assert_eq!(shot_tool["annotations"]["readOnlyHint"], true);
     assert_eq!(shot_tool["annotations"]["openWorldHint"], false);
 
+    let (_, prompts) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":20,"method":"prompts/list"}),
+    )
+    .await;
+    assert_eq!(
+        prompts["result"]["prompts"][0]["name"], "ship_computer",
+        "{prompts}"
+    );
+    let (_, prompt) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":21,"method":"prompts/get","params":{"name":"ship_computer"}}),
+    )
+    .await;
+    let text = prompt["result"]["messages"][0]["content"]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("{prompt}"));
+    assert!(text.starts_with("You are **HOLT**"), "{text}");
+    assert!(text.contains("Rules of engagement"));
+    let (_, missing) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":22,"method":"prompts/get","params":{"name":"nope"}}),
+    )
+    .await;
+    assert!(missing["error"].is_object(), "{missing}");
+
     let (_, status) = rpc(
         &url,
         &token,
@@ -236,5 +276,41 @@ async fn lists_and_calls_tools() {
             .as_str()
             .unwrap()
             .contains("cargo_tonnes")
+    );
+}
+
+#[tokio::test]
+async fn ship_prompt_override_is_read_relative_to_config() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("my-droid.md"),
+        "You are K-2, a reprogrammed droid.",
+    )
+    .unwrap();
+    let (url, token) = spawn_with(
+        |c| c.ship_prompt = Some("my-droid.md".into()),
+        Some(dir.path().join("holtzman.toml")),
+    )
+    .await;
+    let (sid, _) = rpc(
+        &url,
+        &token,
+        None,
+        json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+            "protocolVersion":"2025-06-18","capabilities":{},
+            "clientInfo":{"name":"test","version":"0"}}}),
+    )
+    .await;
+    let sid = sid.expect("session id");
+    let (_, prompt) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":2,"method":"prompts/get","params":{"name":"ship_computer"}}),
+    )
+    .await;
+    assert_eq!(
+        prompt["result"]["messages"][0]["content"]["text"], "You are K-2, a reprogrammed droid.",
+        "{prompt}"
     );
 }

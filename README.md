@@ -36,6 +36,13 @@ plotting a route, by pressing your own key bindings.
 | `find_commodity_market` | Find nearby stations buying or selling a commodity, with prices and market ages |
 | `plan_trade_route` | Get a short Spansh trade itinerary for a specified station, cargo space and budget |
 
+holtzman also serves one MCP prompt, `ship_computer`: the personality and
+rules of engagement for HOLT, the ship's droid
+([prompts/ship-computer.md](prompts/ship-computer.md)). Harnesses can load it
+as their system prompt. To rename or rewrite your droid, point `ship_prompt`
+in `holtzman.toml` at your own Markdown file (relative to the config); it is
+re-read on every request.
+
 Read tools are side-effect free. Action tools take the keyboard for a few
 seconds, so the server's instructions tell the model to announce them first.
 

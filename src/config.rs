@@ -38,6 +38,10 @@ pub struct Config {
     /// anything destructive off this list.
     #[serde(default = "default_pressable")]
     pub pressable: Vec<String>,
+    /// Markdown file to serve as the `ship_computer` prompt instead of the
+    /// built-in one (re-read on every request; relative to this file).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ship_prompt: Option<PathBuf>,
     pub plot_route: PlotRoute,
     /// Named screen positions for `click` steps, as fractions (0..1) of the
     /// game window, so they survive resolution changes. Record them with the
@@ -227,6 +231,7 @@ impl Config {
             dry_run: false,
             tap_ms: default_tap_ms(),
             pressable: default_pressable(),
+            ship_prompt: None,
             plot_route: PlotRoute::default(),
             click_targets: BTreeMap::new(),
             screenshot: ScreenshotDefaults::default(),
