@@ -7,4 +7,5 @@ pub mod config;
 pub mod input;
 pub mod journal;
 pub mod keys;
+pub mod screen;
 pub mod server;

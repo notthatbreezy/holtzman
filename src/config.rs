@@ -10,6 +10,8 @@ use anyhow::{Context, Result};
 use rand::{Rng, distr::Alphanumeric};
 use serde::{Deserialize, Serialize};
 
+use crate::screen::{Format, Region};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
@@ -42,6 +44,45 @@ pub struct Config {
     /// `record_click_target` tool while hovering the mouse over the button.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub click_targets: BTreeMap<String, ClickTarget>,
+    /// Defaults for the `screenshot` tool.
+    #[serde(default)]
+    pub screenshot: ScreenshotDefaults,
+    /// Named parts of the game window for `screenshot`, as fractions (0..1),
+    /// e.g. a panel on your screen layout. Adds to (or overrides) the built-in
+    /// `full`, `center`, `left`, `right`, `top`, `bottom`.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub screen_regions: BTreeMap<String, Region>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ScreenshotDefaults {
+    /// Longest side of the returned image in pixels. Vision models downscale
+    /// past ~1568 anyway; smaller local models may want less.
+    #[serde(default = "default_max_edge")]
+    pub max_edge: u32,
+    #[serde(default)]
+    pub format: Format,
+    #[serde(default = "default_jpeg_quality")]
+    pub jpeg_quality: u8,
+}
+
+impl Default for ScreenshotDefaults {
+    fn default() -> Self {
+        Self {
+            max_edge: default_max_edge(),
+            format: Format::default(),
+            jpeg_quality: default_jpeg_quality(),
+        }
+    }
+}
+
+fn default_max_edge() -> u32 {
+    1568
+}
+
+fn default_jpeg_quality() -> u8 {
+    85
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -188,7 +229,24 @@ impl Config {
             pressable: default_pressable(),
             plot_route: PlotRoute::default(),
             click_targets: BTreeMap::new(),
+            screenshot: ScreenshotDefaults::default(),
+            screen_regions: BTreeMap::new(),
         }
+    }
+
+    /// Look up a screen region by name: `[screen_regions]` first, then built-ins.
+    pub fn screen_region(&self, name: &str) -> Result<Region> {
+        if let Some(r) = self.screen_regions.get(name) {
+            return Ok(*r);
+        }
+        Region::builtin(name).ok_or_else(|| {
+            let mut known: Vec<&str> = Region::BUILTIN_NAMES.to_vec();
+            known.extend(self.screen_regions.keys().map(String::as_str));
+            anyhow::anyhow!(
+                "unknown screen region `{name}`; known: {}",
+                known.join(", ")
+            )
+        })
     }
 
     pub fn load(path: &Path) -> Result<Self> {
@@ -286,5 +344,26 @@ mod tests {
         let back = Config::load(&path).unwrap();
         assert_eq!(back.click_targets, c.click_targets);
         assert!(back.missing_click_targets().is_empty());
+    }
+
+    #[test]
+    fn screen_regions_override_builtins_and_old_configs_load() {
+        let mut c = Config::generate();
+        let text = c.to_toml().unwrap();
+        // A config written before screenshots existed.
+        let old = text.split("[screenshot]").next().unwrap().to_string();
+        let back: Config = toml::from_str(&old).unwrap();
+        assert_eq!(back.screenshot, ScreenshotDefaults::default());
+
+        let panel = Region {
+            x: 0.1,
+            y: 0.2,
+            w: 0.3,
+            h: 0.4,
+        };
+        c.screen_regions.insert("left".into(), panel);
+        assert_eq!(c.screen_region("left").unwrap(), panel);
+        assert_eq!(c.screen_region("full").unwrap(), Region::FULL);
+        assert!(c.screen_region("nope").is_err());
     }
 }

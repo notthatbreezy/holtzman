@@ -3,8 +3,13 @@ use std::{path::PathBuf, sync::Arc};
 use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
 use holtzman::{
-    automation::Pilot, bindings::Bindings, config::Config, input::platform_sender,
-    journal::JournalDir, server,
+    automation::Pilot,
+    bindings::Bindings,
+    config::Config,
+    input::platform_sender,
+    journal::JournalDir,
+    screen::{Format, platform_screen, render},
+    server,
 };
 
 /// Ship computer for Elite Dangerous, served over MCP.
@@ -37,6 +42,18 @@ enum Command {
     ResetRecipe,
     /// Print the mouse position relative to the game window (for click targets).
     Cursor,
+    /// Save a screenshot of the game window (checks capture works).
+    Screenshot {
+        /// Output file; .png or .jpg
+        #[arg(default_value = "holtzman-screenshot.png")]
+        out: PathBuf,
+        /// Named region (full, center, left, right, top, bottom, or [screen_regions])
+        #[arg(long, default_value = "full")]
+        region: String,
+        /// Longest side in pixels; 0 keeps full resolution
+        #[arg(long, default_value_t = 0)]
+        max_edge: u32,
+    },
     /// Run the plot-route recipe once, without MCP (for tuning).
     Plot {
         system: String,
@@ -111,6 +128,36 @@ async fn main() -> Result<()> {
             let sender = platform_sender(false);
             let pos = sender.cursor()?;
             println!("{}", serde_json::to_string_pretty(&pos)?);
+        }
+        Command::Screenshot {
+            out,
+            region,
+            max_edge,
+        } => {
+            let config = Config::load(&cli.config)?;
+            let region = config.screen_region(&region)?;
+            let format = match out.extension().and_then(|e| e.to_str()) {
+                Some("jpg" | "jpeg") => Format::Jpeg,
+                _ => Format::Png,
+            };
+            let frame = platform_screen().capture()?;
+            let max_edge = if max_edge == 0 { u32::MAX } else { max_edge };
+            let shot = render(
+                &frame,
+                region,
+                max_edge,
+                format,
+                config.screenshot.jpeg_quality,
+            )?;
+            std::fs::write(&out, &shot.bytes)?;
+            println!(
+                "wrote {} ({}x{} from a {}x{} window)",
+                out.display(),
+                shot.width,
+                shot.height,
+                shot.window_width,
+                shot.window_height
+            );
         }
         Command::Plot { system, dry_run } => {
             let mut config = Config::load(&cli.config)?;

@@ -28,7 +28,8 @@ plotting a route, by pressing your own key bindings.
 | `nav_route` | Current plotted route |
 | `recent_events` | Latest journal events (noise filtered), optionally by type |
 | `plot_route` | Galaxy map → search → plot → close, then **verifies** the destination in `NavRoute.json` |
-| `press_binding` | Press one allow-listed binding (for stepping through menus / tuning recipes) |
+| `screenshot` | Picture of the game window (never the desktop) plus open panel and status flags; crop by named region or rect |
+| `press_binding` | Press one allow-listed binding (for stepping through menus / tuning recipes); `observe: true` returns a screenshot of the result and how much of the screen changed |
 | `cursor_position` | Mouse position relative to the game window |
 | `record_click_target` | Save the hovered position as a named click target in `holtzman.toml` |
 
@@ -104,6 +105,34 @@ so it survives resolution changes as long as the UI layout is the same):
 
 Upgrading from 0.1? `holtzman reset-recipe` swaps in the new default recipe
 and keeps your token and targets.
+
+## Screenshots
+
+The journal says which panel is open, not which tab or row is highlighted.
+`screenshot` fills that gap: it asks the game window to render itself into
+an off-screen bitmap, so other windows never appear in the image and the
+game doesn't need focus. Use borderless or windowed mode; exclusive
+fullscreen can come back black.
+
+Images are downscaled so the longest side is 1568 px (JPEG by default).
+Crop with `region` (`full`, `center`, `left`, `right`, `top`, `bottom`) or a
+`rect` in window fractions to read small HUD text. Set defaults and add your
+own named regions in `holtzman.toml`:
+
+```toml
+[screenshot]
+max_edge = 1024        # smaller for local vision models
+format = "jpeg"        # or "png"
+jpeg_quality = 85
+
+[screen_regions.station_menu]
+x = 0.43
+y = 0.6
+w = 0.14
+h = 0.3
+```
+
+Check capture from the command line with `holtzman screenshot out.png`.
 
 ## Tuning `plot_route`
 

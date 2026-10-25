@@ -5,18 +5,32 @@ use std::sync::Arc;
 
 use holtzman::{
     config::Config,
+    screen::Screen,
     server::{Ship, app},
 };
 use serde_json::{Value, json};
 
 const FIXTURES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures");
 
+/// A fake game window: a 1920x1080 gradient.
+struct TestPattern;
+
+impl Screen for TestPattern {
+    fn capture(&self) -> anyhow::Result<image::RgbaImage> {
+        Ok(image::RgbaImage::from_fn(1920, 1080, |x, y| {
+            image::Rgba([(x % 256) as u8, (y % 256) as u8, 200, 255])
+        }))
+    }
+}
+
 async fn spawn() -> (String, String) {
     let mut config = Config::generate();
     config.journal_dir = Some(FIXTURES.into());
     config.dry_run = true;
     let token = config.token.clone();
-    let ship = Arc::new(Ship::new(config, None).unwrap());
+    let mut ship = Ship::new(config, None).unwrap();
+    ship.screen = Arc::new(TestPattern);
+    let ship = Arc::new(ship);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     tokio::spawn(async move { axum::serve(listener, app(ship)).await.unwrap() });
@@ -120,6 +134,7 @@ async fn lists_and_calls_tools() {
         "recent_events",
         "plot_route",
         "press_binding",
+        "screenshot",
     ] {
         assert!(names.contains(&want), "missing {want}: {names:?}");
     }
@@ -156,4 +171,30 @@ async fn lists_and_calls_tools() {
     )
     .await;
     assert_eq!(denied["result"]["isError"], true, "{denied}");
+
+    let (_, shot) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"screenshot","arguments":{"region":"left","max_edge":512}}}),
+    )
+    .await;
+    let content = &shot["result"]["content"];
+    let info: Value = serde_json::from_str(content[0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(info["window"], json!([1920, 1080]), "{info}");
+    // The left half is 960x1080; its long side shrinks to 512.
+    assert_eq!(info["image"], json!([455, 512]), "{info}");
+    assert!(info["journal"]["gui_focus"].is_string(), "{info}");
+    assert_eq!(content[1]["type"], "image", "{shot}");
+    assert_eq!(content[1]["mimeType"], "image/jpeg");
+    assert!(content[1]["data"].as_str().unwrap().starts_with("/9j/")); // JPEG magic
+
+    let (_, bad) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"screenshot","arguments":{"region":"nowhere"}}}),
+    )
+    .await;
+    assert_eq!(bad["result"]["isError"], true, "{bad}");
 }
