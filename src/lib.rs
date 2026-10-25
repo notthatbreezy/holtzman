@@ -8,3 +8,4 @@ pub mod input;
 pub mod journal;
 pub mod keys;
 pub mod server;
+pub mod spansh;

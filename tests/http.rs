@@ -120,8 +120,25 @@ async fn lists_and_calls_tools() {
         "recent_events",
         "plot_route",
         "press_binding",
+        "trade_commodities",
+        "find_commodity_market",
+        "plan_trade_route",
     ] {
         assert!(names.contains(&want), "missing {want}: {names:?}");
+    }
+    for name in [
+        "trade_commodities",
+        "find_commodity_market",
+        "plan_trade_route",
+    ] {
+        let tool = list["result"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["name"] == name)
+            .unwrap();
+        assert_eq!(tool["annotations"]["readOnlyHint"], true);
+        assert_eq!(tool["annotations"]["openWorldHint"], true);
     }
 
     let (_, status) = rpc(
@@ -156,4 +173,19 @@ async fn lists_and_calls_tools() {
     )
     .await;
     assert_eq!(denied["result"]["isError"], true, "{denied}");
+
+    // Invalid planning arguments fail locally, without an external request or game input.
+    let (_, invalid) = rpc(
+        &url, &token, Some(&sid),
+        json!({"jsonrpc":"2.0","id":6,"method":"tools/call","params":{
+            "name":"plan_trade_route","arguments":{"system":"Sol","station":"Galileo","cargo_tonnes":0,"budget_credits":100000}
+        }}),
+    ).await;
+    assert_eq!(invalid["result"]["isError"], true, "{invalid}");
+    assert!(
+        invalid["result"]["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("cargo_tonnes")
+    );
 }

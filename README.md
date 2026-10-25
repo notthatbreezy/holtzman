@@ -31,6 +31,9 @@ plotting a route, by pressing your own key bindings.
 | `press_binding` | Press one allow-listed binding (for stepping through menus / tuning recipes) |
 | `cursor_position` | Mouse position relative to the game window |
 | `record_click_target` | Save the hovered position as a named click target in `holtzman.toml` |
+| `trade_commodities` | Look up Spansh commodity names |
+| `find_commodity_market` | Find nearby stations buying or selling a commodity, with prices and market ages |
+| `plan_trade_route` | Get a short Spansh trade itinerary for a specified station, cargo space and budget |
 
 Read tools are side-effect free. Action tools take the keyboard for a few
 seconds, so the server's instructions tell the model to announce them first.
@@ -88,8 +91,9 @@ Desktop to the LAN server. In `claude_desktop_config.json`:
 
 ## Calibrating the Plot Route button
 
-The galaxy map's Plot Route button doesn't take keyboard focus, so the recipe
-clicks it. Record its position once (stored as fractions of the game window,
+The recipe uses a recorded mouse click for Plot Route. A supervised Odyssey
+test succeeded with this approach; the keyboard hold prompt did not produce
+a route in that test. Record the button's position once (stored as fractions of the game window,
 so it survives resolution changes as long as the UI layout is the same):
 
 1. Open the galaxy map, search for any system, and let its info panel open.
@@ -104,6 +108,10 @@ so it survives resolution changes as long as the UI layout is the same):
 
 Upgrading from 0.1? `holtzman reset-recipe` swaps in the new default recipe
 and keeps your token and targets.
+
+For a complete recipe verified in-game, including search-result selection,
+see [Validated Odyssey route recipe](docs/validated-odyssey-recipe.md).
+`reset-recipe` restores the built-in default, not this calibrated recipe.
 
 ## Tuning `plot_route`
 
@@ -145,6 +153,22 @@ Requirements: the game window must exist, no panel open, and holtzman must
 run at the same privilege level as the game (Windows blocks input injection
 into elevated windows from non-elevated processes).
 
+## Trade planning with Spansh
+
+Ask your agent to find nearby sellers or buyers, compare opportunities, or
+plan a short trade itinerary. The planning tools send explicit search
+parameters to Spansh and return advice, without controlling the game. They do
+not automatically read/export your commander profile, spend credits, buy/sell
+cargo, or plot a route. Your Holtzman token is never sent to Spansh.
+
+No Spansh account or API key was needed in testing. The integration uses the
+interface behind Spansh's public website, rather than a guaranteed versioned
+API, so provider changes may require updates. Prices are community reports;
+every result includes freshness information and constraints still matter.
+
+See [Trade-planning tools and conversation examples](docs/trade-planning.md)
+for arguments, defaults, outbound data, and limitations.
+
 ## Fair play
 
 Frontier allows macros and voice-command tools; unattended automated play is
@@ -154,9 +178,12 @@ is a single, short, supervised UI chore. Please keep it that way.
 ## Roadmap
 
 - `holtzman bridge`: built-in stdio↔HTTP proxy (drop the `npx` dependency)
-- Spansh tools: trade routes, neutron plotting, station search
+- Spansh follow-ups: neutron plotting and broader station search
 - Journal watch → MCP notifications (docked, market opened, interdicted)
 - More recipes: target next system, request docking
+
+See [Trade-planning research and deferred integration design](docs/trade-planning-design.md)
+for tested Spansh interfaces, Inara API limits, and the original design history.
 
 ## Development
 
