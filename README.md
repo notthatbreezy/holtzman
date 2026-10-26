@@ -169,6 +169,15 @@ every result includes freshness information and constraints still matter.
 See [Trade-planning tools and conversation examples](docs/trade-planning.md)
 for arguments, defaults, outbound data, and limitations.
 
+## Local voice client architecture
+
+For a proposed voice-centered client with all AI models on a separate
+Windows or Omarchy PC, see [Local voice ship computer](docs/local-voice-architecture.md).
+Holtzman remains the game-facing MCP service on the Windows PC.
+Follow the [Windows installation guide](docs/windows-client-install.md) or
+[Omarchy installation guide](docs/omarchy-install.md) to prepare that PC;
+the combined voice controller still needs implementation.
+
 ## Fair play
 
 Frontier allows macros and voice-command tools; unattended automated play is
