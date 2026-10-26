@@ -83,6 +83,22 @@ seconds, so the server's instructions tell the model to announce them first.
    holtzman serve
    ```
 
+### Updating the server
+
+`scripts/update-holtzman-server.ps1` builds the latest `main` straight from
+GitHub and restarts the server in the background, with logs in
+`server.stdout.log` / `server.stderr.log` next to the config:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\update-holtzman-server.ps1
+```
+
+The running server keeps serving until the build succeeds. The previous
+binary is kept as `holtzman.exe.bak` and put back automatically if the new
+one won't start. Options: `-Branch` (default `main`) and `-Config` (default
+`$HOME\holtzman\holtzman.toml`). The script only works from a checkout
+because that's where it lives; it never touches the checkout itself.
+
 ## Connect a client (laptop)
 
 Until holtzman grows its own stdio bridge, use
