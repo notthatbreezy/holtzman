@@ -28,6 +28,13 @@ def resolve(selector, kind):
     return matches[0]
 
 
+def shared_output_settings(device):
+    """Let Windows mix Kokoro's 24 kHz speech into a shared WASAPI device format."""
+    actual = sd.query_devices(device, "output")
+    host = sd.query_hostapis(actual["hostapi"])["name"]
+    return sd.WasapiSettings(auto_convert=True) if host == "Windows WASAPI" else None
+
+
 class Segmenter:
     """Require sustained speech, preserve a short pre-roll, finish after silence."""
     def __init__(self, silence_ms=850, maximum=25):
@@ -147,6 +154,7 @@ class Speaker:
         if not Path(self.voice).exists():
             raise RuntimeError("Selected voice asset is missing")
         self.device = resolve(settings["speaker"], "output")
+        self.output_settings = shared_output_settings(self.device)
         self.stopped = stopped
         self.effect = settings.get("voice_effect", "dry")
         self.interrupt = threading.Event()
@@ -158,5 +166,6 @@ class Speaker:
             if self.stopped.is_set() or self.interrupt.is_set():
                 return
             from client.voice_effects import robot_filter
-            sd.play(robot_filter(np.asarray(result.audio), preset=self.effect), 24000, device=self.device)
+            sd.play(robot_filter(np.asarray(result.audio), preset=self.effect), 24000,
+                    device=self.device, extra_settings=self.output_settings)
             sd.wait()

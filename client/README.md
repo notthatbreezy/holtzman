@@ -34,6 +34,8 @@ device name and audio backend, not a numeric device ID. If a selected device
 is missing, the panel reports it rather than quietly switching microphones.
 Device changes apply on the next Start. The text box remains an alternative
 to microphone input.
+For a microphone and headphones on the gaming PC while HOLT runs on a separate
+PC, see the [two-way SKIPPY audio handoff](../docs/skippy-audio-handoff.md).
 The panel shows the opened microphone separately from conversation state.
 Disconnected or stopped input streams are retried every three seconds.
 Capture pauses while HOLT thinks or speaks; physical mute naturally produces silence.
