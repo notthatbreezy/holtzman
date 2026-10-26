@@ -110,6 +110,15 @@ async fn lists_and_calls_tools() {
     )
     .await;
     assert!(init["result"]["serverInfo"].is_object(), "{init}");
+    let instructions = init["result"]["instructions"].as_str().unwrap_or_default();
+    for want in [
+        "SEEING THE SCREEN",
+        "observe=true",
+        "read_guide",
+        "ship_computer",
+    ] {
+        assert!(instructions.contains(want), "instructions lack {want}");
+    }
     let sid = sid.expect("session id");
     rpc(
         &url,

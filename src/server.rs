@@ -799,13 +799,28 @@ impl ServerHandler for Holtzman {
                 .build(),
         )
         .with_instructions(
-            "Ship computer for an Elite Dangerous commander. Read tools reflect the live game \
-             journal on the gaming PC; `screenshot` shows the game window when the journal \
-             can't tell you what is on screen. Spansh trade tools send explicit planning arguments \
-             externally and return advice; never automatically chain them to game actions. \
-             Ask for the trading budget and cargo space when unknown. Action tools press keys in the running game: say what \
-             you're about to do before calling them, and never chain them without the \
-             commander in the loop.",
+            "Ship computer for an Elite Dangerous commander. If your client supports MCP \
+             prompts, load `ship_computer` as the system prompt.\n\n\
+             READING STATE: status, cargo, nav_route, market and recent_events read the live \
+             game journal. They can't see the screen: Status.json says which panel is open, \
+             not which tab, row or button is highlighted.\n\n\
+             SEEING THE SCREEN: `screenshot` returns a picture of the game window only (never \
+             the desktop) plus the open panel and status flags. Crop with `region` (full, \
+             center, left, right, top, bottom, or a name from [screen_regions]) or `rect` \
+             {x, y, w, h} in window fractions (0..1, the same space as click targets); crop \
+             and use format png to read small text. Look before acting whenever you're unsure \
+             what is highlighted. Images cost context: don't screenshot after every step.\n\n\
+             ACTING: action tools press keys in the running game. Say what you're about to do \
+             before calling them, and never chain them without the commander in the loop. \
+             press_binding with observe=true returns the screen after the press plus \
+             screen_changed_pct; near 0 means the press probably didn't land (often the game \
+             lost focus), so look and ask rather than retry. plot_route plots to another \
+             system; nav_target_start/move/confirm/cancel lock a station in this system.\n\n\
+             GUIDES: read_guide (or resources guide://<name>) holds game concepts and mission \
+             profiles. Read the matching profile when the commander starts an activity.\n\n\
+             PLANNING: Spansh tools send explicit planning arguments externally and return \
+             advice; never chain them to game actions automatically. Ask for the trading \
+             budget and cargo space when unknown.",
         )
     }
 }
