@@ -27,6 +27,16 @@ class InstrumentContextTests(unittest.TestCase):
         self.assertTrue(context["mass_locked"])
         self.assertFalse(context["docked"])
 
+    def test_post_reboot_null_fuel_is_unknown_not_a_failed_watch(self):
+        facts = self.facts()
+        facts["status"].update(fuel=None, cargo_tons=None)
+        self.history.observe(facts, self.now)
+        context = self.history.context(facts, self.now)
+        self.assertIsNone(context["fuel_main_tonnes"])
+        self.assertIsNone(context["fuel_reservoir_tonnes"])
+        self.assertIsNone(context["cargo_tonnes"])
+        self.assertEqual(context["history"]["system_observed_seconds"], 0)
+
     def test_free_hold_and_read_only_planning_budget_are_derived(self):
         facts = self.facts()
         facts["ship"].update(cargo_capacity=1168, rebuy=15000000)

@@ -34,8 +34,8 @@ def snapshot(facts, now=None):
             "cargo_free_tonnes": free,
             "trade_planning_budget_credits": budget,
             "trade_planning_budget_note": "Read-only planning default: current credits minus one ship rebuy reserve. An explicit Captain budget overrides this; no credits are spent by planning.",
-            "fuel_main_tonnes": status.get("fuel", {}).get("FuelMain"),
-            "fuel_reservoir_tonnes": status.get("fuel", {}).get("FuelReservoir"),
+            "fuel_main_tonnes": (status.get("fuel") or {}).get("FuelMain"),
+            "fuel_reservoir_tonnes": (status.get("fuel") or {}).get("FuelReservoir"),
             "fuel_percentage": None, "fuel_percentage_note": "Tank capacity is not supplied; do not convert tonnes to percent.",
             "docked": "Docked" in flags, "landed": "Landed" in flags,
             "mass_locked": "FsdMassLocked" in flags, "supercruise": "Supercruise" in flags,
@@ -65,7 +65,7 @@ class InstrumentHistory:
         identity = str(ship.get("ident")) + "/" + str(ship.get("type"))
         self.db.execute("INSERT OR IGNORE INTO instrument_samples VALUES(?,?,?,?,?,?)", (
             now.timestamp(), facts.get("location", {}).get("system"), state, place, identity,
-            status.get("fuel", {}).get("FuelMain")))
+            (status.get("fuel") or {}).get("FuelMain")))
         self.db.execute("DELETE FROM instrument_samples WHERE observed<?", (now.timestamp() - 21600,))
         self.db.commit()
 
