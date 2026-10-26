@@ -34,6 +34,11 @@ device name and audio backend, not a numeric device ID. If a selected device
 is missing, the panel reports it rather than quietly switching microphones.
 Device changes apply on the next Start. The text box remains an alternative
 to microphone input.
+The panel shows the opened microphone separately from conversation state.
+Disconnected or stopped input streams are retried every three seconds.
+Capture pauses while HOLT thinks or speaks; physical mute naturally produces silence.
+George's standard delivery runs at 1.15x speed. Ordinary replies are shortened
+to one or two sentences; ask for detail to get a longer explanation.
 
 Spoken game-control commands must begin with **HOLT**, for example:
 
@@ -46,6 +51,10 @@ per-request call/time budget. In-system navigation and docking menu actions
 use cockpit observations and the server's verification. Calibration, raw
 flight/fire keys, unattended loops and arbitrary desktop control are excluded.
 Untick **Explicit game commands** to use HOLT in read-only mode.
+The local read-only `find_module` tool searches public Spansh outfitting
+reports for an exact system and module (optionally class/rating). It requires
+large pads, excludes planetary ports and fleet carriers, returns report times,
+and never buys or installs anything. Community reports are not live stock.
 An immediate order such as **HOLT, request docking now** runs a bounded menu
 chore using cockpit observations. Docking requires being within 7.5 km of the
 station. Conditional orders such as “when I am in range, request docking” are

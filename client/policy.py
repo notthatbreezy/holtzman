@@ -3,7 +3,7 @@ import re
 import time
 
 READ = frozenset({"status", "cargo", "market", "nav_route", "recent_events", "read_guide",
-                  "trade_commodities", "find_commodity_market", "plan_trade_route", "screenshot"})
+                  "trade_commodities", "find_commodity_market", "plan_trade_route", "screenshot", "find_module"})
 CONTROL = frozenset({"plot_route", "nav_target_start", "nav_target_move", "nav_target_confirm",
                      "nav_target_cancel", "press_binding"})
 MENU_KEYS = frozenset({"FocusLeftPanel", "UI_Up", "UI_Down", "UI_Left", "UI_Right", "UI_Select",

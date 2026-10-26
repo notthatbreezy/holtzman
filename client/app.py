@@ -34,6 +34,7 @@ class App:
         self.photo = None
         self.state = tk.StringVar(value="Stopped")
         self.ship = tk.StringVar(value="Not connected")
+        self.microphone_status = tk.StringVar(value="Microphone stopped")
         style = ttk.Style()
         style.theme_use("vista" if "vista" in style.theme_names() else "clam")
         frame = ttk.Frame(window, padding=18)
@@ -44,6 +45,7 @@ class App:
         status.pack(fill="x", pady=12)
         ttk.Label(status, textvariable=self.state, font=("Segoe UI", 12, "bold")).pack(anchor="w")
         ttk.Label(status, textvariable=self.ship).pack(anchor="w", pady=(3, 8))
+        ttk.Label(status, textvariable=self.microphone_status).pack(anchor="w")
         buttons = ttk.Frame(status)
         buttons.pack(fill="x")
         self.start_button = ttk.Button(buttons, text="Start HOLT", command=self.start)
@@ -203,7 +205,9 @@ class App:
                 kind, value = self.events.get_nowait()
             except queue.Empty:
                 break
-            if kind in ("state", "microphone"):
+            if kind == "microphone":
+                self.microphone_status.set(value)
+            elif kind == "state":
                 self.state.set(value)
             elif kind == "ship":
                 self.ship.set(value)
@@ -215,6 +219,7 @@ class App:
                 self.chat.configure(state="disabled")
                 self.append(self.chat, value)
             elif kind == "stopped":
+                self.microphone_status.set("Microphone stopped")
                 self.state.set("Stopped")
                 self.ship.set("Not connected")
                 self.start_button.configure(state="normal")

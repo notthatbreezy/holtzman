@@ -70,6 +70,15 @@ class Microphone:
         self.frames = queue.Queue(maxsize=100)
 
     def run(self):
+        while not self.stopped.is_set():
+            try:
+                self.capture()
+            except Exception as exc:
+                self.report("microphone", f"Microphone unavailable ({type(exc).__name__}); retrying")
+                self.report("error", f"Microphone: {exc}")
+                self.stopped.wait(3)
+
+    def capture(self):
         try:
             device = resolve(self.settings["microphone"], "input")
             actual = sd.query_devices(device, "input")
@@ -85,9 +94,11 @@ class Microphone:
                         pass
 
             with sd.RawInputStream(device=device, samplerate=16000, channels=1, dtype="int16",
-                                   blocksize=480, extra_settings=extra, callback=callback):
+                                   blocksize=480, extra_settings=extra, callback=callback) as stream:
                 self.report("microphone", f"Listening: {actual['name']}")
                 while not self.stopped.is_set():
+                    if not stream.active:
+                        raise RuntimeError("Input stream stopped")
                     if self.paused.is_set():
                         segmenter = Segmenter(self.settings["silence_ms"], self.settings["max_utterance_seconds"])
                         while not self.frames.empty():
@@ -105,7 +116,7 @@ class Microphone:
                         self.paused.set()
                         self.utterances.put(("audio", audio))
         except Exception as exc:
-            self.report("error", f"Microphone: {exc}")
+            raise RuntimeError(str(exc)) from exc
 
 
 def wav_bytes(pcm):
@@ -141,7 +152,7 @@ class Speaker:
 
     def say(self, text, delivery="normal"):
         self.interrupt.clear()
-        speeds = {"normal": 1.0, "caution": 1.03, "urgent": 1.12, "critical": 1.18}
+        speeds = {"normal": 1.15, "caution": 1.18, "urgent": 1.24, "critical": 1.28}
         for result in self.pipeline(text, voice=self.voice, speed=speeds.get(delivery, 1.0)):
             if self.stopped.is_set() or self.interrupt.is_set():
                 return

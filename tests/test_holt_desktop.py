@@ -6,6 +6,7 @@ from client.state import Memory, load_settings, save_settings
 from client.policy import Permit
 from client.services import matches
 from client.telemetry import reading_age, Watches
+from client.outfitting import select_results
 from datetime import datetime, timezone, timedelta
 
 
@@ -105,6 +106,25 @@ class TelemetryTests(unittest.TestCase):
                  "ship": {"hull_health": .1}}
         self.assertIn("not a game heartbeat", reading_age(facts, now)["note"])
         self.assertEqual(Watches().update(facts, now), [])
+
+
+class OutfittingTests(unittest.TestCase):
+    def test_stock_must_match_system_module_and_access(self):
+        station = {"name": "Test Port", "id": "123", "system_name": "Ross 248",
+                   "type": "Coriolis Starport", "has_large_pad": True, "has_outfitting": True,
+                   "is_planetary": False, "distance_to_arrival": 100,
+                   "outfitting_updated_at": "2026-10-25T00:00:00Z",
+                   "modules": [{"name": "Fuel Scoop", "class": 4, "rating": "A", "price": 123},
+                               {"name": "Cargo Rack", "class": 4, "rating": "E"}]}
+        variants = [station, station | {"type": "Drake-Class Carrier"},
+                    station | {"system_name": "Sol"}, station | {"is_planetary": True},
+                    station | {"has_large_pad": False}, station | {"has_outfitting": False}]
+        result = select_results({"reference": {"name": "Ross 248"}, "results": variants},
+                                "Ross 248", "Fuel Scoop", 4, "A")
+        self.assertEqual(len(result["stations"]), 1)
+        self.assertEqual(result["stations"][0]["modules"], [{"name": "Fuel Scoop", "class": 4, "rating": "A", "price": 123}])
+        with self.assertRaises(ValueError):
+            select_results({"reference": {"name": "Sol"}}, "Ross 248", "Fuel Scoop")
 
     def test_warning_only_on_threshold_transition_and_never_when_docked(self):
         now = datetime.now(timezone.utc)
