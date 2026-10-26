@@ -4,7 +4,7 @@ import re
 
 
 def non_speech(text):
-    return bool(re.fullmatch(r"\s*[\[(](?:cough(?:ing)?|breathing|laugh(?:ing|ter)?|music|silence|blank_audio|inaudible|applause)[\])]\s*[.!]?\s*", text, re.I))
+    return bool(re.fullmatch(r"\s*[\[(](?:music|silence|blank_audio|inaudible)[\])]\s*[.!]?\s*", text, re.I))
 
 
 def silent_reply(content):
@@ -28,3 +28,10 @@ def spoken_reply(content):
         # Optional control fields must never cause the JSON itself to be spoken.
         return {"text": value["text"].strip(), "delivery": value["delivery"]}
     return None
+
+
+def speech_text(text):
+    text = re.sub(r"cite.*?", "", text)
+    text = re.sub(r"\[([^\]]+)\]\(https?://[^)]+\)", r"\1", text)
+    text = re.sub(r"https?://\S+", "", text)
+    return text.replace("**", "").replace("`", "").strip()

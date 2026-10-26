@@ -4,7 +4,13 @@ import os
 
 def openai_key():
     from keyring.backends.Windows import WinVaultKeyring
-    return os.environ.get("OPENAI_API_KEY") or WinVaultKeyring().get_password("HoltzmanVoice", "openai-api-key")
+    vault = WinVaultKeyring()
+    key = os.environ.get("OPENAI_API_KEY") or vault.get_password("HOLT.OpenAI", "api-key")
+    if not key:
+        key = vault.get_password("HoltzmanVoice", "openai-api-key")
+        if key:
+            vault.set_password("HOLT.OpenAI", "api-key", key)
+    return key
 
 
 def save_openai_key(parent=None):
@@ -28,11 +34,15 @@ def save_openai_key(parent=None):
             messagebox.showerror("HOLT", "Enter the API key value only.", parent=window)
             return
         try:
-            WinVaultKeyring().set_password("HoltzmanVoice", "openai-api-key", key)
+            vault = WinVaultKeyring()
+            vault.set_password("HOLT.OpenAI", "api-key", key)
+            if vault.get_password("HOLT.OpenAI", "api-key") != key:
+                raise RuntimeError("Credential verification failed")
         except Exception:
             messagebox.showerror("HOLT", "Could not save the Windows credential.", parent=window)
             return
         value.set("")
+        messagebox.showinfo("HOLT", "OpenAI key saved and verified. You can return to the chat.", parent=window)
         window.destroy()
     ttk.Button(frame, text="Save key", command=save).pack(anchor="e", pady=12)
     window.after(100, entry.focus_set)

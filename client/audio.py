@@ -148,6 +148,7 @@ class Speaker:
             raise RuntimeError("Selected voice asset is missing")
         self.device = resolve(settings["speaker"], "output")
         self.stopped = stopped
+        self.effect = settings.get("voice_effect", "dry")
         self.interrupt = threading.Event()
 
     def say(self, text, delivery="normal"):
@@ -156,5 +157,6 @@ class Speaker:
         for result in self.pipeline(text, voice=self.voice, speed=speeds.get(delivery, 1.0)):
             if self.stopped.is_set() or self.interrupt.is_set():
                 return
-            sd.play(np.asarray(result.audio), 24000, device=self.device)
+            from client.voice_effects import robot_filter
+            sd.play(robot_filter(np.asarray(result.audio), preset=self.effect), 24000, device=self.device)
             sd.wait()

@@ -47,12 +47,13 @@ and do not appear as errors. Command outcomes and important warnings still need 
 
 Choose **OpenAI · GPT-5.4 mini** in the conversation-model selector, save a key
 with **Set OpenAI key**, then Stop/Start. The key is held in Windows Credential
-Manager (`HoltzmanVoice` / `openai-api-key`), or supplied via `OPENAI_API_KEY`.
+Manager (`HOLT.OpenAI` / `api-key`), or supplied via `OPENAI_API_KEY`.
 The model receives conversation history, selected ship facts/tool results, and
-cockpit images when used. Whisper transcription, George speech and all game
+cockpit images only when **Allow game-window images to OpenAI** is enabled.
+Whisper transcription, George speech and all game
 controls remain local. API usage is billed separately from ChatGPT.
 
-The provider uses the fixed OpenAI HTTPS endpoint, disables response storage
+The provider uses OpenAI's Responses API at a fixed HTTPS endpoint, disables response storage
 with `store:false`, and never attaches its credential to MCP, Spansh or speech
 requests. Conversation uses low reasoning effort; auxiliary formatting uses
 none. Local Qwen is not started in hosted mode. Select **Local · Qwen** and
@@ -63,6 +64,11 @@ Token counts, cache hits and estimated API costs are written to
 `.local/holt/results/openai-usage.jsonl`; per-call/session estimates appear in
 Service details. GPT-5.4 mini price estimates use the documented rates as of
 2026-10-26, including cached input; the provider's bill is authoritative.
+Web search is available when the hosted model needs external knowledge, with
+up to two built-in search calls per conversational turn. Search fees are counted
+at $0.01 per call plus token costs. Spoken answers omit citation markers and
+URLs; source links remain clickable in the transcript. Local instruments remain
+the authority on live ship state.
 `python -m client.evaluate_conversation --openai` runs five paid, offline
 conversation tests without game input. Plain `client.evaluate_conversation`
 compares local prompt/thinking configurations and incurs no OpenAI usage.

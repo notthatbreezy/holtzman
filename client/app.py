@@ -85,6 +85,8 @@ class App:
                      values=["Local · Qwen", "OpenAI · GPT-5.4 mini"]).pack(side="left")
         from client.credentials import save_openai_key
         ttk.Button(backend_row, text="Set OpenAI key", command=lambda: save_openai_key(self.window)).pack(side="right")
+        self.hosted_images = tk.BooleanVar(value=self.settings.get("allow_hosted_images", False))
+        ttk.Checkbutton(options, text="Allow game-window images to OpenAI", variable=self.hosted_images).grid(row=6, column=1, sticky="w", pady=(4, 0))
         notebook = ttk.Notebook(frame, height=220)
         notebook.pack(fill="both", expand=True, pady=(12, 6))
         chat = ttk.Frame(notebook)
@@ -124,6 +126,20 @@ class App:
         widget.see("end")
         widget.configure(state="disabled")
 
+    def append_sources(self, sources):
+        import webbrowser
+        self.chat.configure(state="normal")
+        for source in sources:
+            url = source["url"]
+            if not url.startswith(("https://", "http://")):
+                continue
+            tag = "source-" + str(len(self.chat.tag_names()))
+            self.chat.insert("end", "Source: " + source.get("title", "Reference") + "\n", tag)
+            self.chat.tag_configure(tag, foreground="#2865a8", underline=True)
+            self.chat.tag_bind(tag, "<Button-1>", lambda event, target=url: webbrowser.open(target))
+        self.chat.insert("end", "\n")
+        self.chat.configure(state="disabled")
+
     def report(self, kind, value):
         self.events.put((kind, value))
 
@@ -132,7 +148,8 @@ class App:
                              speaker=None if self.speaker.get() == "Windows default" else self.speaker.get(),
                              listen=self.listen.get(), speak=self.speak.get(), allow_actions=self.actions.get(),
                              preferences=self.preferences.get(),
-                             model_provider="openai" if self.backend.get().startswith("OpenAI") else "local")
+                             model_provider="openai" if self.backend.get().startswith("OpenAI") else "local",
+                             allow_hosted_images=self.hosted_images.get())
         save_settings(self.settings)
 
     def start(self):
@@ -227,6 +244,8 @@ class App:
                 self.chat.delete("1.0", "end")
                 self.chat.configure(state="disabled")
                 self.append(self.chat, value)
+            elif kind == "sources":
+                self.append_sources(value)
             elif kind == "stopped":
                 self.microphone_status.set("Microphone stopped")
                 self.state.set("Stopped")

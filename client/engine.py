@@ -28,7 +28,7 @@ from client.diagnostics import trace
 from client.outfitting import SCHEMA as OUTFITTING_SCHEMA, find_module
 from client.instruments import InstrumentHistory, EVENTS
 from client.model_backend import ModelHTTP
-from client.replies import silent_reply, spoken_reply, non_speech
+from client.replies import silent_reply, spoken_reply, non_speech, speech_text
 
 sys.path.insert(0, str(REPO / "scripts"))
 from holt_discovery import discover, prompt_text, save_discovery
@@ -84,6 +84,12 @@ Silence is a valid conversational choice. If an acknowledgement or aside needs n
 answer, return {"text":"","delivery":"normal","respond":false}. Do not force a
 last word, repeated acknowledgement or offer. Still report requested results, control
 outcomes, failures and important warnings. An intentional silent turn is not an error.
+Coughs, laughs and other human cues may invite a small in-character reaction. Use
+judgement rather than a mandatory acknowledgement. Light shipboard flavour is welcome;
+real game telemetry, tool execution and action completion still need evidence.
+Web search is available with the hosted backend for outside game knowledge. Use
+local instruments for live ship state. Speak naturally without citation markers,
+URLs or source lists; the client displays source links separately in the transcript.
 """
 
 
@@ -251,6 +257,7 @@ class Engine:
         raise RuntimeError("Conversation context is too large; history is preserved")
 
     async def speak(self, text, delivery="normal"):
+        text = speech_text(text)
         if self.speaker and not self.stopped.is_set():
             async with self.speech_lock:
                 self.paused.set()
@@ -398,6 +405,8 @@ class Engine:
         return outcome, images
 
     async def converse(self, session, bundle, question, spoken=False):
+        if self.model_http is not None:
+            self.model_http.web_calls = 0
         permit = Permit(question, spoken=spoken, enabled=self.settings["allow_actions"])
         self.request_id = uuid.uuid4().hex
         self.trace("request", text=question, spoken=spoken, controls_enabled=self.settings["allow_actions"],
@@ -411,6 +420,8 @@ class Engine:
             self.trace("client_reply", reply=reply)
             return reply
         names = READ | CONTROL if permit.authorized else READ
+        if self.settings.get("model_provider") == "openai" and not self.settings.get("allow_hosted_images", False):
+            names = names - {"screenshot", "press_binding", "nav_target_start", "nav_target_move", "nav_target_confirm", "nav_target_cancel"}
         self.schemas = {t["name"]: t for t in bundle["tools"] if t["name"] in names}
         self.schemas["find_module"] = OUTFITTING_SCHEMA
         if permit.authorized and permit.route:
@@ -474,7 +485,10 @@ class Engine:
                 if reply is None:
                     reply = await _core.format_reply(self.model_http or self.http, message.get("content") or "")
                 reply = await self.brief_reply(reply, question)
+                reply["text"] = speech_text(reply["text"])
                 reply["delivery"] = self.urgency_floor(reply["delivery"])
+                if message.get("_sources"):
+                    reply["sources"] = message["_sources"]
                 self.memory.append(question, reply)
                 self.trace("model_reply", reply=reply)
                 return reply
@@ -534,6 +548,8 @@ class Engine:
                 reply = await self.converse(session, bundle, value, kind == "audio")
                 if reply.get("respond") is not False:
                     self.report("assistant", reply["text"])
+                    if reply.get("sources"):
+                        self.report("sources", reply["sources"])
                     await self.speak(reply["text"], reply["delivery"])
                 else:
                     self.report("service", "HOLT chose to leave this turn unanswered.")
@@ -555,6 +571,8 @@ class Engine:
                 self.report("user", question)
                 if reply.get("respond") is not False:
                     self.report("assistant", reply["text"])
+                    if reply.get("sources"):
+                        self.report("sources", reply["sources"])
             token = WinVaultKeyring().get_password("HoltzmanVoice", "holtzman-bearer")
             if not token:
                 raise RuntimeError("Save the Holtzman credential with scripts/save-holt-credential.ps1")

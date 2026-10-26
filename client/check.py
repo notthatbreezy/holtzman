@@ -5,6 +5,7 @@ import json
 import logging
 import tempfile
 import threading
+import argparse
 from pathlib import Path
 
 import httpx2
@@ -16,8 +17,10 @@ from client.engine import Engine, discover
 from client.state import ROOT, Memory, load_settings
 
 
-async def main():
+async def main(hosted=False, text_only=False):
     settings = load_settings() | {"listen": False, "speak": False, "allow_actions": False}
+    if hosted:
+        settings["model_provider"] = "openai"
     token = WinVaultKeyring().get_password("HoltzmanVoice", "holtzman-bearer")
     if not token:
         raise RuntimeError("Missing Holtzman credential")
@@ -49,21 +52,29 @@ async def main():
                             print("CAPABILITY CHECKS PASS: disabled and deferred commands send no controls.", flush=True)
                             reply = await engine.converse(session, bundle, "Where are we, and is the telemetry current?")
                             print("STATUS REPLY:", reply, flush=True)
-                            screenshot = await session.call_tool("screenshot", {"format": "png", "max_edge": 1280})
-                            if screenshot.is_error:
-                                print("SCREENSHOT ERROR:", [p.text for p in screenshot.content if p.type == "text"], flush=True)
-                                raise RuntimeError("Game-window screenshot failed")
-                            for part in screenshot.content:
-                                if part.type == "image":
-                                    path = ROOT / "results/live-cockpit.png"
-                                    path.write_bytes(base64.b64decode(part.data))
-                                    response = await engine.http.post(settings["model_url"] + "/v1/chat/completions", json={
-                                        "model": "holt", "temperature": 0, "max_tokens": 180,
-                                        "messages": [{"role": "user", "content": [
-                                            {"type": "text", "text": "Describe this Elite Dangerous screen. Read the station name if visible, say whether the ship appears docked, and identify the highlighted menu entry if readable. Do not guess or send controls."},
-                                            {"type": "image_url", "image_url": {"url": "data:image/png;base64," + part.data}}]}]})
-                                    response.raise_for_status()
-                                    print("VISION:", response.json()["choices"][0]["message"]["content"], flush=True)
+                            if hosted:
+                                shopping = await engine.converse(session, bundle, "Find a station selling a fuel scoop in Ross 248, using the outfitting stock tool.")
+                                assert "Progress" in shopping["text"] or "Inheritance" in shopping["text"], shopping
+                                print("OUTFITTING TOOL ROUND-TRIP:", shopping["text"], flush=True)
+                                search = await engine.converse(session, bundle, "Use web search to find an Elite Dangerous reference about which ship slot a fuel scoop fits into. Answer in one sentence.")
+                                assert search.get("sources"), search
+                                print("WEB SEARCH:", search["text"], "sources:", len(search["sources"]), flush=True)
+                            if not text_only:
+                                screenshot = await session.call_tool("screenshot", {"format": "png", "max_edge": 1280})
+                                if screenshot.is_error:
+                                    print("SCREENSHOT ERROR:", [p.text for p in screenshot.content if p.type == "text"], flush=True)
+                                    raise RuntimeError("Game-window screenshot failed")
+                                for part in screenshot.content:
+                                    if part.type == "image":
+                                        path = ROOT / "results/live-cockpit.png"
+                                        path.write_bytes(base64.b64decode(part.data))
+                                        response = await engine.model_post(settings["model_url"] + "/v1/chat/completions", json={
+                                            "model": "holt", "temperature": 0, "max_tokens": 180,
+                                            "messages": [{"role": "user", "content": [
+                                                {"type": "text", "text": "Describe this Elite Dangerous screen. Read the station name if visible, say whether the ship appears docked, and identify the highlighted menu entry if readable. Do not guess or send controls."},
+                                                {"type": "image_url", "image_url": {"url": "data:image/png;base64," + part.data}}]}]})
+                                        response.raise_for_status()
+                                        print("VISION:", response.json()["choices"][0]["message"]["content"], flush=True)
                             for n in range(7):
                                 engine.memory.append("Remember that I exclude fleet carriers from trade searches.",
                                                      {"text": "Understood, Captain. Fleet carriers excluded.", "delivery": "normal"})
@@ -79,8 +90,12 @@ async def main():
 
 if __name__ == "__main__":
     logging.disable(logging.CRITICAL)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--openai", action="store_true", help="Test hosted backend; incurs API usage")
+    parser.add_argument("--text-only", action="store_true", help="Skip all cockpit-image checks")
+    args = parser.parse_args()
     try:
-        asyncio.run(main())
+        asyncio.run(main(args.openai, args.text_only))
     except Exception as exc:
         print("Live check failed:", type(exc).__name__)
         def explain(error):

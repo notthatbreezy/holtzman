@@ -12,7 +12,7 @@ def estimated_cost(model, usage):
     cached = min(prompt, max(0, usage.get("prompt_tokens_details", {}).get("cached_tokens", 0)))
     completion = usage.get("completion_tokens", 0)
     # completion_tokens already includes billed reasoning output; don't add it twice.
-    return ((prompt - cached) * .75 + cached * .075 + completion * 4.5) / 1_000_000
+    return ((prompt - cached) * .75 + cached * .075 + completion * 4.5) / 1_000_000 + usage.get("web_search_calls", 0) * .01
 
 
 def record_usage(model, usage, root=ROOT):
