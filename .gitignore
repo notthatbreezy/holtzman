@@ -3,3 +3,6 @@
 __pycache__/
 # Contains your bearer token.
 holtzman.toml
+
+# Runtime agent knowledge lives beside the server config.
+/playbooks/

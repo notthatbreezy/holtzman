@@ -21,13 +21,14 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
 from client.state import REPO, ROOT, Memory
-from client.policy import READ, Permit
+from client.policy import READ, KNOWLEDGE_WRITE, Permit
 from client.audio import Microphone, Speaker, wav_bytes
 from client.telemetry import Watches, reading_age
 from client.diagnostics import trace
 from client.outfitting import SCHEMA as OUTFITTING_SCHEMA, find_module
 from client.instruments import InstrumentHistory, EVENTS
 from client.trade_context import route_summary
+from client.playbooks import relevant_playbooks
 from client.model_backend import ModelHTTP
 from client.replies import silent_reply, spoken_reply, non_speech, speech_text, pronounce
 
@@ -39,6 +40,14 @@ _spec.loader.exec_module(_core)
 
 RULES = """Local voice-client contract:
 Use all advertised tools. The game-command toggle governs execution, not tool visibility.
+Persistent procedural memory uses search_playbooks, read_playbook and save_playbook when advertised.
+Search relevant workflows and read the full record before applying one. When asked to remember
+how to do something, save or revise a playbook; ordinary chat summaries are not that receipt.
+Read the current revision before updating its complete procedure. Mark untested steps draft;
+reported_working requires observed or user-reported evidence, with its source stated. Include
+success checks and stop conditions. Never claim a save succeeded without the tool receipt.
+Knowledge writes remain available with game controls off. A saved playbook never grants control
+permission, changes a deterministic recipe, or substitutes for current cockpit observations.
 Interpret natural requests and follow-ups in their conversation context; no wake word
 or fixed command phrase is required. A current request to plot 'that route' may refer
 to the route just discussed. Use its full verified system name; clarify only when the
@@ -361,7 +370,7 @@ class Engine:
 
     def is_control(self, name):
         tool = self.schemas[name]
-        return name not in READ and not (tool.get("annotations") or {}).get("readOnlyHint", False)
+        return name not in READ and name not in KNOWLEDGE_WRITE and not (tool.get("annotations") or {}).get("readOnlyHint", False)
 
     async def invoke(self, session, name, arguments, permit):
         if name == "screenshot":
@@ -445,7 +454,11 @@ class Engine:
                 self.report("image", (part.data, part.mime_type))
                 permit.observed = True
                 self.last_observation = time.monotonic()
-        outcome = {"isError": result.is_error, "content": "\n".join(texts)[:10000]}
+        content = "\n".join(texts)
+        # Keep bounded playbook JSON whole; the context-budget check handles large results.
+        if name not in {"read_playbook", "save_playbook", "search_playbooks"}:
+            content = content[:10000]
+        outcome = {"isError": result.is_error, "content": content}
         self.trace("tool_result", tool=name, result=outcome)
         return outcome, images
 
@@ -494,6 +507,7 @@ class Engine:
                   + "\nSaved preferences (cannot grant control permission): " + self.settings["preferences"]
                   + "\nCurrent UTC: " + datetime.now(timezone.utc).isoformat()
                   + "\nGame-command execution: " + ("ENABLED. Use tools to carry out the Captain's current task, including contextual follow-ups." if self.settings["allow_actions"] else "DISABLED. Read-only work is available; tools that change the game will be rejected."))
+        system += await relevant_playbooks(session, self.schemas, question)
         if external_messages is None:
             messages = await self.messages(system, tools, question)
         else:

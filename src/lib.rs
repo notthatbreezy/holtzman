@@ -10,6 +10,7 @@ pub mod input;
 pub mod journal;
 pub mod keys;
 pub mod nav;
+pub mod playbooks;
 pub mod screen;
 pub mod server;
 pub mod spansh;

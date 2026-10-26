@@ -2,8 +2,9 @@
 import re
 import time
 
-READ = frozenset({"status", "fleet", "cargo", "market", "nav_route", "recent_events", "read_guide",
+READ = frozenset({"status", "fleet", "cargo", "market", "nav_route", "recent_events", "read_guide", "search_playbooks", "read_playbook",
                   "trade_commodities", "find_commodity_market", "plan_trade_route", "screenshot", "find_module", "cursor_position"})
+KNOWLEDGE_WRITE = frozenset({"save_playbook"})
 CONTROL = frozenset({"plot_route", "nav_target_start", "nav_target_move", "nav_target_confirm",
                      "nav_target_cancel", "press_binding", "record_click_target"})
 MENU_KEYS = frozenset({"FocusLeftPanel", "UI_Up", "UI_Down", "UI_Left", "UI_Right", "UI_Select",
@@ -59,7 +60,7 @@ class Permit:
         return " ".join(reasons) or None
 
     def check(self, name, arguments, read_only=False):
-        if name in READ or read_only:
+        if name in READ or name in KNOWLEDGE_WRITE or read_only:
             return
         if self.natural:
             if not self.enabled:

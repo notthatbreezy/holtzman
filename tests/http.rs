@@ -98,6 +98,98 @@ async fn rejects_missing_token() {
 }
 
 #[tokio::test]
+async fn playbooks_round_trip_over_authenticated_mcp() {
+    let temp = tempfile::tempdir().unwrap();
+    let (url, token) = spawn_with(
+        |c| c.playbooks_dir = Some(temp.path().join("knowledge")),
+        None,
+    )
+    .await;
+    let (sid, _) = rpc(&url, &token, None, json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+        "protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"0"}}})).await;
+    let sid = sid.unwrap();
+    rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","method":"notifications/initialized"}),
+    )
+    .await;
+    let (_, list) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":2,"method":"tools/list"}),
+    )
+    .await;
+    for (name, read_only) in [
+        ("search_playbooks", true),
+        ("read_playbook", true),
+        ("save_playbook", false),
+    ] {
+        let tool = list["result"]["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["name"] == name)
+            .unwrap();
+        assert_eq!(tool["annotations"]["readOnlyHint"], read_only);
+        assert_eq!(tool["annotations"]["openWorldHint"], false);
+    }
+    let args = json!({"name":"docking","expected_revision":0,"change_note":"Captain requested memory",
+        "procedure":{"title":"Docking","summary":"Inspect before acting","when_to_use":"Docking requests",
+        "tags":["docking"],"required_tools":["screenshot"],"steps":["Observe current target and range"],
+        "success_checks":["DockingGranted observed"],"stop_conditions":["Unknown range"],"validation":"draft","evidence":null}});
+    let (_, saved) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":3,"method":"tools/call",
+        "params":{"name":"save_playbook","arguments":args}}),
+    )
+    .await;
+    assert_ne!(saved["result"]["isError"], true, "{saved}");
+    let record: Value =
+        serde_json::from_str(saved["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(record["revision"], 1);
+    let (_, recalled) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":4,"method":"tools/call",
+        "params":{"name":"read_playbook","arguments":{"name":"docking"}}}),
+    )
+    .await;
+    let read: Value =
+        serde_json::from_str(recalled["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(record, read);
+    let (_, searched) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":5,"method":"tools/call",
+        "params":{"name":"search_playbooks","arguments":{"query":"request docking"}}}),
+    )
+    .await;
+    let found: Value =
+        serde_json::from_str(searched["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(found["matches"][0]["name"], "docking");
+    let (_, conflict) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":6,"method":"tools/call",
+        "params":{"name":"save_playbook","arguments":args}}),
+    )
+    .await;
+    // rmcp represents handler errors as either tool errors or JSON-RPC errors.
+    assert!(
+        conflict["error"].is_object() || conflict["result"]["isError"] == true,
+        "{conflict}"
+    );
+}
+
+#[tokio::test]
 async fn lists_and_calls_tools() {
     let (url, token) = spawn().await;
     let (sid, init) = rpc(
@@ -115,6 +207,9 @@ async fn lists_and_calls_tools() {
         "SEEING THE SCREEN",
         "observe=true",
         "read_guide",
+        "search_playbooks",
+        "read_playbook",
+        "save_playbook",
         "ship_computer",
     ] {
         assert!(instructions.contains(want), "instructions lack {want}");

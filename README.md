@@ -308,3 +308,13 @@ actual injection is testable anywhere.
 ## License
 
 MIT
+
+
+### Agent playbooks
+
+Agents can save reusable workflows with `save_playbook`, discover them with
+`search_playbooks`, and recall full or historical versions with `read_playbook`.
+HOLT automatically retrieves a small relevant index before normal model turns.
+Records persist beside the server config, separate from chat compaction and authored
+field guides. See [Persistent agent playbooks](docs/playbooks.md) for usage, storage,
+revision conflicts and deployment.

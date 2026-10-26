@@ -47,6 +47,9 @@ pub struct Config {
     /// Relative to this file.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub guides_dir: Option<PathBuf>,
+    /// Agent-saved procedural knowledge; defaults to playbooks/ beside this config.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub playbooks_dir: Option<PathBuf>,
     pub plot_route: PlotRoute,
     /// Named screen positions for `click` steps, as fractions (0..1) of the
     /// game window, so they survive resolution changes. Record them with the
@@ -318,6 +321,7 @@ impl Config {
             pressable: default_pressable(),
             ship_prompt: None,
             guides_dir: None,
+            playbooks_dir: None,
             plot_route: PlotRoute::default(),
             click_targets: BTreeMap::new(),
             screenshot: ScreenshotDefaults::default(),
