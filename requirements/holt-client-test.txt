@@ -1,6 +1,10 @@
-# Lightweight Windows dependencies for client policy/discovery tests.
+# Windows dependencies for policy/discovery and the mocked Tavern/audio gateway.
+# Speech models (Torch/Kokoro) are not needed: tests never construct a live speaker.
 mcp==2.3.0
 keyring==25.7.0
 pywin32-ctypes==0.2.3
 jsonschema==4.26.0
 psutil==7.2.2
+numpy==2.5.4
+sounddevice==0.5.6
+webrtcvad-wheels==2.0.14
