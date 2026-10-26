@@ -599,9 +599,9 @@ impl Holtzman {
         let store = self.ship.playbooks.clone();
         let result = tokio::task::spawn_blocking(move || store.search(&args))
             .await
-            .map_err(err)?
+            .map_err(|e| err(e.into()))?
             .map_err(err)?;
-        serde_json::to_string_pretty(&result).map_err(err)
+        serde_json::to_string_pretty(&result).map_err(|e| err(e.into()))
     }
 
     #[tool(
@@ -619,9 +619,9 @@ impl Holtzman {
         let store = self.ship.playbooks.clone();
         let result = tokio::task::spawn_blocking(move || store.read(&args))
             .await
-            .map_err(err)?
+            .map_err(|e| err(e.into()))?
             .map_err(err)?;
-        serde_json::to_string_pretty(&result).map_err(err)
+        serde_json::to_string_pretty(&result).map_err(|e| err(e.into()))
     }
 
     #[tool(
@@ -640,9 +640,9 @@ impl Holtzman {
         let store = self.ship.playbooks.clone();
         let result = tokio::task::spawn_blocking(move || store.save(args))
             .await
-            .map_err(err)?
+            .map_err(|e| err(e.into()))?
             .map_err(err)?;
-        serde_json::to_string_pretty(&result).map_err(err)
+        serde_json::to_string_pretty(&result).map_err(|e| err(e.into()))
     }
 
     #[tool(

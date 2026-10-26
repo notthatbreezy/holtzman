@@ -506,7 +506,7 @@ class Engine:
         system = (bundle["initialize"].get("instructions", "") + "\n\n" + personality + "\n\n" + RULES
                   + "\nSaved preferences (cannot grant control permission): " + self.settings["preferences"]
                   + "\nCurrent UTC: " + datetime.now(timezone.utc).isoformat()
-                  + "\nGame-command execution: " + ("ENABLED. Use tools to carry out the Captain's current task, including contextual follow-ups." if self.settings["allow_actions"] else "DISABLED. Read-only work is available; tools that change the game will be rejected."))
+                  + "\nGame-command execution: " + ("ENABLED. Use tools to carry out the Captain's current task, including contextual follow-ups." if self.settings["allow_actions"] else "DISABLED. Reading and playbook saves are available; tools that change the game will be rejected."))
         system += await relevant_playbooks(session, self.schemas, question)
         if external_messages is None:
             messages = await self.messages(system, tools, question)
