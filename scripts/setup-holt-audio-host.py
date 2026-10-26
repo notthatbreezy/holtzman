@@ -69,7 +69,7 @@ class Remote:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--peer", default="192.168.50.21", help="SKIPPY's IPv4 address")
+    parser.add_argument("--peer", default="192.168.50.41", help="SKIPPY's Ethernet IPv4 address")
     parser.add_argument("--clock-device", default="Speakers (Senary Audio)", help="Stable local hardware output for A1's audio clock; receives no HOLT mix")
     parser.add_argument("--apply", action="store_true", help="Replace mixer routing with the dedicated HOLT bridge; back up the current profile first")
     parser.add_argument("--select-holt-devices", action="store_true", help="Switch saved HOLT devices to the bridge for next Start; current worker is untouched")

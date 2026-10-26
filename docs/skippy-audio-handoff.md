@@ -8,7 +8,8 @@ the language model, Whisper or Kokoro to SKIPPY. Do not start a second HOLT clie
 ## Counterpart and agreed network contract
 
 These are LAN addresses observed on 2026-10-26; confirm them before configuring.
-HOLT processing PC: **192.168.50.16**. SKIPPY: **192.168.50.21**. Both sides use
+HOLT processing PC: **192.168.50.16**. SKIPPY on Ethernet: **192.168.50.41**
+(replaces its earlier Wi-Fi address, 192.168.50.21). Both sides use
 **UDP 6980**, **48,000 Hz, 16-bit PCM, 2 channels**, initial quality **Medium (2)**.
 Stream names are case-sensitive. Prefer Ethernet where available. Reserve addresses
 in the router or update both configurations if DHCP changes them. Do not create
@@ -95,7 +96,7 @@ The HOLT PC has Banana **2.1.3.0 installed and configured**, with a saved
 A1 uses shared MME `Speakers (Senary Audio)` only as the stable audio clock;
 no input strip is routed to A1, so HOLT is not monitored on this PC's speakers.
 The firewall's active mixer exception is `HOLT-VBAN-SKIPPY`, UDP 6980, remote
-192.168.50.21, scoped to `voicemeeterpro.exe`. Broad first-launch app allow rules
+192.168.50.41, scoped to `voicemeeterpro.exe`. Broad first-launch app allow rules
 were disabled and recorded for rollback. The network profile was not changed.
 
 Local hardware checks passed: 24 kHz HOLT-format playback was converted into the
