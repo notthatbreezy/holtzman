@@ -242,7 +242,12 @@ Follow the [Windows installation guide](docs/windows-client-install.md) or
 [Omarchy installation guide](docs/omarchy-install.md) to prepare that PC;
 the combined voice controller still needs implementation.
 
-A read-only Windows conversation prototype is available in
+The Windows desktop client is in [`client/`](client/README.md). Double-click
+**HOLT.cmd** for Start/Stop, audio-device selection, continuous voice input,
+George speech output and persistent session memory. Explicit game commands
+use bounded permissions without per-action confirmation dialogs.
+
+The earlier read-only Windows conversation prototype is available in
 [`scripts/holt-client.py`](scripts/holt-client.py). It discovers the MCP
 server's instructions, personality prompt and guides, validates read-tool
 arguments and blocks all game controls. Optional `--speak` uses local

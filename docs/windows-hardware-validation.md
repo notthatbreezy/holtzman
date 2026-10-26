@@ -1,9 +1,11 @@
 # Windows ship-computer validation
 
-Inspected October 26, 2026 on the second PC. The memory correction does not
+Initial inspection was October 26, 2026 on the second PC. The memory correction does not
 require replacing the PC or changing the two-PC architecture. Capacity is
 adequate for the proposed quantized model; latency and accuracy still need
-measurement. This is a preparation checkpoint, not a completed installation.
+measurement. The desktop client is now implemented; see [the client guide](../client/README.md)
+for the Start/Stop launcher, continuous listening, audio settings and persistent memory.
+The details below also preserve the earlier preparation and benchmark history.
 
 ## Hardware and graphics
 
@@ -271,6 +273,28 @@ CPU index first, as in the Windows guide, then restore the remaining locked
 dependencies into the isolated environment. Models and credentials are
 not included in the lock or source control.
 
-The complete microphone-to-tools-to-speech loop remains to be built.
+The desktop client now connects microphone voice detection, local Whisper,
+the model/MCP loop and George speech output. `HOLT.cmd` opens its control
+panel; a HOLT desktop shortcut was created on the configured PC. Start/Stop
+was tested from running and stopped states, including cleanup of both local
+inference processes. Microphone format opening and sample-audio segmentation
+were verified. Nineteen local tests pass, and the live read-only check covers
+status, real cockpit imagery and actual model-driven compaction.
+
+The client has persistent SQLite sessions and saved preferences, token-aware
+compaction, audio-device selection and quiet hull/heat/low-fuel watches.
+Explicit controls use bounded request permits without per-action popups;
+spoken control requests must address HOLT. No live game inputs were sent
+during the desktop checks, including while the Captain flew to another station.
+
+The PC clock was four hours ahead of SKIPPY and was corrected by the user.
+Freshness arithmetic now runs in code and the client checks the server's HTTP
+clock. Status.json timestamps are change times, not a heartbeat. The screenshot
+test also found the MCP SDK's default 1 MiB SSE limit too small for PNG captures;
+the desktop transport now allows 16 MiB, with bounded image dimensions/context.
+
+The panel was handed over stopped with a fresh conversation, Windows-default
+audio, continuous listening and speech enabled. Final microphone conversation
+quality and live supervised controls remain user acceptance checks.
 No game controls, model training, firewall changes or scheduled startup
 tasks were needed for this checkpoint.
