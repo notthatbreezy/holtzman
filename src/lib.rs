@@ -4,6 +4,7 @@
 pub mod automation;
 pub mod bindings;
 pub mod config;
+pub mod guides;
 pub mod input;
 pub mod journal;
 pub mod keys;

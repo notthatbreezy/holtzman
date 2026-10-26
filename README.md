@@ -31,6 +31,7 @@ plotting a route, by pressing your own key bindings.
 | `screenshot` | Picture of the game window (never the desktop) plus open panel and status flags; crop by named region or rect |
 | `press_binding` | Press one allow-listed binding (for stepping through menus / tuning recipes); `observe: true` returns a screenshot of the result and how much of the screen changed |
 | `nav_target_start` / `_move` / `_confirm` / `_cancel` | Lock or unlock a station in the current system, or toggle supercruise assist to it, via the left panel's Navigation list (supervised, step by step) |
+| `read_guide` | Field guides: game concepts (fuel, heat, jump range, …) and mission profiles (trading, exploration, mining, …); no name lists them |
 | `cursor_position` | Mouse position relative to the game window |
 | `record_click_target` | Save the hovered position as a named click target in `holtzman.toml` |
 | `trade_commodities` | Look up Spansh commodity names |
@@ -43,6 +44,12 @@ rules of engagement for HOLT, the ship's droid
 as their system prompt. To rename or rewrite your droid, point `ship_prompt`
 in `holtzman.toml` at your own Markdown file (relative to the config); it is
 re-read on every request.
+
+The same field guides are MCP resources at `guide://<name>`
+([guides/](guides/)), for clients that browse resources; `read_guide` covers
+tool-only harnesses. Add your own Markdown guides by pointing `guides_dir`
+in `holtzman.toml` at a folder; a file named like a built-in guide (say
+`fuel.md`) replaces it.
 
 Read tools are side-effect free. Action tools take the keyboard for a few
 seconds, so the server's instructions tell the model to announce them first.

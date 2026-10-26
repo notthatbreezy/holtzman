@@ -147,6 +147,7 @@ async fn lists_and_calls_tools() {
         "nav_target_move",
         "nav_target_confirm",
         "nav_target_cancel",
+        "read_guide",
         "trade_commodities",
         "find_commodity_market",
         "plan_trade_route",
@@ -207,6 +208,47 @@ async fn lists_and_calls_tools() {
     )
     .await;
     assert!(missing["error"].is_object(), "{missing}");
+
+    let (_, guide) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":30,"method":"tools/call","params":{"name":"read_guide","arguments":{"name":"exploration-for-profit"}}}),
+    )
+    .await;
+    let text = guide["result"]["content"][0]["text"].as_str().unwrap();
+    assert!(text.starts_with("# Playbook"), "{text}");
+    let (_, resources) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":31,"method":"resources/list"}),
+    )
+    .await;
+    let uris: Vec<&str> = resources["result"]["resources"]
+        .as_array()
+        .unwrap_or_else(|| panic!("{resources}"))
+        .iter()
+        .map(|r| r["uri"].as_str().unwrap())
+        .collect();
+    assert!(uris.contains(&"guide://fuel"), "{uris:?}");
+    let (_, heat) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":32,"method":"resources/read","params":{"uri":"guide://heat"}}),
+    )
+    .await;
+    assert_eq!(
+        heat["result"]["contents"][0]["mimeType"], "text/markdown",
+        "{heat}"
+    );
+    assert!(
+        heat["result"]["contents"][0]["text"]
+            .as_str()
+            .unwrap()
+            .starts_with("# Heat")
+    );
 
     let (_, status) = rpc(
         &url,

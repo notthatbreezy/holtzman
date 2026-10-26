@@ -19,8 +19,9 @@ use rmcp::{
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::{
         CallToolResult, ContentBlock, GetPromptRequestParams, GetPromptResponse, GetPromptResult,
-        ListPromptsResult, PaginatedRequestParams, Prompt, PromptMessage, Role, ServerCapabilities,
-        ServerConfig,
+        ListPromptsResult, ListResourcesResult, PaginatedRequestParams, Prompt, PromptMessage,
+        ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult, Resource,
+        ResourceContents, Role, ServerCapabilities, ServerConfig,
     },
     service::RequestContext,
     tool, tool_handler, tool_router,
@@ -36,6 +37,7 @@ use crate::{
     automation::Pilot,
     bindings::Bindings,
     config::{ClickTarget, Config},
+    guides,
     input::{KeySender, platform_sender},
     journal::JournalDir,
     nav::{Nav, NavAction, NavSession, NavView},
@@ -145,6 +147,14 @@ pub struct PressArgs {
         description = "With observe: screen region to return, as for the screenshot tool (default full)"
     )]
     pub region: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct GuideArgs {
+    #[schemars(
+        description = "Guide to read, e.g. \"fuel\" or \"exploration\". Omit to list them all."
+    )]
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -505,6 +515,29 @@ impl Holtzman {
     }
 
     #[tool(
+        description = "Field guides to Elite Dangerous: game concepts (fuel, heat, jump range, interdiction, rebuy, engineering) and mission profiles (trading, exploration, exploration for profit, mining). With no name, lists them. Read the matching profile when the commander starts an activity, and check a concept guide before answering mechanics questions from memory.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn read_guide(&self, Parameters(args): Parameters<GuideArgs>) -> Result<String, String> {
+        let dir = self.guides_dir();
+        match args
+            .name
+            .as_deref()
+            .map(str::trim)
+            .filter(|n| !n.is_empty())
+        {
+            Some(name) => guides::read(dir.as_deref(), name).map_err(err),
+            None => Ok(pretty(
+                serde_json::to_value(guides::list(dir.as_deref())).unwrap_or_default(),
+            )),
+        }
+    }
+
+    #[tool(
         description = "Where the mouse cursor is on the gaming PC, as fractions (0..1) of the game window plus pixels. Use while the commander hovers over a button."
     )]
     async fn cursor_position(&self) -> Result<String, String> {
@@ -658,19 +691,30 @@ pub const SHIP_COMPUTER_PROMPT: &str = include_str!("../prompts/ship-computer.md
 const SHIP_COMPUTER: &str = "ship_computer";
 
 impl Holtzman {
+    /// Paths in holtzman.toml are relative to the file itself.
+    fn config_relative(&self, path: PathBuf) -> PathBuf {
+        match self.ship.config_path.as_deref().and_then(|c| c.parent()) {
+            Some(dir) if path.is_relative() => dir.join(path),
+            _ => path,
+        }
+    }
+
     /// The prompt text: the configured override file if set, else the built-in one.
     fn ship_prompt(&self) -> Result<String, ErrorData> {
         let Some(path) = self.ship.config().ship_prompt else {
             return Ok(SHIP_COMPUTER_PROMPT.to_string());
         };
-        // Relative paths are relative to holtzman.toml.
-        let path = match self.ship.config_path.as_deref().and_then(|c| c.parent()) {
-            Some(dir) if path.is_relative() => dir.join(path),
-            _ => path,
-        };
+        let path = self.config_relative(path);
         std::fs::read_to_string(&path).map_err(|e| {
             ErrorData::internal_error(format!("reading ship_prompt {}: {e}", path.display()), None)
         })
+    }
+
+    fn guides_dir(&self) -> Option<PathBuf> {
+        self.ship
+            .config()
+            .guides_dir
+            .map(|d| self.config_relative(d))
     }
 }
 
@@ -713,11 +757,45 @@ impl ServerHandler for Holtzman {
         )
     }
 
+    async fn list_resources(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ListResourcesResult, ErrorData> {
+        let resources = guides::list(self.guides_dir().as_deref())
+            .into_iter()
+            .map(|g| {
+                Resource::new(format!("{}{}", guides::URI_PREFIX, g.name), g.name)
+                    .with_description(format!("{} guide: {}", g.kind, g.summary))
+                    .with_mime_type("text/markdown")
+            })
+            .collect();
+        Ok(ListResourcesResult::with_all_items(resources))
+    }
+
+    async fn read_resource(
+        &self,
+        request: ReadResourceRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ReadResourceResponse, ErrorData> {
+        let name = request
+            .uri
+            .strip_prefix(guides::URI_PREFIX)
+            .ok_or_else(|| ErrorData::resource_not_found(request.uri.clone(), None))?;
+        let text = guides::read(self.guides_dir().as_deref(), name)
+            .map_err(|e| ErrorData::resource_not_found(format!("{e:#}"), None))?;
+        Ok(ReadResourceResult::new(vec![
+            ResourceContents::text(text, request.uri).with_mime_type("text/markdown"),
+        ])
+        .into())
+    }
+
     fn get_info(&self) -> ServerConfig {
         ServerConfig::new(
             ServerCapabilities::builder()
                 .enable_tools()
                 .enable_prompts()
+                .enable_resources()
                 .build(),
         )
         .with_instructions(
