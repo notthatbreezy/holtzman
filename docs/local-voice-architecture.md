@@ -60,7 +60,13 @@ operation should start independently of a coding session.
 | Startup | systemd user services on Omarchy, with models kept loaded |
 
 These are candidates to validate on the actual APU, driver and firmware
-configuration. Do not assume that all 192 GB is available to GPU inference,
+configuration. The Windows client PC was inspected October 26, 2026: it has
+128 GiB installed memory, a Ryzen AI Max+ 395 and Radeon 8060S. Windows sees
+about 31.6 GiB of system RAM; the graphics reservation appears to be 96 GiB.
+These share one physical pool, not separate additive memory capacities.
+See [Windows hardware validation](windows-hardware-validation.md) for the
+measured Vulkan/runtime budgets and remaining gates. Do not assume that all
+installed memory is available to GPU inference,
 or that a model fitting in memory will respond quickly. Keep room for model
 context, speech models and the desktop. Start with a moderate context window
 and measure tool-call correctness and response latency before trying larger
@@ -99,17 +105,23 @@ fallback.
 The controller is the MCP client. The language model proposes structured
 tool calls; ordinary application code validates and executes them. Reuse the
 existing HOLT ship-computer system prompt for personality, the Captain
-relationship and conversational style. Load it from a versioned local file
-on Omarchy so the same personality can be used with different local models.
+relationship, personal history and conversational style. On connection,
+read the MCP initialize instructions, discover prompts and request
+`ship_computer`. Discover tools and the `guide://` resource index from the
+same server. Keep a timestamped local snapshot for diagnostics, not a
+silently preferred copy that overrides future server updates. The source
+prompt is versioned at `prompts/ship-computer.md`; SKIPPY can override it
+through `ship_prompt` in its config. No manual prompt transfer is needed.
 Action boundaries and result verification remain enforced in code.
 
-The prompt currently exists as `prompts/ship-computer.md` in the screenshot
-development checkout. Its tool descriptions include capabilities beyond
-the main checkout used for this architecture. During client implementation,
-reconcile those descriptions with the connected server's discovered tools;
-the prompt alone does not make a capability available. Screenshot-guided
-docking requires image interpretation on Omarchy; SKIPPY only captures and
-returns the game window.
+The deployed tool catalogue is authoritative for available capabilities.
+Refresh discovery after reconnecting; load field guides on demand for the
+Captain's activity or mechanics questions. Screenshot-guided docking
+requires image interpretation on the client; SKIPPY only captures and
+returns the game window. Expose tools by operating mode rather than putting
+every calibration and control tool into every request. The discovered full
+prompt and all schemas nearly fill an 8K context; the inspected Windows
+runtime now uses 16K, with compact tool results and conversation history.
 
 The normal request path is:
 

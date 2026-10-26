@@ -242,6 +242,14 @@ Follow the [Windows installation guide](docs/windows-client-install.md) or
 [Omarchy installation guide](docs/omarchy-install.md) to prepare that PC;
 the combined voice controller still needs implementation.
 
+A read-only Windows conversation prototype is available in
+[`scripts/holt-client.py`](scripts/holt-client.py). It discovers the MCP
+server's instructions, personality prompt and guides, validates read-tool
+arguments and blocks all game controls. Optional `--speak` uses local
+George speech synthesis. Microphone input and supervised action workflows
+are not integrated yet. See the [tested Windows checkpoint](docs/windows-hardware-validation.md)
+for installed paths, benchmarks, dependencies and launch commands.
+
 ## Fair play
 
 Frontier allows macros and voice-command tools; unattended automated play is

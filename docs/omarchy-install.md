@@ -454,29 +454,19 @@ uv pip freeze --python "$HOME/.local/share/holtzman-voice/.venv/bin/python" \
   > "$HOME/.local/share/holtzman-voice/tests/python-packages.txt"
 ```
 
-## 10. Bring over the existing HOLT prompt
+## 10. Discover the HOLT prompt and field guides
 
-The current personality file on SKIPPY is:
+On the authenticated MCP session, read the initialize instructions, call
+`list_prompts`, and retrieve `get_prompt("ship_computer")`. Discover tools
+and the `guide://` resource index from the same connection. The controller
+uses that prompt for personality and personal history and reads relevant
+guides on demand. Refresh discovery on reconnect.
 
-```text
-C:\Users\chris\holtzman\holtzman-screenshot\prompts\ship-computer.md
-```
-
-Copy **that file only** to Omarchy using a file share, USB drive or another
-private transfer method. Save it as:
-
-```text
-~/.config/holtzman-voice/ship-computer.md
-```
-
-The edited prompt is in the screenshot development checkout; cloning main
-alone does not retrieve that local revision. You do not need another
-Holtzman server, Rust installation or Windows config on Omarchy.
-
-The voice application will load this prompt when it is implemented. The
-llama.cpp service does not automatically load it merely because it exists
-on disk. Its tool catalogue must be reconciled with the connected server;
-the text-only model launch above cannot inspect screenshots.
+No manual prompt transfer or Windows file share is needed. The source
+prompt is versioned in `prompts/ship-computer.md`, with a server-side
+`ship_prompt` override available. A local snapshot can aid diagnostics, but
+must not silently override the server's newer prompt. The llama.cpp service
+does not fetch MCP instructions by itself; the client must supply them.
 
 ## 11. Optionally start the model automatically at login
 
@@ -525,7 +515,7 @@ At this point you should have five independent successes:
 2. A local model answering text and proposing a structured `status` call.
 3. A clear microphone recording and usable local transcription.
 4. Local speech playing through the Omarchy speakers.
-5. The existing HOLT system prompt in the intended configuration directory.
+5. The advertised HOLT system prompt and guide index discovered over MCP.
 
 The next development task is the small `holtzman-voice` controller: connect
 these components using Pipecat, load the prompt, maintain the MCP session,

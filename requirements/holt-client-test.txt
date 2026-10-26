@@ -1,0 +1,5 @@
+# Lightweight Windows dependencies for client policy/discovery tests.
+mcp==2.3.0
+keyring==25.7.0
+pywin32-ctypes==0.2.3
+jsonschema==4.26.0

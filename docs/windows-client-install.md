@@ -9,6 +9,12 @@ Commands run on the **second PC**, in PowerShell 7, unless explicitly marked
 **SKIPPY**. These are native Windows instructions; WSL and Docker are not
 required. This is an alternative to the [Omarchy guide](omarchy-install.md).
 
+For the inspected Corsair PC, start with the
+[October 26 hardware and installation checkpoint](windows-hardware-validation.md).
+It records the actual 128 GiB memory configuration, portable Vulkan runtime,
+pending Windows Update restart and remaining validation. Do not repeat setup
+steps that are already complete there.
+
 ## What is available now
 
 These steps install and independently check the local language/vision model,
@@ -525,29 +531,25 @@ inference is local. `af_heart` is a test voice; choose HOLT's final voice by
 auditioning alternatives. **Continue when:** speech plays clearly through
 the speakers connected to the second PC.
 
-## 12. Copy the existing HOLT personality prompt
+## 12. Discover the HOLT prompt and field guides
 
-Copy this file from SKIPPY using your file share, USB drive or another
-private transfer method:
+The server advertises its instructions, `ship_computer` prompt, tools and
+`guide://` resource index through MCP. Load the prompt from that authenticated
+connection; do not copy a prompt file from another checkout. Read relevant
+guides on demand through `read_guide` or MCP resources.
 
-```text
-C:\Users\chris\holtzman\holtzman-screenshot\prompts\ship-computer.md
-```
-
-Save it on the second PC at:
+From this repository's root, the preflight script can save the discovered
+contract (using the configured Python environment):
 
 ```powershell
-Join-Path $HoltConfig 'ship-computer.md'
+& $HoltPython scripts\check-holt-mcp.py --schemas (Join-Path $HoltRoot 'tests\mcp-tools.json') --discovery (Join-Path $HoltRoot 'tests\discovery')
 ```
 
-That prints the intended destination path; copy the file there with your
-file manager. Copy only the prompt, not `holtzman.toml`. The current edited
-prompt lives in the screenshot development checkout, so cloning main alone
-does not retrieve that revision.
-
-The future controller will load the prompt and reconcile its tool catalogue
-with the connected server. The model service does not load it automatically
-just because the file exists.
+The inspected PC uses its own portable environment instead; see its hardware
+checkpoint for exact paths. The controller loads the advertised personality
+and refreshes discovery on reconnect. The model service does not fetch MCP
+prompts by itself. A local discovery snapshot is for diagnostics, not a
+replacement for the connected server's current contract.
 
 ## 13. Optional: start the model when you sign in
 
