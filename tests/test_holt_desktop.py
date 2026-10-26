@@ -11,6 +11,11 @@ from datetime import datetime, timezone, timedelta
 
 
 class DurableStateTests(unittest.TestCase):
+    def test_fleet_query_remains_available_with_game_controls_off(self):
+        permit = Permit("Which of my ships suits pirate hunting?", enabled=False, natural=True)
+        permit.check("fleet", {"include_modules": True})
+        self.assertEqual(permit.calls, 0)
+
     def test_settings_round_trip_uses_names_not_device_ids(self):
         with tempfile.TemporaryDirectory() as root:
             settings = load_settings(root)

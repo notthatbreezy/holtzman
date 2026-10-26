@@ -23,6 +23,7 @@ plotting a route, by pressing your own key bindings.
 | Tool | What it does |
 |---|---|
 | `status` | Location, docked station, ship, cargo capacity, credits, fuel, status flags, open panel, plotted destination |
+| `fleet` | Owned ships and last-known locations/loadouts across historical journals; reconciles sales, swaps, stored snapshots and pending transfers |
 | `market` | Last-opened commodity market (buy/sell/stock/demand), optional name filter |
 | `cargo` | Hold contents |
 | `nav_route` | Current plotted route |

@@ -145,6 +145,7 @@ async fn lists_and_calls_tools() {
         "cursor_position",
         "record_click_target",
         "status",
+        "fleet",
         "market",
         "cargo",
         "nav_route",
@@ -267,6 +268,24 @@ async fn lists_and_calls_tools() {
     )
     .await;
     let text = status["result"]["content"][0]["text"].as_str().unwrap();
+    let (_, fleet) = rpc(
+        &url, &token, Some(&sid),
+        json!({"jsonrpc":"2.0","id":34,"method":"tools/call","params":{"name":"fleet","arguments":{"ship_id":3,"include_modules":true}}}),
+    ).await;
+    let inventory: Value =
+        serde_json::from_str(fleet["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(inventory["commander"], "TESTCMDR");
+    assert_eq!(inventory["ships"][0]["ship_id"], 3);
+    assert_eq!(inventory["ships"][0]["type"], "type9");
+    assert!(inventory["ships"][0]["loadout"]["modules"].is_array());
+    let fleet_tool = list["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|tool| tool["name"] == "fleet")
+        .unwrap();
+    assert_eq!(fleet_tool["annotations"]["readOnlyHint"], true);
+    assert_eq!(fleet_tool["annotations"]["openWorldHint"], false);
     assert!(text.contains("Pratchett Port"), "{text}");
 
     let (_, market) = rpc(

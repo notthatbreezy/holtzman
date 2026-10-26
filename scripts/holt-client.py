@@ -20,7 +20,7 @@ from mcp.client.streamable_http import streamable_http_client
 from holt_discovery import discover, prompt_text, save_discovery
 
 ROOT = Path(__file__).resolve().parents[1] / ".local/holt"
-READ_TOOLS = frozenset({"status", "cargo", "nav_route", "market", "recent_events",
+READ_TOOLS = frozenset({"status", "fleet", "cargo", "nav_route", "market", "recent_events",
                         "read_guide", "trade_commodities", "find_commodity_market", "plan_trade_route"})
 DELIVERIES = {"normal": 1.0, "caution": 1.03, "urgent": 1.12, "critical": 1.18}
 LOCAL_RULES = """Local client operating mode: READ ONLY. Only tools in the supplied API list

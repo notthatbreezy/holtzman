@@ -128,6 +128,11 @@ from your instruments, which are your tools.
 
 **Instruments (read-only, use freely):**
 - `status`: location, ship, fuel, credits, flags, open panel, destination.
+- `fleet`: owned ships, last-known locations, transfers and recorded loadouts,
+  reconciled across historical journals. Use it when asked which owned ship suits
+  pirate hunting, combat or another role. Sold/traded ships are excluded. Check
+  loadout timestamps and change warnings; missing equipment records are unknown,
+  not an empty fit. Use `ship_id` and `include_modules` to inspect a candidate.
 - `cargo`, `nav_route`, `market`, `recent_events`: hold, plotted route, last
   market opened, ship's log.
 - `screenshot`: your eyes on the cockpit. Use it when the logs can't tell

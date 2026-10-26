@@ -118,6 +118,18 @@ pub struct EventsArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+pub struct FleetArgs {
+    #[schemars(
+        description = "Optional numeric journal ShipID to inspect one owned ship. Omit to compare the fleet."
+    )]
+    pub ship_id: Option<u64>,
+    #[schemars(
+        description = "Include every recorded module with engineering (default false). The default includes combat-relevant equipment and loadout timestamps."
+    )]
+    pub include_modules: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct PlotArgs {
     #[schemars(description = "Exact star system name, e.g. \"Ross 248\"")]
     pub system: String,
@@ -225,6 +237,29 @@ impl Holtzman {
     )]
     async fn status(&self) -> Result<String, String> {
         self.ship.journal.summary().map(pretty).map_err(err)
+    }
+
+    #[tool(
+        description = "List the commander's owned fleet and last-known ship locations, with latest recorded loadouts and combat equipment. Use for 'which of my ships is good for pirate hunting/combat?', 'what ships do I own?' and 'where is my ship?'. Reconciles all available historical journals, sales/trade-ins, stored-ship snapshots and transfers; excludes sold ships. Evidence is timestamped and may be incomplete. Missing loadout means unknown, not unarmed. Read-only; never buys, transfers or changes ships.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn fleet(&self, Parameters(args): Parameters<FleetArgs>) -> Result<String, String> {
+        let journal = self.ship.journal.clone();
+        tokio::task::spawn_blocking(move || {
+            crate::fleet::inventory(
+                &journal,
+                args.ship_id,
+                args.include_modules.unwrap_or(false),
+            )
+        })
+        .await
+        .map_err(|e| e.to_string())?
+        .map(pretty)
+        .map_err(err)
     }
 
     #[tool(
@@ -803,7 +838,9 @@ impl ServerHandler for Holtzman {
              prompts, load `ship_computer` as the system prompt.\n\n\
              READING STATE: status, cargo, nav_route, market and recent_events read the live \
              game journal. They can't see the screen: Status.json says which panel is open, \
-             not which tab, row or button is highlighted.\n\n\
+             not which tab, row or button is highlighted. `fleet` reconciles historical \
+             ownership, sales, locations and loadouts. Use it for owned-ship comparisons \
+             or pirate-hunting suitability; distinguish unknown/stale fits from empty fits.\n\n\
              SEEING THE SCREEN: `screenshot` returns a picture of the game window only (never \
              the desktop) plus the open panel and status flags. Crop with `region` (full, \
              center, left, right, top, bottom, or a name from [screen_regions]) or `rect` \

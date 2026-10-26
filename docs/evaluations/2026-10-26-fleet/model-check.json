@@ -1,0 +1,470 @@
+[
+  {
+    "framework": "desktop",
+    "repeat": 0,
+    "model": "gpt-6-luna",
+    "question": "Do I have any good ships that would be good for pirate hunting? You ready to take down some pirates or are you scared?",
+    "simulated_ship": true,
+    "reply": {
+      "text": "The Vulture Test Hunter looks like your best pirate hunter, with a gimballed large pulse laser, gimballed large multicannon, and class 5 shield generator. Your Cobra\u2019s loadout is unknown, and the Panther\u2019s recorded combat equipment is empty.",
+      "delivery": "normal"
+    },
+    "tools": [
+      "fleet"
+    ],
+    "checks": {
+      "retrieves_fleet": true,
+      "recommends_recorded_combat_ship": true,
+      "no_invented_anaconda": true,
+      "no_irrelevant_cargo_query": true
+    },
+    "passed": true,
+    "model_calls": [
+      {
+        "seconds": 1.8151710999991337,
+        "usage": {
+          "prompt_tokens": 8563,
+          "completion_tokens": 19,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 8560,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 26515,
+        "finish": "tool_calls"
+      },
+      {
+        "seconds": 1.7989662999989378,
+        "usage": {
+          "prompt_tokens": 9003,
+          "completion_tokens": 75,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 9000,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 28640,
+        "finish": "stop"
+      },
+      {
+        "seconds": 1.9662165000008827,
+        "usage": {
+          "prompt_tokens": 159,
+          "completion_tokens": 57,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 780,
+        "finish": "stop"
+      }
+    ],
+    "time_utc": "2026-10-26T19:20:57.216301+00:00"
+  },
+  {
+    "framework": "desktop",
+    "repeat": 1,
+    "model": "gpt-6-luna",
+    "question": "Do I have any good ships that would be good for pirate hunting? You ready to take down some pirates or are you scared?",
+    "simulated_ship": true,
+    "reply": {
+      "text": "You have a Vulture named Test Hunter at Jameson Memorial in Shinrarta Dezhra, equipped with a gimballed large pulse laser, gimballed large multicannon, and class-5 shield generator. The Cobra\u2019s loadout is unknown; your Panther Mk II\u2019s recorded snapshot shows no combat equipment.",
+      "delivery": "normal"
+    },
+    "tools": [
+      "fleet"
+    ],
+    "checks": {
+      "retrieves_fleet": true,
+      "recommends_recorded_combat_ship": true,
+      "no_invented_anaconda": true,
+      "no_irrelevant_cargo_query": true
+    },
+    "passed": true,
+    "model_calls": [
+      {
+        "seconds": 1.6575277000010828,
+        "usage": {
+          "prompt_tokens": 8563,
+          "completion_tokens": 19,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 8560,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 26515,
+        "finish": "tool_calls"
+      },
+      {
+        "seconds": 2.2345635000001494,
+        "usage": {
+          "prompt_tokens": 9003,
+          "completion_tokens": 102,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 9000,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 28640,
+        "finish": "stop"
+      },
+      {
+        "seconds": 1.3592499000005773,
+        "usage": {
+          "prompt_tokens": 187,
+          "completion_tokens": 68,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 891,
+        "finish": "stop"
+      }
+    ],
+    "time_utc": "2026-10-26T19:21:03.212993+00:00"
+  },
+  {
+    "framework": "desktop",
+    "repeat": 2,
+    "model": "gpt-6-luna",
+    "question": "Do I have any good ships that would be good for pirate hunting? You ready to take down some pirates or are you scared?",
+    "simulated_ship": true,
+    "reply": {
+      "text": "Your Vulture, Test Hunter, has a gimballed large pulse laser, a gimballed large multicannon, and a Class 5 shield generator. The Cobra\u2019s loadout is unknown; the Panther\u2019s recorded snapshot lists no combat equipment.",
+      "delivery": "normal"
+    },
+    "tools": [
+      "fleet"
+    ],
+    "checks": {
+      "retrieves_fleet": true,
+      "recommends_recorded_combat_ship": true,
+      "no_invented_anaconda": true,
+      "no_irrelevant_cargo_query": true
+    },
+    "passed": true,
+    "model_calls": [
+      {
+        "seconds": 2.3281064000002516,
+        "usage": {
+          "prompt_tokens": 8563,
+          "completion_tokens": 19,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 8560,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 26515,
+        "finish": "tool_calls"
+      },
+      {
+        "seconds": 2.659246199998961,
+        "usage": {
+          "prompt_tokens": 9003,
+          "completion_tokens": 87,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 9000,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 28640,
+        "finish": "stop"
+      },
+      {
+        "seconds": 1.6074257000000216,
+        "usage": {
+          "prompt_tokens": 172,
+          "completion_tokens": 54,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 853,
+        "finish": "stop"
+      }
+    ],
+    "time_utc": "2026-10-26T19:21:11.459039+00:00"
+  },
+  {
+    "framework": "sillytavern",
+    "repeat": 0,
+    "model": "gpt-6-luna",
+    "question": "Do I have any good ships that would be good for pirate hunting? You ready to take down some pirates or are you scared?",
+    "simulated_ship": true,
+    "reply": {
+      "text": "Your Vulture, Test Hunter, is the clear pirate-hunting pick, with a gimballed large pulse laser, a gimballed large multicannon, and a size-5 shield generator. The Panther\u2019s combat fit isn\u2019t recorded.",
+      "delivery": "normal"
+    },
+    "tools": [
+      "fleet"
+    ],
+    "checks": {
+      "retrieves_fleet": true,
+      "recommends_recorded_combat_ship": true,
+      "no_invented_anaconda": true,
+      "no_irrelevant_cargo_query": true
+    },
+    "passed": true,
+    "model_calls": [
+      {
+        "seconds": 1.4722082000007504,
+        "usage": {
+          "prompt_tokens": 5359,
+          "completion_tokens": 19,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 5356,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 12731,
+        "finish": "tool_calls"
+      },
+      {
+        "seconds": 2.329162100000758,
+        "usage": {
+          "prompt_tokens": 5799,
+          "completion_tokens": 100,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 5796,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 14856,
+        "finish": "stop"
+      },
+      {
+        "seconds": 1.4372812999990856,
+        "usage": {
+          "prompt_tokens": 179,
+          "completion_tokens": 54,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 862,
+        "finish": "stop"
+      }
+    ],
+    "time_utc": "2026-10-26T19:21:16.726510+00:00"
+  },
+  {
+    "framework": "sillytavern",
+    "repeat": 1,
+    "model": "gpt-6-luna",
+    "question": "Do I have any good ships that would be good for pirate hunting? You ready to take down some pirates or are you scared?",
+    "simulated_ship": true,
+    "reply": {
+      "text": "The Vulture *Test Hunter* at Jameson Memorial has two large gimballed weapons\u2014a pulse laser and multicannon\u2014and a class 5 shield generator, making it the clear pirate-hunting pick. Your current Panther Mk II has no recorded combat equipment.",
+      "delivery": "normal"
+    },
+    "tools": [
+      "fleet"
+    ],
+    "checks": {
+      "retrieves_fleet": true,
+      "recommends_recorded_combat_ship": true,
+      "no_invented_anaconda": true,
+      "no_irrelevant_cargo_query": true
+    },
+    "passed": true,
+    "model_calls": [
+      {
+        "seconds": 1.5742929999996704,
+        "usage": {
+          "prompt_tokens": 5359,
+          "completion_tokens": 19,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 5356,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 12731,
+        "finish": "tool_calls"
+      },
+      {
+        "seconds": 2.022702600001139,
+        "usage": {
+          "prompt_tokens": 5799,
+          "completion_tokens": 75,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 5796,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 14856,
+        "finish": "stop"
+      },
+      {
+        "seconds": 1.269554700000299,
+        "usage": {
+          "prompt_tokens": 161,
+          "completion_tokens": 56,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 806,
+        "finish": "stop"
+      }
+    ],
+    "time_utc": "2026-10-26T19:21:22.403284+00:00"
+  },
+  {
+    "framework": "sillytavern",
+    "repeat": 2,
+    "model": "gpt-6-luna",
+    "question": "Do I have any good ships that would be good for pirate hunting? You ready to take down some pirates or are you scared?",
+    "simulated_ship": true,
+    "reply": {
+      "text": "Test Hunter is the clear pirate-hunting pick, recorded with a gimballed large pulse laser, a gimballed large multicannon, and a size-5 shield generator. The Cobra\u2019s loadout is unknown, and your current Panther Mk II has no combat equipment recorded.",
+      "delivery": "normal"
+    },
+    "tools": [
+      "fleet"
+    ],
+    "checks": {
+      "retrieves_fleet": true,
+      "recommends_recorded_combat_ship": true,
+      "no_invented_anaconda": true,
+      "no_irrelevant_cargo_query": true
+    },
+    "passed": true,
+    "model_calls": [
+      {
+        "seconds": 2.376109599999836,
+        "usage": {
+          "prompt_tokens": 5359,
+          "completion_tokens": 19,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 5356,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 12731,
+        "finish": "tool_calls"
+      },
+      {
+        "seconds": 2.308021099999678,
+        "usage": {
+          "prompt_tokens": 5799,
+          "completion_tokens": 90,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 5796,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 14856,
+        "finish": "stop"
+      },
+      {
+        "seconds": 1.3697112999998353,
+        "usage": {
+          "prompt_tokens": 169,
+          "completion_tokens": 60,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        "timings": {},
+        "input_characters": 825,
+        "finish": "stop"
+      }
+    ],
+    "time_utc": "2026-10-26T19:21:28.473217+00:00"
+  }
+]
