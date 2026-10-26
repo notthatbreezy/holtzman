@@ -57,10 +57,16 @@ class ActionBoundaryTests(unittest.TestCase):
         self.assertTrue(Permit("Hey Holt how is it going, request docking now", spoken=True, enabled=True).authorized)
         self.assertFalse(Permit("Holt how do I request docking", spoken=True, enabled=True).authorized)
 
-    def test_direct_spoken_order_needs_holt_address(self):
-        with self.assertRaises(ValueError):
-            Permit("Plot a course to Sol", spoken=True, enabled=True).check("plot_route", {"system": "Sol"})
+    def test_direct_spoken_order_does_not_need_holt_address(self):
+        Permit("Plot a course to Sol", spoken=True, enabled=True).check("plot_route", {"system": "Sol"})
         Permit("HOLT, plot a course to Sol", spoken=True, enabled=True).check("plot_route", {"system": "Sol"})
+
+    def test_actual_compound_route_request_uses_explicit_destination(self):
+        text = "So, little good news bad news here. I was supposed to go to AD Leonis and not Ross 248. Can you plot me a route to AD Leonis please?"
+        permit = Permit(text, spoken=True, enabled=True)
+        self.assertTrue(permit.authorized)
+        self.assertEqual(permit.destination, "ad leonis")
+        permit.check("plot_route", {"system": "AD Leonis"})
 
     def test_casual_negated_ambiguous_and_planning_requests_do_not_arm_controls(self):
         for text in ["Explain how to plot a route to Sol", "Do not plot a course to Sol",

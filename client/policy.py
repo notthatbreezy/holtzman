@@ -11,7 +11,7 @@ MENU_KEYS = frozenset({"FocusLeftPanel", "UI_Up", "UI_Down", "UI_Left", "UI_Righ
 
 
 def normalized(text):
-    return " ".join(re.findall(r"[\w'-]+", text.casefold()))
+    return " ".join(re.findall(r"[\w+'-]+", text.casefold()))
 
 
 class Permit:
@@ -29,12 +29,16 @@ class Permit:
         self.plotted = False
         uncertain = re.search(r"not sure|don't remember|do not remember|maybe|which number|can't remember", self.text)
         discussion = re.search(r"\b(explain|describe|hypothetical|example|don't|do not|without|never|how|what happens|would happen)\b", self.text)
-        addressed = not spoken or bool(re.match(r"^(?:hey |okay |ok )?holt\b", self.text))
-        self.route = bool(re.search(r"\b(plot|chart|set|lay)\b.*\b(course|route)\b", self.text))
+        route_words = bool(re.search(r"\b(plot|chart|set|lay)\b.*\b(course|route)\b", self.text))
+        route_order = re.search(r"^(?:(?:hey|okay|ok) )?(?:holt )?(?:please |go ahead and )?(?:plot|chart|set|lay)\b|\b(?:can|could|would|will) you (?:please )?(?:plot|chart|set|lay)\b|\bi (?:need|want)(?: you)? to (?:plot|chart|set|lay)\b", self.text)
+        past_or_conditional = re.search(r"\b(?:i asked|i said|he said|she said|if i|whether)\b", self.text)
+        self.route = bool(route_words and route_order and not past_or_conditional)
+        destination = re.search(r"\b(?:course|route) (?:to|for) (.+)$", self.text)
+        self.destination = re.sub(r"(?: please| captain| thanks| now)+$", "", destination[1]) if destination else None
         self.nav = bool(re.search(r"\b(target|lock|unlock|supercruise assist)\b", self.text))
         self.docking = bool(re.search(r"\b(request|ask for) docking\b", self.text))
         self.deferred = bool(re.search(r"\b(when|once|later|after|as soon as|until)\b", self.text))
-        self.requested = bool(addressed and not uncertain and not discussion and (self.route or self.nav or self.docking))
+        self.requested = bool(not uncertain and not discussion and (self.route or self.nav or self.docking))
         self.authorized = bool(enabled and self.requested and not self.deferred)
 
     def unavailable_reply(self):
@@ -59,8 +63,7 @@ class Permit:
             raise ValueError("The bounded action permit has expired")
         if name == "plot_route":
             target = normalized(arguments.get("system", ""))
-            requested = re.search(r"\b(?:course|route) (?:to|for) (.+)$", self.text)
-            exact = re.sub(r"(?: please| captain| thanks)+$", "", requested[1]) if requested else ""
+            exact = self.destination
             if not self.route or self.plotted or not target or target != exact:
                 raise ValueError("Destination must appear explicitly in the Captain's request")
             self.plotted = True

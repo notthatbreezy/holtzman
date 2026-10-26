@@ -72,7 +72,7 @@ class App:
         ttk.Checkbutton(toggles, text="Listen while unmuted", variable=self.listen).pack(side="left")
         ttk.Checkbutton(toggles, text="Spoken replies", variable=self.speak).pack(side="left", padx=12)
         ttk.Checkbutton(toggles, text="Explicit game commands", variable=self.actions).pack(side="left")
-        ttk.Label(options, text="For spoken controls, begin with ‘HOLT’. Your physical mute button controls listening.", wraplength=790).grid(row=3, columnspan=2, sticky="w")
+        ttk.Label(options, text="Give direct game commands naturally. Your physical mute button controls listening.", wraplength=790).grid(row=3, columnspan=2, sticky="w")
         ttk.Label(options, text="Preferences to remember").grid(row=4, column=0, sticky="w", pady=(8, 0))
         self.preferences = ttk.Entry(options)
         self.preferences.insert(0, self.settings["preferences"])

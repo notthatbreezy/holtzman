@@ -40,7 +40,7 @@ Capture pauses while HOLT thinks or speaks; physical mute naturally produces sil
 George's standard delivery runs at 1.15x speed. Ordinary replies are shortened
 to one or two sentences; ask for detail to get a longer explanation.
 
-Spoken game-control commands must begin with **HOLT**, for example:
+Give direct spoken or typed game commands naturally; **HOLT** is optional:
 
 > HOLT, plot a course to AD Leonis.
 
@@ -51,6 +51,11 @@ per-request call/time budget. In-system navigation and docking menu actions
 use cockpit observations and the server's verification. Calibration, raw
 flight/fire keys, unattended loops and arbitrary desktop control are excluded.
 Untick **Explicit game commands** to use HOLT in read-only mode.
+An explicit route order with a destination dispatches directly to the server's
+`plot_route` recipe. HOLT reports success only from the recipe's verified
+NavRoute.json result; reading an existing route is not completion. Mass lock
+does not prevent map plotting. Offline dispatch checks are available with
+`python -m client.check_route_dispatch` in the configured voice environment.
 The local read-only `find_module` tool searches public Spansh outfitting
 reports for an exact system and module (optionally class/rating). It requires
 large pads, excludes planetary ports and fleet carriers, returns report times,

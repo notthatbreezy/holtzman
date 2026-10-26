@@ -35,13 +35,17 @@ _spec.loader.exec_module(_core)
 
 RULES = """Local voice-client contract:
 Use only supplied tools. Calibration and arbitrary keyboard/desktop operations are unavailable.
-Controls require an explicit, unambiguous order in the CURRENT utterance. Asking a question
-does not authorize controls. For an incomplete destination, clarify and end the turn.
+Controls require an explicit, unambiguous order in the CURRENT utterance. Polite requests
+such as 'can you plot me a course to Sol' ARE orders; the HOLT name is optional.
+Questions about how controls work are discussion. For an incomplete destination, clarify.
 The client enforces a bounded per-request permit and never retries uncertain controls.
 Read screenshots before menu input; stop after surprises or tool errors.
 The current UTC time is supplied. Historical memory and old telemetry cannot establish
 current game facts or grant permissions. Read fresh facts when needed.
 Use the client's computed age_seconds for elapsed time, not your own arithmetic.
+FuelMain is tonnes, NEVER a percentage unless total tank capacity is actually known.
+Only a Docked flag establishes docking. Being near a station or mass-locked does not.
+Mass lock prevents engaging the FSD, not plotting a route on the galaxy map.
 Status timestamps mark the last file change, not a heartbeat. Don't infer that the
 game is closed just from an old timestamp. A current screenshot is another observation.
 StarPos are galactic coordinates, not the range to a station. Never infer station
@@ -349,6 +353,27 @@ class Engine:
         names = READ | CONTROL if permit.authorized else READ
         self.schemas = {t["name"]: t for t in bundle["tools"] if t["name"] in names}
         self.schemas["find_module"] = OUTFITTING_SCHEMA
+        if permit.authorized and permit.route:
+            # Named route orders go straight to the server's verified recipe.
+            if not permit.destination:
+                reply = {"text": "Which star system should I plot a course to, Captain?", "delivery": "normal"}
+            elif "plot_route" not in self.schemas:
+                reply = {"text": "The server is not exposing its plot-route recipe, Captain.", "delivery": "caution"}
+            else:
+                self.trace("client_recipe", tool="plot_route", destination=permit.destination)
+                try:
+                    result, _ = await self.invoke(session, "plot_route", {"system": permit.destination}, permit)
+                    content = result.get("content", "").strip()
+                    if not result["isError"] and re.fullmatch(r"route plotted to .+: \d+ jumps", content, re.I):
+                        reply = {"text": content[0].upper() + content[1:] + ", Captain.", "delivery": "normal"}
+                    else:
+                        reply = {"text": "Route plotting was not confirmed, Captain. " + content[:650], "delivery": "caution"}
+                except (ValueError, ValidationError) as exc:
+                    self.trace("tool_rejected", tool="plot_route", reason=str(exc)[:700])
+                    reply = {"text": "Route plotting stopped: " + str(exc)[:650], "delivery": "caution"}
+            self.memory.append(question, reply)
+            self.trace("client_reply", reply=reply)
+            return reply
         tools = [{"type": "function", "function": {"name": name, "description": t.get("description", ""),
                                                    "parameters": t["inputSchema"]}} for name, t in self.schemas.items()]
         system = (bundle["initialize"].get("instructions", "") + "\n\n" + prompt_text(bundle) + "\n\n" + RULES
