@@ -10,6 +10,8 @@ use anyhow::{Context, Result};
 use rand::{Rng, distr::Alphanumeric};
 use serde::{Deserialize, Serialize};
 
+use crate::screen::{Format, Region};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
@@ -36,12 +38,140 @@ pub struct Config {
     /// anything destructive off this list.
     #[serde(default = "default_pressable")]
     pub pressable: Vec<String>,
+    /// Markdown file to serve as the `ship_computer` prompt instead of the
+    /// built-in one (re-read on every request; relative to this file).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ship_prompt: Option<PathBuf>,
+    /// Folder of your own Markdown guides (`<name>.md`) to serve alongside
+    /// the built-in ones; a file named like a built-in guide replaces it.
+    /// Relative to this file.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guides_dir: Option<PathBuf>,
     pub plot_route: PlotRoute,
     /// Named screen positions for `click` steps, as fractions (0..1) of the
     /// game window, so they survive resolution changes. Record them with the
     /// `record_click_target` tool while hovering the mouse over the button.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub click_targets: BTreeMap<String, ClickTarget>,
+    /// Defaults for the `screenshot` tool.
+    #[serde(default)]
+    pub screenshot: ScreenshotDefaults,
+    /// Named parts of the game window for `screenshot`, as fractions (0..1),
+    /// e.g. a panel on your screen layout. Adds to (or overrides) the built-in
+    /// `full`, `center`, `left`, `right`, `top`, `bottom`.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub screen_regions: BTreeMap<String, Region>,
+    /// Keys and checks for the `nav_target_*` tools (lock an in-system
+    /// station from the left panel's Navigation tab).
+    #[serde(default)]
+    pub nav_target: NavTarget,
+}
+
+/// How the `nav_target_*` tools drive the left panel. Every key sequence is
+/// a recipe so it can be recalibrated without a rebuild.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default, deny_unknown_fields)]
+pub struct NavTarget {
+    /// Opens the left panel. Must end with the panel open.
+    pub open_steps: Vec<Step>,
+    /// Status.json `GuiFocus` while the left panel is open (2 = ExternalPanel).
+    pub panel_gui_focus: i64,
+    /// Bindings that switch tabs and move the list highlight.
+    pub next_tab: String,
+    pub previous_tab: String,
+    pub row_down: String,
+    pub row_up: String,
+    /// Pause between repeated presses, and before a screenshot.
+    pub step_gap_ms: u64,
+    pub settle_ms: u64,
+    /// Where the Navigation list is on screen (window fractions), for the
+    /// screenshots returned to the caller.
+    pub list_region: Region,
+    /// From the highlighted row: press the lock/unlock button.
+    pub lock_steps: Vec<Step>,
+    /// From the highlighted row: press the supercruise assist button.
+    pub assist_steps: Vec<Step>,
+    /// Closes the left panel. Should end back in the cockpit.
+    pub close_steps: Vec<Step>,
+    /// How long to wait for Status.json to show the new destination.
+    pub verify_timeout_ms: u64,
+}
+
+impl Default for NavTarget {
+    /// Uncalibrated guesses: the row's Select shows its buttons with the
+    /// first (lock/unlock) highlighted, and supercruise assist is one below.
+    fn default() -> Self {
+        use Step::*;
+        let b = |name: &str| Binding {
+            name: name.into(),
+            hold_ms: None,
+        };
+        Self {
+            open_steps: vec![
+                b("FocusLeftPanel"),
+                WaitForGui {
+                    focus: 2,
+                    timeout_ms: 3000,
+                },
+                Wait { ms: 700 },
+            ],
+            panel_gui_focus: 2,
+            next_tab: "CycleNextPanel".into(),
+            previous_tab: "CyclePreviousPanel".into(),
+            row_down: "UI_Down".into(),
+            row_up: "UI_Up".into(),
+            step_gap_ms: 150,
+            settle_ms: 500,
+            list_region: Region::builtin("left").expect("built-in region"),
+            lock_steps: vec![b("UI_Select"), Wait { ms: 600 }, b("UI_Select")],
+            assist_steps: vec![
+                b("UI_Select"),
+                Wait { ms: 600 },
+                b("UI_Down"),
+                Wait { ms: 250 },
+                b("UI_Select"),
+            ],
+            close_steps: vec![
+                b("FocusLeftPanel"),
+                WaitForGui {
+                    focus: 0,
+                    timeout_ms: 3000,
+                },
+            ],
+            verify_timeout_ms: 3000,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ScreenshotDefaults {
+    /// Longest side of the returned image in pixels. Vision models downscale
+    /// past ~1568 anyway; smaller local models may want less.
+    #[serde(default = "default_max_edge")]
+    pub max_edge: u32,
+    #[serde(default)]
+    pub format: Format,
+    #[serde(default = "default_jpeg_quality")]
+    pub jpeg_quality: u8,
+}
+
+impl Default for ScreenshotDefaults {
+    fn default() -> Self {
+        Self {
+            max_edge: default_max_edge(),
+            format: Format::default(),
+            jpeg_quality: default_jpeg_quality(),
+        }
+    }
+}
+
+fn default_max_edge() -> u32 {
+    1568
+}
+
+fn default_jpeg_quality() -> u8 {
+    85
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -186,9 +316,29 @@ impl Config {
             dry_run: false,
             tap_ms: default_tap_ms(),
             pressable: default_pressable(),
+            ship_prompt: None,
+            guides_dir: None,
             plot_route: PlotRoute::default(),
             click_targets: BTreeMap::new(),
+            screenshot: ScreenshotDefaults::default(),
+            screen_regions: BTreeMap::new(),
+            nav_target: NavTarget::default(),
         }
+    }
+
+    /// Look up a screen region by name: `[screen_regions]` first, then built-ins.
+    pub fn screen_region(&self, name: &str) -> Result<Region> {
+        if let Some(r) = self.screen_regions.get(name) {
+            return Ok(*r);
+        }
+        Region::builtin(name).ok_or_else(|| {
+            let mut known: Vec<&str> = Region::BUILTIN_NAMES.to_vec();
+            known.extend(self.screen_regions.keys().map(String::as_str));
+            anyhow::anyhow!(
+                "unknown screen region `{name}`; known: {}",
+                known.join(", ")
+            )
+        })
     }
 
     pub fn load(path: &Path) -> Result<Self> {
@@ -286,5 +436,26 @@ mod tests {
         let back = Config::load(&path).unwrap();
         assert_eq!(back.click_targets, c.click_targets);
         assert!(back.missing_click_targets().is_empty());
+    }
+
+    #[test]
+    fn screen_regions_override_builtins_and_old_configs_load() {
+        let mut c = Config::generate();
+        let text = c.to_toml().unwrap();
+        // A config written before screenshots existed.
+        let old = text.split("[screenshot]").next().unwrap().to_string();
+        let back: Config = toml::from_str(&old).unwrap();
+        assert_eq!(back.screenshot, ScreenshotDefaults::default());
+
+        let panel = Region {
+            x: 0.1,
+            y: 0.2,
+            w: 0.3,
+            h: 0.4,
+        };
+        c.screen_regions.insert("left".into(), panel);
+        assert_eq!(c.screen_region("left").unwrap(), panel);
+        assert_eq!(c.screen_region("full").unwrap(), Region::FULL);
+        assert!(c.screen_region("nope").is_err());
     }
 }

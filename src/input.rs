@@ -147,7 +147,7 @@ pub fn platform_sender(dry_run: bool) -> Arc<dyn KeySender> {
 }
 
 #[cfg(windows)]
-mod windows {
+pub(crate) mod windows {
     use anyhow::{Result, anyhow, bail};
     use windows_sys::Win32::UI::{
         Input::KeyboardAndMouse::{
@@ -185,7 +185,7 @@ mod windows {
         }
     }
 
-    fn game_window() -> Result<HWND> {
+    pub(crate) fn game_window() -> Result<HWND> {
         let class = wide(GAME_WINDOW_CLASS);
         // SAFETY: null-terminated UTF-16 class name; null window name.
         let hwnd = unsafe { FindWindowW(class.as_ptr(), std::ptr::null()) };
@@ -196,7 +196,7 @@ mod windows {
     }
 
     /// Screen-space origin and size of the game window's client area.
-    fn client_area(hwnd: HWND) -> Result<(i32, i32, i32, i32)> {
+    pub(crate) fn client_area(hwnd: HWND) -> Result<(i32, i32, i32, i32)> {
         let mut rect = RECT {
             left: 0,
             top: 0,

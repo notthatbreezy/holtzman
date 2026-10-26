@@ -93,6 +93,15 @@ pub fn decode_flags(flags: u64, table: &'static [(u32, &'static str)]) -> Vec<&'
         .collect()
 }
 
+/// Names of the set `Flags` and `Flags2` bits in a Status.json value.
+fn active_flags(status: &Value) -> Vec<&'static str> {
+    let flags = status.get("Flags").and_then(Value::as_u64).unwrap_or(0);
+    let flags2 = status.get("Flags2").and_then(Value::as_u64).unwrap_or(0);
+    let mut active = decode_flags(flags, FLAGS);
+    active.extend(decode_flags(flags2, FLAGS2));
+    active
+}
+
 #[derive(Debug, Clone)]
 pub struct JournalDir {
     pub dir: PathBuf,
@@ -124,6 +133,32 @@ impl JournalDir {
 
     pub fn gui_focus(&self) -> Option<i64> {
         self.status().ok()?.get("GuiFocus")?.as_i64()
+    }
+
+    /// Name of the locked navigation target from Status.json, if any.
+    pub fn destination_name(&self) -> Option<String> {
+        let status = self.status().ok()?;
+        let dest = status.get("Destination")?;
+        dest.get("Name_Localised")
+            .or_else(|| dest.get("Name"))?
+            .as_str()
+            .map(String::from)
+    }
+
+    /// Active Status.json flag names (empty if there is no Status.json).
+    pub fn flags(&self) -> Vec<&'static str> {
+        self.status().map(|s| active_flags(&s)).unwrap_or_default()
+    }
+
+    /// What Status.json says about the screen: open panel and active flags.
+    pub fn ui_state(&self) -> Result<Value> {
+        let status = self.status()?;
+        let focus = status.get("GuiFocus").and_then(Value::as_i64).unwrap_or(0);
+        Ok(json!({
+            "status_timestamp": status.get("timestamp"),
+            "gui_focus": gui::name(focus),
+            "flags": active_flags(&status),
+        }))
     }
 
     pub fn market(&self) -> Result<Value> {
@@ -275,10 +310,7 @@ impl JournalDir {
         out.insert("location".into(), Value::Object(location));
 
         if let Ok(status) = self.status() {
-            let flags = status.get("Flags").and_then(Value::as_u64).unwrap_or(0);
-            let flags2 = status.get("Flags2").and_then(Value::as_u64).unwrap_or(0);
-            let mut active = decode_flags(flags, FLAGS);
-            active.extend(decode_flags(flags2, FLAGS2));
+            let active = active_flags(&status);
             let focus = status.get("GuiFocus").and_then(Value::as_i64).unwrap_or(0);
             out.insert(
                 "status".into(),

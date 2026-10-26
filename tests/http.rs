@@ -5,18 +5,40 @@ use std::sync::Arc;
 
 use holtzman::{
     config::Config,
+    screen::Screen,
     server::{Ship, app},
 };
 use serde_json::{Value, json};
 
 const FIXTURES: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures");
 
+/// A fake game window: a 1920x1080 gradient.
+struct TestPattern;
+
+impl Screen for TestPattern {
+    fn capture(&self) -> anyhow::Result<image::RgbaImage> {
+        Ok(image::RgbaImage::from_fn(1920, 1080, |x, y| {
+            image::Rgba([(x % 256) as u8, (y % 256) as u8, 200, 255])
+        }))
+    }
+}
+
 async fn spawn() -> (String, String) {
+    spawn_with(|_| {}, None).await
+}
+
+async fn spawn_with(
+    tweak: impl FnOnce(&mut Config),
+    config_path: Option<std::path::PathBuf>,
+) -> (String, String) {
     let mut config = Config::generate();
     config.journal_dir = Some(FIXTURES.into());
     config.dry_run = true;
+    tweak(&mut config);
     let token = config.token.clone();
-    let ship = Arc::new(Ship::new(config, None).unwrap());
+    let mut ship = Ship::new(config, config_path).unwrap();
+    ship.screen = Arc::new(TestPattern);
+    let ship = Arc::new(ship);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     tokio::spawn(async move { axum::serve(listener, app(ship)).await.unwrap() });
@@ -88,6 +110,15 @@ async fn lists_and_calls_tools() {
     )
     .await;
     assert!(init["result"]["serverInfo"].is_object(), "{init}");
+    let instructions = init["result"]["instructions"].as_str().unwrap_or_default();
+    for want in [
+        "SEEING THE SCREEN",
+        "observe=true",
+        "read_guide",
+        "ship_computer",
+    ] {
+        assert!(instructions.contains(want), "instructions lack {want}");
+    }
     let sid = sid.expect("session id");
     rpc(
         &url,
@@ -120,6 +151,12 @@ async fn lists_and_calls_tools() {
         "recent_events",
         "plot_route",
         "press_binding",
+        "screenshot",
+        "nav_target_start",
+        "nav_target_move",
+        "nav_target_confirm",
+        "nav_target_cancel",
+        "read_guide",
         "trade_commodities",
         "find_commodity_market",
         "plan_trade_route",
@@ -140,6 +177,87 @@ async fn lists_and_calls_tools() {
         assert_eq!(tool["annotations"]["readOnlyHint"], true);
         assert_eq!(tool["annotations"]["openWorldHint"], true);
     }
+    let shot_tool = list["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["name"] == "screenshot")
+        .unwrap();
+    assert_eq!(shot_tool["annotations"]["readOnlyHint"], true);
+    assert_eq!(shot_tool["annotations"]["openWorldHint"], false);
+
+    let (_, prompts) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":20,"method":"prompts/list"}),
+    )
+    .await;
+    assert_eq!(
+        prompts["result"]["prompts"][0]["name"], "ship_computer",
+        "{prompts}"
+    );
+    let (_, prompt) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":21,"method":"prompts/get","params":{"name":"ship_computer"}}),
+    )
+    .await;
+    let text = prompt["result"]["messages"][0]["content"]["text"]
+        .as_str()
+        .unwrap_or_else(|| panic!("{prompt}"));
+    assert!(text.starts_with("You are **HOLT**"), "{text}");
+    assert!(text.contains("Rules of engagement"));
+    let (_, missing) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":22,"method":"prompts/get","params":{"name":"nope"}}),
+    )
+    .await;
+    assert!(missing["error"].is_object(), "{missing}");
+
+    let (_, guide) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":30,"method":"tools/call","params":{"name":"read_guide","arguments":{"name":"exploration-for-profit"}}}),
+    )
+    .await;
+    let text = guide["result"]["content"][0]["text"].as_str().unwrap();
+    assert!(text.starts_with("# Playbook"), "{text}");
+    let (_, resources) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":31,"method":"resources/list"}),
+    )
+    .await;
+    let uris: Vec<&str> = resources["result"]["resources"]
+        .as_array()
+        .unwrap_or_else(|| panic!("{resources}"))
+        .iter()
+        .map(|r| r["uri"].as_str().unwrap())
+        .collect();
+    assert!(uris.contains(&"guide://fuel"), "{uris:?}");
+    let (_, heat) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":32,"method":"resources/read","params":{"uri":"guide://heat"}}),
+    )
+    .await;
+    assert_eq!(
+        heat["result"]["contents"][0]["mimeType"], "text/markdown",
+        "{heat}"
+    );
+    assert!(
+        heat["result"]["contents"][0]["text"]
+            .as_str()
+            .unwrap()
+            .starts_with("# Heat")
+    );
 
     let (_, status) = rpc(
         &url,
@@ -174,10 +292,36 @@ async fn lists_and_calls_tools() {
     .await;
     assert_eq!(denied["result"]["isError"], true, "{denied}");
 
+    let (_, shot) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"screenshot","arguments":{"region":"left","max_edge":512}}}),
+    )
+    .await;
+    let content = &shot["result"]["content"];
+    let info: Value = serde_json::from_str(content[0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(info["window"], json!([1920, 1080]), "{info}");
+    // The left half is 960x1080; its long side shrinks to 512.
+    assert_eq!(info["image"], json!([455, 512]), "{info}");
+    assert!(info["journal"]["gui_focus"].is_string(), "{info}");
+    assert_eq!(content[1]["type"], "image", "{shot}");
+    assert_eq!(content[1]["mimeType"], "image/jpeg");
+    assert!(content[1]["data"].as_str().unwrap().starts_with("/9j/")); // JPEG magic
+
+    let (_, bad) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"screenshot","arguments":{"region":"nowhere"}}}),
+    )
+    .await;
+    assert_eq!(bad["result"]["isError"], true, "{bad}");
+
     // Invalid planning arguments fail locally, without an external request or game input.
     let (_, invalid) = rpc(
         &url, &token, Some(&sid),
-        json!({"jsonrpc":"2.0","id":6,"method":"tools/call","params":{
+        json!({"jsonrpc":"2.0","id":8,"method":"tools/call","params":{
             "name":"plan_trade_route","arguments":{"system":"Sol","station":"Galileo","cargo_tonnes":0,"budget_credits":100000}
         }}),
     ).await;
@@ -187,5 +331,41 @@ async fn lists_and_calls_tools() {
             .as_str()
             .unwrap()
             .contains("cargo_tonnes")
+    );
+}
+
+#[tokio::test]
+async fn ship_prompt_override_is_read_relative_to_config() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("my-droid.md"),
+        "You are K-2, a reprogrammed droid.",
+    )
+    .unwrap();
+    let (url, token) = spawn_with(
+        |c| c.ship_prompt = Some("my-droid.md".into()),
+        Some(dir.path().join("holtzman.toml")),
+    )
+    .await;
+    let (sid, _) = rpc(
+        &url,
+        &token,
+        None,
+        json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+            "protocolVersion":"2025-06-18","capabilities":{},
+            "clientInfo":{"name":"test","version":"0"}}}),
+    )
+    .await;
+    let sid = sid.expect("session id");
+    let (_, prompt) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":2,"method":"prompts/get","params":{"name":"ship_computer"}}),
+    )
+    .await;
+    assert_eq!(
+        prompt["result"]["messages"][0]["content"]["text"], "You are K-2, a reprogrammed droid.",
+        "{prompt}"
     );
 }

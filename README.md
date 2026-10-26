@@ -28,12 +28,28 @@ plotting a route, by pressing your own key bindings.
 | `nav_route` | Current plotted route |
 | `recent_events` | Latest journal events (noise filtered), optionally by type |
 | `plot_route` | Galaxy map → search → plot → close, then **verifies** the destination in `NavRoute.json` |
-| `press_binding` | Press one allow-listed binding (for stepping through menus / tuning recipes) |
+| `screenshot` | Picture of the game window (never the desktop) plus open panel and status flags; crop by named region or rect |
+| `press_binding` | Press one allow-listed binding (for stepping through menus / tuning recipes); `observe: true` returns a screenshot of the result and how much of the screen changed |
+| `nav_target_start` / `_move` / `_confirm` / `_cancel` | Lock or unlock a station in the current system, or toggle supercruise assist to it, via the left panel's Navigation list (supervised, step by step) |
+| `read_guide` | Field guides: game concepts (fuel, heat, jump range, …) and mission profiles (trading, exploration, mining, …); no name lists them |
 | `cursor_position` | Mouse position relative to the game window |
 | `record_click_target` | Save the hovered position as a named click target in `holtzman.toml` |
 | `trade_commodities` | Look up Spansh commodity names |
 | `find_commodity_market` | Find nearby stations buying or selling a commodity, with prices and market ages |
 | `plan_trade_route` | Get a short Spansh trade itinerary for a specified station, cargo space and budget |
+
+holtzman also serves one MCP prompt, `ship_computer`: the personality and
+rules of engagement for HOLT, the ship's droid
+([prompts/ship-computer.md](prompts/ship-computer.md)). Harnesses can load it
+as their system prompt. To rename or rewrite your droid, point `ship_prompt`
+in `holtzman.toml` at your own Markdown file (relative to the config); it is
+re-read on every request.
+
+The same field guides are MCP resources at `guide://<name>`
+([guides/](guides/)), for clients that browse resources; `read_guide` covers
+tool-only harnesses. Add your own Markdown guides by pointing `guides_dir`
+in `holtzman.toml` at a folder; a file named like a built-in guide (say
+`fuel.md`) replaces it.
 
 Read tools are side-effect free. Action tools take the keyboard for a few
 seconds, so the server's instructions tell the model to announce them first.
@@ -112,6 +128,54 @@ and keeps your token and targets.
 For a complete recipe verified in-game, including search-result selection,
 see [Validated Odyssey route recipe](docs/validated-odyssey-recipe.md).
 `reset-recipe` restores the built-in default, not this calibrated recipe.
+
+## Screenshots
+
+The journal says which panel is open, not which tab or row is highlighted.
+`screenshot` fills that gap: it asks the game window to render itself into
+an off-screen bitmap, so other windows never appear in the image and the
+game doesn't need focus. Use borderless or windowed mode; exclusive
+fullscreen can come back black.
+
+Images are downscaled so the longest side is 1568 px (JPEG by default).
+Crop with `region` (`full`, `center`, `left`, `right`, `top`, `bottom`) or a
+`rect` in window fractions to read small HUD text. Set defaults and add your
+own named regions in `holtzman.toml`:
+
+```toml
+[screenshot]
+max_edge = 1024        # smaller for local vision models
+format = "jpeg"        # or "png"
+jpeg_quality = 85
+
+[screen_regions.station_menu]
+x = 0.43
+y = 0.6
+w = 0.14
+h = 0.3
+```
+
+Check capture from the command line with `holtzman screenshot out.png`.
+
+## Locking a station in the current system
+
+holtzman can't read the Navigation list, so the assistant reads it from
+screenshots while the server presses keys and runs the checks:
+
+1. `nav_target_start(station, action)` refuses if a panel is open, the ship
+   is in danger, or the lock is already as asked (Status.json
+   `Destination`). Otherwise it opens the left panel and returns the list.
+2. `nav_target_move(session, rows, tabs, expect)` moves the highlight and
+   returns the list again. `expect` names what the assistant sees
+   highlighted afterwards; confirm is refused until it is the station.
+3. `nav_target_confirm(session)` presses the lock or supercruise assist
+   button, checks the new `Destination` (lock and unlock), closes the panel,
+   and for supercruise assist returns a HUD screenshot to check.
+
+The keys and timings live in `[nav_target]` in `holtzman.toml`: the open
+and close recipes, the lock and assist button recipes, the row and tab
+bindings, and `list_region` (where the list is, for the screenshots). The
+defaults are uncalibrated guesses; tune them in-game.
 
 ## Tuning `plot_route`
 

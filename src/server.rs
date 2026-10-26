@@ -15,9 +15,15 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use rmcp::{
-    ServerHandler,
+    ErrorData, RoleServer, ServerHandler,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{ServerCapabilities, ServerConfig},
+    model::{
+        CallToolResult, ContentBlock, GetPromptRequestParams, GetPromptResponse, GetPromptResult,
+        ListPromptsResult, ListResourcesResult, PaginatedRequestParams, Prompt, PromptMessage,
+        ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult, Resource,
+        ResourceContents, Role, ServerCapabilities, ServerConfig,
+    },
+    service::RequestContext,
     tool, tool_handler, tool_router,
     transport::streamable_http_server::{
         StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
@@ -31,10 +37,14 @@ use crate::{
     automation::Pilot,
     bindings::Bindings,
     config::{ClickTarget, Config},
+    guides,
     input::{KeySender, platform_sender},
     journal::JournalDir,
+    nav::{Nav, NavAction, NavSession, NavView},
+    screen::{Format, Region, Screen, platform_screen},
     spansh::{CommodityArgs, MarketSearch, RouteArgs, Spansh},
 };
+use image::RgbaImage;
 
 /// Shared state behind every MCP session.
 pub struct Ship {
@@ -46,7 +56,11 @@ pub struct Ship {
     pub sender: Arc<dyn KeySender>,
     /// Only one keypress recipe may run at a time.
     pub controls: Mutex<()>,
+    /// Captures the game window for the `screenshot` tool.
+    pub screen: Arc<dyn Screen>,
     pub spansh: Spansh,
+    /// The open `nav_target_*` exchange, if any.
+    pub nav: std::sync::Mutex<Option<NavSession>>,
 }
 
 impl Ship {
@@ -59,7 +73,9 @@ impl Ship {
             journal: JournalDir::new(dir),
             sender,
             controls: Mutex::new(()),
+            screen: platform_screen(),
             spansh: Spansh::new()?,
+            nav: std::sync::Mutex::new(None),
             config: RwLock::new(config),
             config_path,
         })
@@ -119,6 +135,72 @@ pub struct PressArgs {
     pub binding: String,
     #[schemars(description = "Hold duration in ms (default: tap)")]
     pub hold_ms: Option<u64>,
+    #[schemars(
+        description = "Return a screenshot taken after the press, plus screen_changed_pct (how much of the window changed; ~0 means the key likely did nothing)"
+    )]
+    pub observe: Option<bool>,
+    #[schemars(
+        description = "With observe: ms to wait for the UI to settle before capturing (default 500, max 5000)"
+    )]
+    pub settle_ms: Option<u64>,
+    #[schemars(
+        description = "With observe: screen region to return, as for the screenshot tool (default full)"
+    )]
+    pub region: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct GuideArgs {
+    #[schemars(
+        description = "Guide to read, e.g. \"fuel\" or \"exploration\". Omit to list them all."
+    )]
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct NavStartArgs {
+    #[schemars(description = "Station or carrier name as the Navigation list shows it")]
+    pub station: String,
+    #[schemars(
+        description = "lock, unlock, or supercruise_assist (toggles assist to the station)"
+    )]
+    pub action: NavAction,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct NavMoveArgs {
+    #[schemars(description = "Session id from nav_target_start")]
+    pub session: String,
+    #[schemars(description = "Rows to move the highlight: positive = down, negative = up")]
+    pub rows: Option<i32>,
+    #[schemars(description = "Tabs to switch first: positive = next, negative = previous")]
+    pub tabs: Option<i32>,
+    #[schemars(
+        description = "Name you expect to be highlighted after the move. Must equal the station before nav_target_confirm will run."
+    )]
+    pub expect: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct NavSessionArgs {
+    #[schemars(description = "Session id from nav_target_start")]
+    pub session: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ScreenshotArgs {
+    #[schemars(
+        description = "Named part of the game window: full (default), center, left, right, top, bottom, or a name from [screen_regions] in holtzman.toml"
+    )]
+    pub region: Option<String>,
+    #[schemars(
+        description = "Custom crop as fractions of the window; overrides `region`. Crop to read small HUD text."
+    )]
+    pub rect: Option<Region>,
+    #[schemars(description = "Longest side of the image in pixels (default from config, 1568)")]
+    pub max_edge: Option<u32>,
+    #[schemars(description = "jpeg (default, smaller) or png (sharper text)")]
+    pub format: Option<Format>,
 }
 
 fn pretty(v: serde_json::Value) -> String {
@@ -258,12 +340,12 @@ impl Holtzman {
     }
 
     #[tool(
-        description = "Press one allow-listed game binding (see `pressable` in holtzman.toml). Useful for stepping through menus and tuning recipes."
+        description = "Press one allow-listed game binding (see `pressable` in holtzman.toml). Useful for stepping through menus and tuning recipes. Set `observe` to get a screenshot of the result and how much of the screen changed, in the same call."
     )]
     async fn press_binding(
         &self,
         Parameters(args): Parameters<PressArgs>,
-    ) -> Result<String, String> {
+    ) -> Result<CallToolResult, String> {
         if !self
             .ship
             .config()
@@ -282,6 +364,15 @@ impl Holtzman {
             .try_lock()
             .map_err(|_| "another keypress sequence is already running".to_string())?;
         let bindings = self.ship.bindings()?;
+        // Resolve the view and grab the "before" frame first, so a bad region
+        // or failed capture stops us before any key is pressed.
+        let observe = match args.observe.unwrap_or(false) {
+            true => {
+                let view = self.view(args.region.as_deref(), None)?;
+                Some((view, self.grab().await?))
+            }
+            false => None,
+        };
         self.ship.sender.focus_game().map_err(err)?;
         let config = self.ship.config();
         let pilot = Pilot {
@@ -290,10 +381,160 @@ impl Holtzman {
             journal: &self.ship.journal,
             sender: self.ship.sender.as_ref(),
         };
-        pilot
+        let pressed = pilot
             .press_binding(&args.binding, args.hold_ms)
             .await
-            .map_err(err)
+            .map_err(err)?;
+        let Some(((name, region), before)) = observe else {
+            return Ok(CallToolResult::success(vec![ContentBlock::text(pressed)]));
+        };
+        let settle = args.settle_ms.unwrap_or(500).min(5000);
+        tokio::time::sleep(std::time::Duration::from_millis(settle)).await;
+        let after = self.grab().await?;
+        let changed = crate::screen::changed_fraction(&before, &after);
+        self.picture(
+            &after,
+            &name,
+            region,
+            None,
+            None,
+            serde_json::json!({
+                "pressed": pressed,
+                "settle_ms": settle,
+                "screen_changed_pct": (changed * 1000.0).round() / 10.0,
+            }),
+        )
+    }
+
+    #[tool(
+        description = "Look at the game: a picture of the Elite Dangerous window (never the rest of the desktop) plus the open panel and status flags from Status.json. Use it to orient before UI actions, e.g. to see which tab or row is highlighted. Crop with `region`/`rect` to read small text; rect coordinates are game-window fractions, the same space as click targets and cursor_position. Read-only; sends no input. Images cost context: prefer press_binding's `observe` while stepping through menus.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn screenshot(
+        &self,
+        Parameters(args): Parameters<ScreenshotArgs>,
+    ) -> Result<CallToolResult, String> {
+        let (name, region) = self.view(args.region.as_deref(), args.rect)?;
+        let frame = self.grab().await?;
+        self.picture(
+            &frame,
+            &name,
+            region,
+            args.max_edge,
+            args.format,
+            serde_json::json!({}),
+        )
+    }
+
+    #[tool(
+        description = "Lock (or unlock, or toggle supercruise assist to) a station or carrier in the current system, step 1 of 3. Checks Status.json (refuses if a panel is open, in danger, or the lock is already as asked), opens the left panel, and returns a screenshot of the Navigation list plus a session id. Presses keys: tell the commander first. Then use nav_target_move until the station is highlighted, then nav_target_confirm."
+    )]
+    async fn nav_target_start(
+        &self,
+        Parameters(args): Parameters<NavStartArgs>,
+    ) -> Result<CallToolResult, String> {
+        let _guard = self.controls()?;
+        let bindings = self.ship.bindings()?;
+        let config = self.ship.config();
+        let nav = self.nav(&config, &bindings);
+        let (session, view) = nav.start(&args.station, args.action).await.map_err(err)?;
+        *self.ship.nav.lock().expect("nav lock") = Some(session);
+        self.nav_view(view, config.nav_target.list_region)
+    }
+
+    #[tool(
+        description = "Step 2 of 3: switch tabs (`tabs`) and/or move the Navigation list highlight (`rows`), then return a fresh screenshot of the list. Say in `expect` which name will be highlighted afterwards; when that is the target station, nav_target_confirm is allowed. Use rows 0 to just report what is highlighted now."
+    )]
+    async fn nav_target_move(
+        &self,
+        Parameters(args): Parameters<NavMoveArgs>,
+    ) -> Result<CallToolResult, String> {
+        let _guard = self.controls()?;
+        let mut session = NavSession::resume(
+            self.ship.nav.lock().expect("nav lock").as_ref(),
+            &args.session,
+        )
+        .map_err(err)?;
+        let bindings = self.ship.bindings()?;
+        let config = self.ship.config();
+        let nav = self.nav(&config, &bindings);
+        let view = nav
+            .move_cursor(
+                &mut session,
+                args.rows.unwrap_or(0),
+                args.tabs.unwrap_or(0),
+                args.expect.as_deref(),
+            )
+            .await
+            .map_err(err)?;
+        *self.ship.nav.lock().expect("nav lock") = Some(session);
+        self.nav_view(view, config.nav_target.list_region)
+    }
+
+    #[tool(
+        description = "Step 3 of 3: with the target station highlighted, press the lock/unlock or supercruise assist button, verify the lock in Status.json, and close the panel. For supercruise assist, returns a HUD screenshot to check. Ends the session either way; on failure it does not retry."
+    )]
+    async fn nav_target_confirm(
+        &self,
+        Parameters(args): Parameters<NavSessionArgs>,
+    ) -> Result<CallToolResult, String> {
+        let _guard = self.controls()?;
+        let id = args.session.ok_or("session is required")?;
+        let session = NavSession::resume(self.ship.nav.lock().expect("nav lock").as_ref(), &id)
+            .map_err(err)?;
+        let bindings = self.ship.bindings()?;
+        let config = self.ship.config();
+        let nav = self.nav(&config, &bindings);
+        let result = nav.confirm(&session).await;
+        // One confirm per session, whatever happened.
+        self.ship.nav.lock().expect("nav lock").take();
+        self.nav_view(result.map_err(err)?, Region::FULL)
+    }
+
+    #[tool(
+        description = "Back out of a nav_target exchange: close the left panel (if open) and end the session. Use when something looks wrong."
+    )]
+    async fn nav_target_cancel(
+        &self,
+        Parameters(_args): Parameters<NavSessionArgs>,
+    ) -> Result<String, String> {
+        let _guard = self.controls()?;
+        self.ship.nav.lock().expect("nav lock").take();
+        let bindings = self.ship.bindings()?;
+        let config = self.ship.config();
+        let nav = self.nav(&config, &bindings);
+        if self.ship.journal.gui_focus() != Some(config.nav_target.panel_gui_focus) {
+            return Ok("session ended; the left panel wasn't open".into());
+        }
+        nav.close().await.map_err(err)?;
+        Ok("session ended and the left panel closed".into())
+    }
+
+    #[tool(
+        description = "Field guides to Elite Dangerous: game concepts (fuel, heat, jump range, interdiction, rebuy, engineering) and mission profiles (trading, exploration, exploration for profit, mining). With no name, lists them. Read the matching profile when the commander starts an activity, and check a concept guide before answering mechanics questions from memory.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn read_guide(&self, Parameters(args): Parameters<GuideArgs>) -> Result<String, String> {
+        let dir = self.guides_dir();
+        match args
+            .name
+            .as_deref()
+            .map(str::trim)
+            .filter(|n| !n.is_empty())
+        {
+            Some(name) => guides::read(dir.as_deref(), name).map_err(err),
+            None => Ok(pretty(
+                serde_json::to_value(guides::list(dir.as_deref())).unwrap_or_default(),
+            )),
+        }
     }
 
     #[tool(
@@ -347,16 +588,239 @@ impl Holtzman {
     }
 }
 
+/// Screenshot plumbing shared by `screenshot` and `press_binding`.
+impl Holtzman {
+    /// A named region (default `full`) or a custom rect.
+    fn view(&self, region: Option<&str>, rect: Option<Region>) -> Result<(String, Region), String> {
+        if let Some(rect) = rect {
+            rect.validate().map_err(err)?;
+            return Ok(("custom".into(), rect));
+        }
+        let name = region.unwrap_or("full");
+        let region = self.ship.config().screen_region(name).map_err(err)?;
+        Ok((name.into(), region))
+    }
+
+    /// Capture the game window off the async runtime (GDI calls block).
+    async fn grab(&self) -> Result<RgbaImage, String> {
+        let screen = self.ship.screen.clone();
+        tokio::task::spawn_blocking(move || screen.capture())
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(err)
+    }
+
+    /// The keyboard, if no other keypress sequence holds it.
+    fn controls(&self) -> Result<tokio::sync::MutexGuard<'_, ()>, String> {
+        self.ship
+            .controls
+            .try_lock()
+            .map_err(|_| "another keypress sequence is already running".to_string())
+    }
+
+    fn nav<'a>(&'a self, config: &'a Config, bindings: &'a Bindings) -> Nav<'a> {
+        Nav {
+            pilot: Pilot {
+                config,
+                bindings,
+                journal: &self.ship.journal,
+                sender: self.ship.sender.as_ref(),
+            },
+            screen: self.ship.screen.clone(),
+        }
+    }
+
+    /// A nav step's report, with its screenshot cropped to `region`.
+    fn nav_view(&self, view: NavView, region: Region) -> Result<CallToolResult, String> {
+        match view.frame {
+            Some(frame) => self.picture(&frame, "nav_target", region, None, None, view.info),
+            None => Ok(CallToolResult::success(vec![ContentBlock::text(pretty(
+                view.info,
+            ))])),
+        }
+    }
+
+    /// Encode a frame as an image block, preceded by a text block describing
+    /// it: `extra` fields, the crop, and what Status.json says.
+    fn picture(
+        &self,
+        frame: &RgbaImage,
+        name: &str,
+        region: Region,
+        max_edge: Option<u32>,
+        format: Option<Format>,
+        mut extra: serde_json::Value,
+    ) -> Result<CallToolResult, String> {
+        let defaults = self.ship.config().screenshot;
+        let max_edge = max_edge.unwrap_or(defaults.max_edge).clamp(64, 4096);
+        let format = format.unwrap_or(defaults.format);
+        let shot = crate::screen::render(frame, region, max_edge, format, defaults.jpeg_quality)
+            .map_err(err)?;
+
+        let info = extra.as_object_mut().expect("extra is a JSON object");
+        info.insert(
+            "captured_at".into(),
+            chrono::Utc::now()
+                .to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+                .into(),
+        );
+        info.insert(
+            "region".into(),
+            serde_json::json!({ "name": name, "x": region.x, "y": region.y, "w": region.w, "h": region.h }),
+        );
+        info.insert(
+            "window".into(),
+            serde_json::json!([shot.window_width, shot.window_height]),
+        );
+        info.insert("image".into(), serde_json::json!([shot.width, shot.height]));
+        if let Ok(ui) = self.ship.journal.ui_state() {
+            info.insert("journal".into(), ui);
+        }
+        use base64::Engine as _;
+        let data = base64::engine::general_purpose::STANDARD.encode(&shot.bytes);
+        Ok(CallToolResult::success(vec![
+            ContentBlock::text(pretty(extra)),
+            ContentBlock::image(data, format.mime()),
+        ]))
+    }
+}
+
+/// The ship computer's personality and rules of engagement, served as the
+/// `ship_computer` prompt. `ship_prompt` in holtzman.toml can replace it.
+pub const SHIP_COMPUTER_PROMPT: &str = include_str!("../prompts/ship-computer.md");
+const SHIP_COMPUTER: &str = "ship_computer";
+
+impl Holtzman {
+    /// Paths in holtzman.toml are relative to the file itself.
+    fn config_relative(&self, path: PathBuf) -> PathBuf {
+        match self.ship.config_path.as_deref().and_then(|c| c.parent()) {
+            Some(dir) if path.is_relative() => dir.join(path),
+            _ => path,
+        }
+    }
+
+    /// The prompt text: the configured override file if set, else the built-in one.
+    fn ship_prompt(&self) -> Result<String, ErrorData> {
+        let Some(path) = self.ship.config().ship_prompt else {
+            return Ok(SHIP_COMPUTER_PROMPT.to_string());
+        };
+        let path = self.config_relative(path);
+        std::fs::read_to_string(&path).map_err(|e| {
+            ErrorData::internal_error(format!("reading ship_prompt {}: {e}", path.display()), None)
+        })
+    }
+
+    fn guides_dir(&self) -> Option<PathBuf> {
+        self.ship
+            .config()
+            .guides_dir
+            .map(|d| self.config_relative(d))
+    }
+}
+
 #[tool_handler]
 impl ServerHandler for Holtzman {
+    async fn list_prompts(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ListPromptsResult, ErrorData> {
+        let mut prompt = Prompt::new(
+            SHIP_COMPUTER,
+            Some(
+                "The ship's droid: personality, chain of command, and rules of engagement \
+                 for the controls. Use it as the system prompt.",
+            ),
+            None,
+        );
+        prompt.title = Some("Ship computer".into());
+        Ok(ListPromptsResult::with_all_items(vec![prompt]))
+    }
+
+    async fn get_prompt(
+        &self,
+        request: GetPromptRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<GetPromptResponse, ErrorData> {
+        if request.name != SHIP_COMPUTER {
+            return Err(ErrorData::invalid_params(
+                format!("unknown prompt `{}`", request.name),
+                None,
+            ));
+        }
+        // MCP prompts have no system role; harnesses use this as their system prompt.
+        let text = self.ship_prompt()?;
+        Ok(
+            GetPromptResult::new(vec![PromptMessage::new_text(Role::User, text)])
+                .with_description("Ship computer system prompt")
+                .into(),
+        )
+    }
+
+    async fn list_resources(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ListResourcesResult, ErrorData> {
+        let resources = guides::list(self.guides_dir().as_deref())
+            .into_iter()
+            .map(|g| {
+                Resource::new(format!("{}{}", guides::URI_PREFIX, g.name), g.name)
+                    .with_description(format!("{} guide: {}", g.kind, g.summary))
+                    .with_mime_type("text/markdown")
+            })
+            .collect();
+        Ok(ListResourcesResult::with_all_items(resources))
+    }
+
+    async fn read_resource(
+        &self,
+        request: ReadResourceRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ReadResourceResponse, ErrorData> {
+        let name = request
+            .uri
+            .strip_prefix(guides::URI_PREFIX)
+            .ok_or_else(|| ErrorData::resource_not_found(request.uri.clone(), None))?;
+        let text = guides::read(self.guides_dir().as_deref(), name)
+            .map_err(|e| ErrorData::resource_not_found(format!("{e:#}"), None))?;
+        Ok(ReadResourceResult::new(vec![
+            ResourceContents::text(text, request.uri).with_mime_type("text/markdown"),
+        ])
+        .into())
+    }
+
     fn get_info(&self) -> ServerConfig {
-        ServerConfig::new(ServerCapabilities::builder().enable_tools().build()).with_instructions(
-            "Ship computer for an Elite Dangerous commander. Read tools reflect the live game \
-             journal on the gaming PC. Spansh trade tools send explicit planning arguments \
-             externally and return advice; never automatically chain them to game actions. \
-             Ask for the trading budget and cargo space when unknown. Action tools press keys in the running game: say what \
-             you're about to do before calling them, and never chain them without the \
-             commander in the loop.",
+        ServerConfig::new(
+            ServerCapabilities::builder()
+                .enable_tools()
+                .enable_prompts()
+                .enable_resources()
+                .build(),
+        )
+        .with_instructions(
+            "Ship computer for an Elite Dangerous commander. If your client supports MCP \
+             prompts, load `ship_computer` as the system prompt.\n\n\
+             READING STATE: status, cargo, nav_route, market and recent_events read the live \
+             game journal. They can't see the screen: Status.json says which panel is open, \
+             not which tab, row or button is highlighted.\n\n\
+             SEEING THE SCREEN: `screenshot` returns a picture of the game window only (never \
+             the desktop) plus the open panel and status flags. Crop with `region` (full, \
+             center, left, right, top, bottom, or a name from [screen_regions]) or `rect` \
+             {x, y, w, h} in window fractions (0..1, the same space as click targets); crop \
+             and use format png to read small text. Look before acting whenever you're unsure \
+             what is highlighted. Images cost context: don't screenshot after every step.\n\n\
+             ACTING: action tools press keys in the running game. Say what you're about to do \
+             before calling them, and never chain them without the commander in the loop. \
+             press_binding with observe=true returns the screen after the press plus \
+             screen_changed_pct; near 0 means the press probably didn't land (often the game \
+             lost focus), so look and ask rather than retry. plot_route plots to another \
+             system; nav_target_start/move/confirm/cancel lock a station in this system.\n\n\
+             GUIDES: read_guide (or resources guide://<name>) holds game concepts and mission \
+             profiles. Read the matching profile when the commander starts an activity.\n\n\
+             PLANNING: Spansh tools send explicit planning arguments externally and return \
+             advice; never chain them to game actions automatically. Ask for the trading \
+             budget and cargo space when unknown.",
         )
     }
 }
