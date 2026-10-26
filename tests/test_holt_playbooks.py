@@ -24,7 +24,8 @@ class PlaybookTests(unittest.IsolatedAsyncioTestCase):
         engine.trace = lambda *args, **kwargs: None
         session = SimpleNamespace(call_tool=AsyncMock(return_value=SimpleNamespace(
             is_error=False, content=[SimpleNamespace(type="text", text='{"revision":1}')])) )
-        permit = Permit("Remember how to dock", enabled=False, natural=True)
+        permit = Permit("Remember this workflow: inspect the cockpit then request docking", enabled=False, natural=True)
+        self.assertIsNone(permit.unavailable_reply())
         self.assertFalse(engine.is_control("save_playbook"))
         receipt, _ = await engine.invoke(session, "save_playbook", {}, permit)
         self.assertFalse(receipt["isError"])

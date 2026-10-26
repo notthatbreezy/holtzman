@@ -96,7 +96,14 @@ per-agent identity. Distinguish commander-specific workflows in names and purpos
 when needed. The feature does not send playbooks to a new external service, but
 recalled content enters the currently selected reasoning model's context.
 
-Deploy the updated server on SKIPPY, restart its MCP service, then restart HOLT from
+From SKIPPY's checkout, update and rebuild the MCP service:
+
+```powershell
+git pull --ff-only
+powershell -ExecutionPolicy Bypass -File scripts\update-holtzman-server.ps1
+```
+
+Then restart HOLT from
 its panel so discovery refreshes. Restart the local gateway process to load changed
 Python code when updating it. No speech model, audio routing or game recipe changes
 are required. Existing saved playbooks are retained through updates.

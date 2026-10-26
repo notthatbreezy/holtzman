@@ -31,7 +31,7 @@ class Permit:
         self.station = None
         self.plotted = False
         uncertain = re.search(r"not sure|don't remember|do not remember|maybe|which number|can't remember", self.text)
-        discussion = re.search(r"\b(explain|describe|hypothetical|example|don't|do not|without|never|how|what happens|would happen)\b", self.text)
+        discussion = re.search(r"\b(explain|describe|hypothetical|example|remember|save|store|document|playbook|workflow|procedure|don't|do not|without|never|how|what happens|would happen)\b", self.text)
         route_words = bool(re.search(r"\b(plot|chart|set|lay)\b.*\b(course|route)\b", self.text))
         route_order = re.search(r"^(?:(?:hey|okay|ok) )?(?:holt )?(?:please |go ahead and )?(?:plot|chart|set|lay)\b|\b(?:can|could|would|will) you (?:please )?(?:plot|chart|set|lay)\b|\bi (?:need|want)(?: you)? to (?:plot|chart|set|lay)\b", self.text)
         past_or_conditional = re.search(r"\b(?:i asked|i said|he said|she said|if i|whether)\b", self.text)
