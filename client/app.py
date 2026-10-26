@@ -80,9 +80,13 @@ class App:
         ttk.Label(options, text="Conversation model").grid(row=5, column=0, sticky="w", pady=(8, 0))
         backend_row = ttk.Frame(options)
         backend_row.grid(row=5, column=1, sticky="ew", pady=(8, 0))
-        self.backend = tk.StringVar(value="OpenAI · GPT-5.4 mini" if self.settings.get("model_provider") == "openai" else "Local · Qwen")
+        self.hosted_choices = {"OpenAI · GPT-5.4 mini": "gpt-5.4-mini", "OpenAI · GPT-5.6 Luna": "gpt-5.6-luna",
+                               "OpenAI · GPT-6 Luna": "gpt-6-luna", "OpenAI · GPT-5.6 Terra": "gpt-5.6-terra",
+                               "OpenAI · GPT-6.1 Sol": "gpt-6.1-sol"}
+        selected = next((label for label, model in self.hosted_choices.items() if model == self.settings.get("openai_model")), "OpenAI · GPT-5.4 mini")
+        self.backend = tk.StringVar(value=selected if self.settings.get("model_provider") == "openai" else "Local · Qwen")
         ttk.Combobox(backend_row, textvariable=self.backend, state="readonly", width=30,
-                     values=["Local · Qwen", "OpenAI · GPT-5.4 mini"]).pack(side="left")
+                     values=["Local · Qwen", *self.hosted_choices]).pack(side="left")
         from client.credentials import save_openai_key
         ttk.Button(backend_row, text="Set OpenAI key", command=lambda: save_openai_key(self.window)).pack(side="right")
         self.hosted_images = tk.BooleanVar(value=self.settings.get("allow_hosted_images", False))
@@ -149,6 +153,7 @@ class App:
                              listen=self.listen.get(), speak=self.speak.get(), allow_actions=self.actions.get(),
                              preferences=self.preferences.get(),
                              model_provider="openai" if self.backend.get().startswith("OpenAI") else "local",
+                             openai_model=self.hosted_choices.get(self.backend.get(), self.settings["openai_model"]),
                              allow_hosted_images=self.hosted_images.get())
         save_settings(self.settings)
 

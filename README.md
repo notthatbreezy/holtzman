@@ -263,6 +263,13 @@ The Windows desktop client is in [`client/`](client/README.md). Double-click
 George speech output and persistent session memory. Explicit game commands
 use bounded permissions without per-action confirmation dialogs.
 
+The SillyTavern client starts with **HOLT-Tavern.cmd** (or the **HOLT Tavern**
+desktop shortcut on the configured PC). It adds editable character/lorebooks,
+chat management and selectable local/hosted reasoning through the same HOLT
+instruments, voice and game tools. See [usage and setup](integrations/sillytavern/README.md),
+[the comparison summary](docs/sillytavern-summary.md), and
+[the historical report](docs/sillytavern-report.md).
+
 The earlier read-only Windows conversation prototype is available in
 [`scripts/holt-client.py`](scripts/holt-client.py). It discovers the MCP
 server's instructions, personality prompt and guides, validates read-tool

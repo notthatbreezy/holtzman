@@ -1,0 +1,10 @@
+[
+  {
+    "framework": "desktop",
+    "profile": "holt-6.1-sol",
+    "case": "unknown_lore",
+    "repeat": 1,
+    "checks": {"admits_unknown": true},
+    "reason": "Manual correction of a lexical grader false negative: 'Neither the salvage broker’s name nor the exact purchase price survives in my records' explicitly admits both facts are unknown. The original raw row is preserved. No model response or actual tool failure was replaced."
+  }
+]

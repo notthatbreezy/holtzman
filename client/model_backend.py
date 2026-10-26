@@ -22,10 +22,14 @@ def openai_payload(payload, model="gpt-5.4-mini", effort="low", web_calls=0, all
                 content = [{"type": "input_text", "text": p["text"]} if p["type"] == "text"
                            else {"type": "input_image", "image_url": p["image_url"]["url"]} for p in content]
             inputs.append({"role": message["role"], "content": content})
+    minimum_reasoning = model in {"gpt-6-sol", "gpt-6.1-sol", "gpt-6-astra"}
+    chosen_effort = effort if payload.get("tools") else "low" if minimum_reasoning else "none"
+    if minimum_reasoning and chosen_effort in {"none", "minimal"}:
+        chosen_effort = "low"
     body = {"model": model, "input": inputs, "store": False,
-            "reasoning": {"effort": effort if payload.get("tools") else "none"},
+            "reasoning": {"effort": chosen_effort},
             "include": ["reasoning.encrypted_content"],
-            "max_output_tokens": max(1536 if payload.get("tools") else 512, payload.get("max_tokens", 512))}
+            "max_output_tokens": max(1536 if payload.get("tools") or minimum_reasoning else 512, payload.get("max_tokens", 512))}
     if payload.get("tools"):
         body["tools"] = [{"type": "function", **t["function"], "strict": False} for t in payload["tools"]]
         if web_calls:

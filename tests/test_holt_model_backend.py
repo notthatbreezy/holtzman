@@ -43,6 +43,12 @@ class BackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("top_k", body)
         self.assertNotIn("max_tokens", body)
 
+    def test_sol_auxiliary_requests_keep_supported_minimum_reasoning(self):
+        body = openai_payload({"messages": [{"role": "user", "content": "Summarize"}], "max_tokens": 600},
+                              model="gpt-6.1-sol", effort="none")
+        self.assertEqual(body["reasoning"]["effort"], "low")
+        self.assertGreaterEqual(body["max_output_tokens"], 1536)
+
     def test_response_items_preserve_reasoning_and_pair_tool_results(self):
         output = [{"type": "reasoning", "id": "r1", "encrypted_content": "opaque", "summary": []},
                   {"type": "function_call", "id": "f1", "call_id": "call1", "name": "status", "arguments": "{}"}]
@@ -72,6 +78,11 @@ class BackendTests(unittest.IsolatedAsyncioTestCase):
                  "completion_tokens": 1000, "completion_tokens_details": {"reasoning_tokens": 800}}
         self.assertAlmostEqual(estimated_cost("gpt-5.4-mini", usage), .0066)
         self.assertIsNone(estimated_cost("unknown-model", usage))
+
+    def test_luna_price_includes_cache_writes_at_published_multiplier(self):
+        usage = {"prompt_tokens": 1000, "prompt_tokens_details": {"cached_tokens": 500, "cache_write_tokens": 300},
+                 "completion_tokens": 100}
+        self.assertAlmostEqual(estimated_cost("gpt-6-luna", usage), .0001125)
 
     def test_nonverbal_whisper_tags_are_not_user_requests(self):
         self.assertFalse(non_speech("[COUGHING]"))

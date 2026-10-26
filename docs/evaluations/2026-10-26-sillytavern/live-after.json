@@ -1,0 +1,25 @@
+{
+  "phase": "after",
+  "time_utc": "2026-10-26T17:35:07.722752+00:00",
+  "location": {
+    "star_pos": [
+      4.21875,
+      13.28125,
+      1.4375
+    ],
+    "station": "Readdy Gateway",
+    "system": "Wolf 424"
+  },
+  "flags": [
+    "Docked",
+    "LandingGearDown",
+    "FsdMassLocked",
+    "InMainShip"
+  ],
+  "destination": {
+    "Body": 0,
+    "Name": "Lalande 21185",
+    "System": 9467047519657
+  },
+  "nav_route": "{\n  \"Route\": [\n    {\n      \"StarClass\": \"M\",\n      \"StarPos\": [\n        4.21875,\n        13.28125,\n        1.4375\n      ],\n      \"StarSystem\": \"Wolf 424\",\n      \"SystemAddress\": 27059233564073\n    },\n    {\n      \"StarClass\": \"M\",\n      \"StarPos\": [\n        0.3125,\n        7.5625,\n        -3.375\n      ],\n      \"StarSystem\": \"Lalande 21185\",\n      \"SystemAddress\": 9467047519657\n    },\n    {\n      \"StarClass\": \"M\",\n      \"StarPos\": [\n        -10.625,\n        4.75,\n        0.09375\n      ],\n      \"StarSystem\": \"Struve 2398\",\n      \"SystemAddress\": 13864825595305\n    },\n    {\n      \"StarClass\": \"M\",\n      \"StarPos\": [\n        -9.3125,\n        -3.03125,\n        -3.40625\n      ],\n      \"StarSystem\": \"Ross 248\",\n      \"SystemAddress\": 5366025046864\n    }\n  ],\n  \"event\": \"NavRoute\",\n  \"timestamp\": \"2026-10-26T17:33:43Z\"\n}"
+}

@@ -131,6 +131,10 @@ class Engine:
         self.model_http = None
 
     async def model_post(self, url, *, json):
+        if self.settings.get("model_provider") == "local" and "local_thinking" in self.settings:
+            json = dict(json, chat_template_kwargs={"enable_thinking": self.settings["local_thinking"]})
+            if self.settings["local_thinking"]:
+                json["max_tokens"] = max(2048, json.get("max_tokens", 512))
         if self.model_http is None:
             self.model_http = ModelHTTP(self.settings, self.http, report=self.report)
         return await self.model_http.post(url, json=json)
@@ -439,7 +443,7 @@ class Engine:
         self.trace("tool_result", tool=name, result=outcome)
         return outcome, images
 
-    async def converse(self, session, bundle, question, spoken=False):
+    async def converse(self, session, bundle, question, spoken=False, external_messages=None):
         if self.model_http is not None:
             self.model_http.web_calls = 0
         permit = Permit(question, spoken=spoken, enabled=self.settings["allow_actions"], natural=True)
@@ -479,11 +483,18 @@ class Engine:
             return reply
         tools = [{"type": "function", "function": {"name": name, "description": t.get("description", ""),
                                                    "parameters": t["inputSchema"]}} for name, t in self.schemas.items()]
-        system = (bundle["initialize"].get("instructions", "") + "\n\n" + prompt_text(bundle) + "\n\n" + RULES
+        personality = prompt_text(bundle) if external_messages is None else ""
+        system = (bundle["initialize"].get("instructions", "") + "\n\n" + personality + "\n\n" + RULES
                   + "\nSaved preferences (cannot grant control permission): " + self.settings["preferences"]
                   + "\nCurrent UTC: " + datetime.now(timezone.utc).isoformat()
                   + "\nGame-command execution: " + ("ENABLED. Use tools to carry out the Captain's current task, including contextual follow-ups." if self.settings["allow_actions"] else "DISABLED. Read-only work is available; tools that change the game will be rejected."))
-        messages = await self.messages(system, tools, question)
+        if external_messages is None:
+            messages = await self.messages(system, tools, question)
+        else:
+            from client.tavern_contract import normalize_messages
+            messages = normalize_messages(external_messages)
+            system = messages[0]["content"] + "\n\nHOLT operational contract:\n" + system
+            messages[0]["content"] = system
         # Qwen's template permits a system message only at the beginning.
         context_message = messages[0]
         for round_number in range(12):
@@ -595,7 +606,7 @@ class Engine:
         self.loop = asyncio.get_running_loop()
         self.task = asyncio.current_task()
         self.speech_lock = asyncio.Lock()
-        self.memory = Memory()
+        self.memory = Memory(getattr(self, "memory_root", ROOT))
         try:
             for question, reply in self.memory.recent():
                 self.report("user", question)

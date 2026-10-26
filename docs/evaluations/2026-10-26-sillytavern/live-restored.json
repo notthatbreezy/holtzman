@@ -1,0 +1,25 @@
+{
+  "phase": "restored",
+  "time_utc": "2026-10-26T17:37:09.127205+00:00",
+  "location": {
+    "star_pos": [
+      4.21875,
+      13.28125,
+      1.4375
+    ],
+    "station": "Readdy Gateway",
+    "system": "Wolf 424"
+  },
+  "flags": [
+    "Docked",
+    "LandingGearDown",
+    "FsdMassLocked",
+    "InMainShip"
+  ],
+  "destination": {
+    "Body": 0,
+    "Name": "LHS 380",
+    "System": 13865094030761
+  },
+  "nav_route": "{\n  \"Route\": [\n    {\n      \"StarClass\": \"M\",\n      \"StarPos\": [\n        4.21875,\n        13.28125,\n        1.4375\n      ],\n      \"StarSystem\": \"Wolf 424\",\n      \"SystemAddress\": 27059233564073\n    },\n    {\n      \"StarClass\": \"M\",\n      \"StarPos\": [\n        5.28125,\n        6.75,\n        10.875\n      ],\n      \"StarSystem\": \"LHS 380\",\n      \"SystemAddress\": 13865094030761\n    },\n    {\n      \"StarClass\": \"M\",\n      \"StarPos\": [\n        8.5625,\n        3.875,\n        16.875\n      ],\n      \"StarSystem\": \"LHS 397\",\n      \"SystemAddress\": 2869977753009\n    },\n    {\n      \"StarClass\": \"M\",\n      \"StarPos\": [\n        8.125,\n        4.0,\n        26.09375\n      ],\n      \"StarSystem\": \"LHS 415\",\n      \"SystemAddress\": 11666070775217\n    },\n    {\n      \"StarClass\": \"M\",\n      \"StarPos\": [\n        3.8125,\n        3.625,\n        37.1875\n      ],\n      \"StarSystem\": \"Core Sys Sector RT-R b4-5\",\n      \"SystemAddress\": 11666070775225\n    },\n    {\n      \"StarClass\": \"F\",\n      \"StarPos\": [\n        0.71875,\n        10.71875,\n        33.28125\n      ],\n      \"StarSystem\": \"Parutis\",\n      \"SystemAddress\": 4855200483691\n    }\n  ],\n  \"event\": \"NavRoute\",\n  \"timestamp\": \"2026-10-26T17:36:22Z\"\n}"
+}

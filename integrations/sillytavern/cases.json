@@ -1,0 +1,11 @@
+[
+  {"id":"instruments","question":"Where are we, how much fuel is in the main tank, and what percentage full is that?"},
+  {"id":"shopping","question":"Find a station where I can purchase a fuel scoop in Ross 248."},
+  {"id":"trade_plan","question":"Uh, no, sorry. I need a good trade route here that's gonna fill my hole."},
+  {"id":"trade_followup","history":[{"role":"user","content":"Find a full-hold trade run."},{"role":"assistant","content":"Buy 1,119 tonnes of Lepidolite and 49 tonnes of Bertrandite at Homer Platform, AD Leonis, and sell at High Charity in LP 546-48. Then return with 1,168 tonnes of Uranium; estimated whole-route profit is 64,485,758 credits."}],"question":"Uh, plot their app for me, please."},
+  {"id":"lore","question":"Who manufactured you, and what happened with that manifest full of mugs?"},
+  {"id":"unknown_lore","question":"What was the salvage broker's name and exactly how much did I pay for you?"},
+  {"id":"banter","question":"I may have mistaken the star for a shortcut. Again."},
+  {"id":"silence","question":"Yep, got it. No need to reply."},
+  {"id":"correction","history":[{"role":"assistant","content":"We are mass locked in Ross 248 with only 5 percent fuel."}],"question":"That's old information. What do the instruments say now?"}
+]

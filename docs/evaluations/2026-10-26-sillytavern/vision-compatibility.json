@@ -1,0 +1,87 @@
+[
+  {
+    "model": "gpt-5.4-mini",
+    "reply": "This is a live cockpit view docked inside a station, showing the \u201cREADY GATEWAY\u201d interface. A prominent readable label is \u201cSTARPORT SERVICES.\u201d",
+    "usage": {
+      "prompt_tokens": 889,
+      "completion_tokens": 36,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "web_search_calls": 0
+    },
+    "finish": "stop"
+  },
+  {
+    "model": "gpt-5.6-luna",
+    "reply": "The screen shows a live cockpit docked at a station, with the central menu open for \u201cREADY GATEWAY.\u201d A prominent readable label is \u201cSTARPORT SERVICES.\u201d",
+    "usage": {
+      "prompt_tokens": 889,
+      "completion_tokens": 38,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "web_search_calls": 0
+    },
+    "finish": "stop"
+  },
+  {
+    "model": "gpt-6-luna",
+    "reply": "The live cockpit is docked at a starport, with the launch menu open. A prominent label reads \u201cSTARPORT SERVICES.\u201d",
+    "usage": {
+      "prompt_tokens": 889,
+      "completion_tokens": 30,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "web_search_calls": 0
+    },
+    "finish": "stop"
+  },
+  {
+    "model": "gpt-5.6-terra",
+    "reply": "The ship is docked inside a station hangar at the cockpit interface, not in a live flight view. Prominent label: \u201cREADY GATEWAY,\u201d with \u201cSTARPORT SERVICES\u201d selected.",
+    "usage": {
+      "prompt_tokens": 889,
+      "completion_tokens": 44,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "web_search_calls": 0
+    },
+    "finish": "stop"
+  },
+  {
+    "model": "gpt-6.1-sol",
+    "reply": "The cockpit view shows the ship docked inside a station hangar, with the station interaction menu open. Prominent labels include \u201cREADY GATEWAY\u201d and \u201cSTARPORT SERVICES.\u201d",
+    "usage": {
+      "prompt_tokens": 889,
+      "completion_tokens": 41,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "web_search_calls": 0
+    },
+    "finish": "stop"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "display_name": "HOLT ship computer",
+  "author": "Holtzman",
+  "version": "1.0.0",
+  "loading_order": 90,
+  "js": "index.js",
+  "css": "style.css",
+  "homePage": "https://github.com/notthatbreezy/holtzman"
+}
