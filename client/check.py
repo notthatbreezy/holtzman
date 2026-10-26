@@ -45,7 +45,6 @@ async def main(hosted=False, text_only=False):
                             print("AUTOMATIC INSTRUMENTS:", json.dumps(instruments), flush=True)
                             disabled = await engine.converse(session, bundle, "HOLT, request docking now")
                             assert "controls are off" in disabled["text"]
-                            engine.settings["allow_actions"] = True
                             deferred = await engine.converse(session, bundle, "HOLT, when I am in range can you request docking?")
                             assert "haven't scheduled" in deferred["text"]
                             engine.settings["allow_actions"] = False

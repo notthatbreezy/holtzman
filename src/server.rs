@@ -305,7 +305,7 @@ impl Holtzman {
     }
 
     #[tool(
-        description = "Plan a short profitable commodity-trading itinerary from an explicit system AND station, with explicit empty cargo space and purchasing budget. Sends those parameters to Spansh; may take up to 45 seconds. Returns trade legs, prices, quantities, estimated profits and market ages. Leg distance is not ship jump range. Read-only advice; never moves the ship, buys/sells or plots automatically. Ask for missing budget/constraints rather than assuming all credits are spendable.",
+        description = "Plan a short profitable commodity-trading itinerary from a system AND station, empty cargo space and purchasing budget. Use instrument readings and client-computed free space/planning budget; ask only for information that is unavailable. The default read-only planning budget reserves one rebuy, unless the Captain specifies another limit. Sends parameters to Spansh; may take up to 45 seconds. Returns trade legs, prices, quantities, estimated profits and market ages. Leg distance is not ship jump count. Read-only advice; never moves the ship, buys/sells or plots automatically.",
         annotations(
             read_only_hint = true,
             destructive_hint = false,

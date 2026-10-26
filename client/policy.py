@@ -3,9 +3,9 @@ import re
 import time
 
 READ = frozenset({"status", "cargo", "market", "nav_route", "recent_events", "read_guide",
-                  "trade_commodities", "find_commodity_market", "plan_trade_route", "screenshot", "find_module"})
+                  "trade_commodities", "find_commodity_market", "plan_trade_route", "screenshot", "find_module", "cursor_position"})
 CONTROL = frozenset({"plot_route", "nav_target_start", "nav_target_move", "nav_target_confirm",
-                     "nav_target_cancel", "press_binding"})
+                     "nav_target_cancel", "press_binding", "record_click_target"})
 MENU_KEYS = frozenset({"FocusLeftPanel", "UI_Up", "UI_Down", "UI_Left", "UI_Right", "UI_Select",
                       "UI_Back", "UI_NextPanel", "UI_PrevPanel", "CycleNextPanel", "CyclePreviousPanel"})
 
@@ -15,11 +15,13 @@ def normalized(text):
 
 
 class Permit:
-    def __init__(self, text, spoken=False, enabled=False):
+    def __init__(self, text, spoken=False, enabled=False, natural=False):
         self.text = normalized(text)
         # A greeting in a compound utterance is not a question about the chore.
         self.text = re.sub(r"\bhow(?:'s| is) it going\b", "", self.text)
         self.enabled = enabled
+        self.natural = natural
+        self.announced = False
         self.started = time.monotonic()
         self.calls = 0
         self.failed = False
@@ -40,6 +42,8 @@ class Permit:
         self.deferred = bool(re.search(r"\b(when|once|later|after|as soon as|until)\b", self.text))
         self.requested = bool(not uncertain and not discussion and (self.route or self.nav or self.docking))
         self.authorized = bool(enabled and self.requested and not self.deferred)
+        if natural:
+            self.authorized = enabled
 
     def unavailable_reply(self):
         """Client capabilities, reported without relying on model interpretation."""
@@ -54,11 +58,22 @@ class Permit:
             reasons.append("For docking, say ‘HOLT, request docking now’ within 7.5 km (7,500 metres) of the station.")
         return " ".join(reasons) or None
 
-    def check(self, name, arguments):
-        if name in READ:
+    def check(self, name, arguments, read_only=False):
+        if name in READ or read_only:
+            return
+        if self.natural:
+            if not self.enabled:
+                raise ValueError("Game-command execution is disabled in the control panel")
+            if self.failed:
+                raise ValueError("A previous control failed; stop and report its outcome")
+            if self.calls >= 8 or time.monotonic() - self.started > 120:
+                raise ValueError("The bounded action permit has expired")
+            self.calls += 1
             return
         if name not in CONTROL or not self.authorized or self.failed:
             raise ValueError("No explicit, unambiguous command authorizes this control")
+        if name == "record_click_target":
+            raise ValueError("Calibration is unavailable in strict command mode")
         if self.calls >= 8 or time.monotonic() - self.started > 120:
             raise ValueError("The bounded action permit has expired")
         if name == "plot_route":

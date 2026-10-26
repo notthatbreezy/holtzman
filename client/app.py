@@ -53,7 +53,7 @@ class App:
         self.stop_button = ttk.Button(buttons, text="Stop HOLT", command=self.stop, state="disabled")
         self.stop_button.pack(side="left", padx=8)
         ttk.Button(buttons, text="New conversation", command=self.new_session).pack(side="right")
-        options = ttk.LabelFrame(frame, text="Audio and preferences · changes apply on next Start", padding=10)
+        options = ttk.LabelFrame(frame, text="Devices and speech apply on next Start · game controls change immediately", padding=10)
         options.pack(fill="x")
         self.microphone = tk.StringVar(value=self.settings["microphone"] or "Windows default")
         self.speaker = tk.StringVar(value=self.settings["speaker"] or "Windows default")
@@ -71,7 +71,7 @@ class App:
         toggles.grid(row=2, columnspan=2, sticky="w", pady=6)
         ttk.Checkbutton(toggles, text="Listen while unmuted", variable=self.listen).pack(side="left")
         ttk.Checkbutton(toggles, text="Spoken replies", variable=self.speak).pack(side="left", padx=12)
-        ttk.Checkbutton(toggles, text="Explicit game commands", variable=self.actions).pack(side="left")
+        ttk.Checkbutton(toggles, text="Game controls", variable=self.actions, command=self.toggle_actions).pack(side="left")
         ttk.Label(options, text="Give direct game commands naturally. Your physical mute button controls listening.", wraplength=790).grid(row=3, columnspan=2, sticky="w")
         ttk.Label(options, text="Preferences to remember").grid(row=4, column=0, sticky="w", pady=(8, 0))
         self.preferences = ttk.Entry(options)
@@ -151,6 +151,14 @@ class App:
                              model_provider="openai" if self.backend.get().startswith("OpenAI") else "local",
                              allow_hosted_images=self.hosted_images.get())
         save_settings(self.settings)
+
+    def toggle_actions(self):
+        enabled = self.actions.get()
+        self.settings["allow_actions"] = enabled
+        if self.engine:
+            self.engine.settings["allow_actions"] = enabled
+        save_settings(self.settings)
+        self.report("service", "Game controls enabled" if enabled else "Game controls disabled")
 
     def start(self):
         if self.worker and self.worker.is_alive():

@@ -40,6 +40,12 @@ class DurableStateTests(unittest.TestCase):
 
 
 class ActionBoundaryTests(unittest.TestCase):
+    def test_natural_mode_accepts_contextual_followup_without_phrase_gate(self):
+        permit = Permit("Uh, plot their app for me, please.", spoken=True, enabled=True, natural=True)
+        permit.check("plot_route", {"system": "LP 546-48"})
+        self.assertEqual(permit.calls, 1)
+        with self.assertRaises(ValueError):
+            Permit("plot that", enabled=False, natural=True).check("plot_route", {"system": "Sol"})
     def test_disabled_commands_report_capability_instead_of_promising_action(self):
         permit = Permit("Holt request docking now", enabled=False)
         self.assertFalse(permit.authorized)

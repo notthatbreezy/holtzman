@@ -27,6 +27,15 @@ class InstrumentContextTests(unittest.TestCase):
         self.assertTrue(context["mass_locked"])
         self.assertFalse(context["docked"])
 
+    def test_free_hold_and_read_only_planning_budget_are_derived(self):
+        facts = self.facts()
+        facts["ship"].update(cargo_capacity=1168, rebuy=15000000)
+        facts["status"]["cargo_tons"] = 168
+        facts["credits"] = 278000000
+        context = snapshot(facts, self.now)
+        self.assertEqual(context["cargo_free_tonnes"], 1000)
+        self.assertEqual(context["trade_planning_budget_credits"], 263000000)
+
     def test_observed_duration_resets_after_a_gap(self):
         for seconds in (0, 10, 20, 60, 70):
             at = self.now + timedelta(seconds=seconds)

@@ -51,9 +51,11 @@ async def main():
         async def count(*_):
             return 100
         engine.token_count = count
-        bundle = {"initialize": {}, "tools": [], "ship_computer": {"messages": []}}
+        names = ("status", "plot_route", "record_click_target", "cursor_position", "future_read_tool")
+        bundle = {"initialize": {}, "tools": [{"name": n, "inputSchema": {"type": "object"}} for n in names], "ship_computer": {"messages": []}}
         ship = Ship()
         await engine.converse(ship, bundle, "How much fuel do we have?")
+        assert set(names).issubset(engine.schemas), "Advertised tools must stay visible even with game controls disabled"
         await engine.converse(ship, bundle, "And now?")
         assert [c["fuel_main_tonnes"] for c in engine.http.contexts] == [40, 39]
         ship.failed = True

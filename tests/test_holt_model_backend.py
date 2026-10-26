@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 from client.model_backend import ModelHTTP, openai_payload, completion_result
 from unittest.mock import patch
-from client.replies import silent_reply, spoken_reply, non_speech
+from client.replies import silent_reply, spoken_reply, non_speech, pronounce
 from client.usage import estimated_cost
 
 
@@ -79,6 +79,13 @@ class BackendTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(non_speech("[BLANK_AUDIO]"))
         self.assertFalse(non_speech("I'm coughing, hold on."))
         self.assertFalse(non_speech("[inaudible] plot a course to Sol"))
+
+    def test_display_abbreviations_become_natural_speech(self):
+        text = "46.4 ly, 529 ls, 718 cr/t, 1,168 t, a 4A scoop and FSD on a Panther Mk II."
+        spoken = pronounce(text)
+        for phrase in ("46.4 light years", "529 light seconds", "718 credits per tonne", "1,168 tonnes", "class 4, rating A", "frame shift drive", "Panther Mark two"):
+            self.assertIn(phrase, spoken)
+        self.assertEqual(pronounce("Ross 248 and Sol"), "Ross 248 and Sol")
 
 
 if __name__ == "__main__":

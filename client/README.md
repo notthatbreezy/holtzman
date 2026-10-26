@@ -39,6 +39,9 @@ Disconnected or stopped input streams are retried every three seconds.
 Capture pauses while HOLT thinks or speaks; physical mute naturally produces silence.
 George's standard delivery runs at 1.15x speed. Ordinary replies are shortened
 to one or two sentences; ask for detail to get a longer explanation.
+Before TTS, display abbreviations are expanded to spoken forms: ly/ls become
+light years/light seconds, cr/t becomes credits per tonne, FSD becomes frame shift
+drive, and 4A becomes class four, rating A. The display text is retained.
 HOLT may intentionally leave acknowledgements/asides unanswered. Such turns
 are recorded with `respond:false`, produce no speech or assistant chat bubble,
 and do not appear as errors. Command outcomes and important warnings still need reporting.
@@ -81,14 +84,19 @@ The explicit order authorizes that bounded chore without a confirmation
 popup. Casual discussion, negation and ambiguous destinations do not grant
 permission. Game actions are schema-validated, announced and bounded by a
 per-request call/time budget. In-system navigation and docking menu actions
-use cockpit observations and the server's verification. Calibration, raw
-flight/fire keys, unattended loops and arbitrary desktop control are excluded.
+use cockpit observations and the server's verification. All advertised MCP tools
+remain visible, including calibration tools. HOLT interprets contextual follow-ups
+instead of requiring a matching command phrase. The server's binding allow-list
+still governs available keys; arbitrary desktop control is not exposed.
 Untick **Explicit game commands** to use HOLT in read-only mode.
 An explicit route order with a destination dispatches directly to the server's
 `plot_route` recipe. HOLT reports success only from the recipe's verified
 NavRoute.json result; reading an existing route is not completion. Mass lock
 does not prevent map plotting. Offline dispatch checks are available with
 `python -m client.check_route_dispatch` in the configured voice environment.
+`python -m client.check_conversation_flow` replays proactive trade planning and a
+spoken route follow-up against GPT-5.4 mini with a simulated ship. It incurs model
+usage, but cannot access the game or send real control inputs.
 The local read-only `find_module` tool searches public Spansh outfitting
 reports for an exact system and module (optionally class/rating). It requires
 large pads, excludes planetary ports and fleet carriers, returns report times,
@@ -114,6 +122,11 @@ command when ready. Disabled controls are reported before consulting the model.
   automatically and supplies a separate current-instruments context. The model
   need not request basic ship facts. Failed reads explicitly mark them unavailable.
   Fuel is labelled in tonnes and docked/landed/mass-lock flags are separate.
+  Free cargo space is derived from capacity minus occupied cargo. Read-only
+  trade planning defaults to current credits minus one rebuy reserve, overridden
+  by an explicit Captain budget. HOLT asks only for facts/preferences that remain
+  unavailable, then continues the already-requested task. Verified itinerary
+  summaries survive follow-ups for 30 minutes independently of prose replies.
   Elapsed ages are computed in code. A status timestamp is the last file
   change, not a heartbeat. Clock disagreement is reported and blocks controls.
 - **New conversation** starts a fresh session without deleting old sessions

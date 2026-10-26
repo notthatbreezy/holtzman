@@ -21,10 +21,19 @@ def snapshot(facts, now=None):
     now = now or datetime.now(timezone.utc)
     status = facts.get("status", {})
     flags = status.get("flags", [])
+    capacity = facts.get("ship", {}).get("cargo_capacity")
+    occupied = status.get("cargo_tons")
+    credits = facts.get("credits")
+    rebuy = facts.get("ship", {}).get("rebuy")
+    free = max(0, capacity - occupied) if isinstance(capacity, (int, float)) and isinstance(occupied, (int, float)) else None
+    budget = max(0, int(credits - rebuy)) if isinstance(credits, (int, float)) and isinstance(rebuy, (int, float)) else None
     return {"available": True, "retrieved_at_utc": now.isoformat(),
             "source_age": reading_age(facts, now), "location": facts.get("location", {}),
             "ship": facts.get("ship", {}), "credits": facts.get("credits"),
             "cargo_tonnes": status.get("cargo_tons"),
+            "cargo_free_tonnes": free,
+            "trade_planning_budget_credits": budget,
+            "trade_planning_budget_note": "Read-only planning default: current credits minus one ship rebuy reserve. An explicit Captain budget overrides this; no credits are spent by planning.",
             "fuel_main_tonnes": status.get("fuel", {}).get("FuelMain"),
             "fuel_reservoir_tonnes": status.get("fuel", {}).get("FuelReservoir"),
             "fuel_percentage": None, "fuel_percentage_note": "Tank capacity is not supplied; do not convert tonnes to percent.",
