@@ -46,6 +46,11 @@ per-request call/time budget. In-system navigation and docking menu actions
 use cockpit observations and the server's verification. Calibration, raw
 flight/fire keys, unattended loops and arbitrary desktop control are excluded.
 Untick **Explicit game commands** to use HOLT in read-only mode.
+An immediate order such as **HOLT, request docking now** runs a bounded menu
+chore using cockpit observations. Docking requires being within 7.5 km of the
+station. Conditional orders such as “when I am in range, request docking” are
+not scheduled; HOLT explicitly reports that limitation and asks for a new
+command when ready. Disabled controls are reported before consulting the model.
 
 ## Memory and context
 
@@ -68,6 +73,10 @@ PID records in `run/`, and diagnostic logs in `results/`. These paths are
 git-ignored. Microphone audio is sent only to the local transcription server
 and is not saved. Transcriptions and replies are saved in conversation history.
 Credentials remain in Windows Credential Manager, never in model context.
+`results/client-tools.jsonl` records each request's permit, model tool proposals,
+client rejections, tool executions and returned text. Corresponding cockpit
+observations are saved locally by content hash for diagnosis. These contain
+conversation/game data; no HTTP headers or credentials are recorded.
 
 The client fetches `ship_computer`, instructions, tools and guide resources
 from the live MCP server on every connection/reconnect. It does not require

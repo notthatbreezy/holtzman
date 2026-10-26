@@ -149,7 +149,8 @@ class App:
             except (asyncio.CancelledError, InterruptedError):
                 pass
             except Exception as exc:
-                self.report("error", str(exc) if isinstance(exc, RuntimeError) else type(exc).__name__)
+                from client.diagnostics import record
+                self.report("error", record(exc))
             finally:
                 self.stopped.set()
                 services.stop()

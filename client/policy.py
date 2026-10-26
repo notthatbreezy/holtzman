@@ -17,6 +17,8 @@ def normalized(text):
 class Permit:
     def __init__(self, text, spoken=False, enabled=False):
         self.text = normalized(text)
+        # A greeting in a compound utterance is not a question about the chore.
+        self.text = re.sub(r"\bhow(?:'s| is) it going\b", "", self.text)
         self.enabled = enabled
         self.started = time.monotonic()
         self.calls = 0
@@ -31,7 +33,22 @@ class Permit:
         self.route = bool(re.search(r"\b(plot|chart|set|lay)\b.*\b(course|route)\b", self.text))
         self.nav = bool(re.search(r"\b(target|lock|unlock|supercruise assist)\b", self.text))
         self.docking = bool(re.search(r"\b(request|ask for) docking\b", self.text))
-        self.authorized = bool(enabled and addressed and not uncertain and not discussion and (self.route or self.nav or self.docking))
+        self.deferred = bool(re.search(r"\b(when|once|later|after|as soon as|until)\b", self.text))
+        self.requested = bool(addressed and not uncertain and not discussion and (self.route or self.nav or self.docking))
+        self.authorized = bool(enabled and self.requested and not self.deferred)
+
+    def unavailable_reply(self):
+        """Client capabilities, reported without relying on model interpretation."""
+        if not self.requested:
+            return None
+        reasons = []
+        if not self.enabled:
+            reasons.append("Game controls are off. Enable Explicit game commands and restart HOLT to send game inputs.")
+        if self.deferred:
+            reasons.append("I haven't scheduled that: this client cannot queue actions for later. Give me the command again when you're ready.")
+        if reasons and self.docking:
+            reasons.append("For docking, say ‘HOLT, request docking now’ within 7.5 km (7,500 metres) of the station.")
+        return " ".join(reasons) or None
 
     def check(self, name, arguments):
         if name in READ:

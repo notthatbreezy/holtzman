@@ -34,6 +34,13 @@ async def main():
                                                        max_sse_event_size=16 * 1024 * 1024) as (read, write):
                         async with ClientSession(read, write) as session:
                             bundle = await discover(session, await session.initialize())
+                            disabled = await engine.converse(session, bundle, "HOLT, request docking now")
+                            assert "controls are off" in disabled["text"]
+                            engine.settings["allow_actions"] = True
+                            deferred = await engine.converse(session, bundle, "HOLT, when I am in range can you request docking?")
+                            assert "haven't scheduled" in deferred["text"]
+                            engine.settings["allow_actions"] = False
+                            print("CAPABILITY CHECKS PASS: disabled and deferred commands send no controls.", flush=True)
                             reply = await engine.converse(session, bundle, "Where are we, and is the telemetry current?")
                             print("STATUS REPLY:", reply, flush=True)
                             screenshot = await session.call_tool("screenshot", {"format": "png", "max_edge": 1280})

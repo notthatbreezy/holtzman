@@ -39,6 +39,23 @@ class DurableStateTests(unittest.TestCase):
 
 
 class ActionBoundaryTests(unittest.TestCase):
+    def test_disabled_commands_report_capability_instead_of_promising_action(self):
+        permit = Permit("Holt request docking now", enabled=False)
+        self.assertFalse(permit.authorized)
+        self.assertIn("controls are off", permit.unavailable_reply())
+
+    def test_deferred_compound_docking_is_not_silently_armed(self):
+        text = "hey holt how is it going, I'm headed to Herrington City - when I am in range can you request docking (7500 km)?"
+        permit = Permit(text, spoken=True, enabled=True)
+        self.assertTrue(permit.requested)
+        self.assertFalse(permit.authorized)
+        self.assertIn("haven't scheduled", permit.unavailable_reply())
+        self.assertIn("7,500 metres", permit.unavailable_reply())
+
+    def test_greeting_does_not_block_an_immediate_docking_order(self):
+        self.assertTrue(Permit("Hey Holt how is it going, request docking now", spoken=True, enabled=True).authorized)
+        self.assertFalse(Permit("Holt how do I request docking", spoken=True, enabled=True).authorized)
+
     def test_direct_spoken_order_needs_holt_address(self):
         with self.assertRaises(ValueError):
             Permit("Plot a course to Sol", spoken=True, enabled=True).check("plot_route", {"system": "Sol"})

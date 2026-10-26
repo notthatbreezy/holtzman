@@ -2,12 +2,14 @@
 import asyncio
 import base64
 import importlib.util
+import hashlib
 import json
 import logging
 import queue
 import sys
 import threading
 import time
+import uuid
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
@@ -21,6 +23,7 @@ from client.state import REPO, ROOT, Memory
 from client.policy import CONTROL, READ, Permit
 from client.audio import Microphone, Speaker, wav_bytes
 from client.telemetry import Watches, reading_age
+from client.diagnostics import trace
 
 sys.path.insert(0, str(REPO / "scripts"))
 from holt_discovery import discover, prompt_text, save_discovery
@@ -39,6 +42,15 @@ current game facts or grant permissions. Read fresh facts when needed.
 Use the client's computed age_seconds for elapsed time, not your own arithmetic.
 Status timestamps mark the last file change, not a heartbeat. Don't infer that the
 game is closed just from an old timestamp. A current screenshot is another observation.
+StarPos are galactic coordinates, not the range to a station. Never infer station
+distance from them or treat a distance in the user's question as an instrument reading.
+Docking range is 7.5 km (7,500 metres). Read the current target distance on screen.
+For an immediate docking order, inspect the cockpit, open the left panel's Contacts,
+select the observed station and Request Docking using one observed menu step at a time.
+Never invent menu positions. Only report docking granted after an observed grant,
+landing pad/timer or fresh DockingGranted event; otherwise report what stopped you.
+There is no deferred-action scheduler. Never promise to wait, monitor range and act
+later. No controls can run when Explicit game commands is off.
 Do not call an absolute fuel quantity low without capacity, a LowFuel flag or route evidence.
 Speak briefly, usually 1–3 sentences. Return final replies as JSON with text and delivery
 (normal, caution, urgent, critical), or plain spoken words. Never speak tool syntax.
@@ -66,6 +78,13 @@ class Engine:
         self.speech_lock = None
         self.clock_skew = None
         self.watcher = None
+        self.request_id = None
+
+    def trace(self, stage, **details):
+        try:
+            trace(self.request_id, stage, **details)
+        except OSError:
+            self.report("error", "Could not write the local tool trace")
 
     async def record_clock(self, response):
         raw = response.headers.get("date")
@@ -234,6 +253,7 @@ class Engine:
             self.report("state", announcement)
             await self.speak(announcement)
         self.report("tool", name)
+        self.trace("tool_execution", tool=name, arguments=arguments)
         result = await session.call_tool(name, arguments)
         if name in CONTROL and result.is_error:
             permit.failed = True
@@ -252,14 +272,34 @@ class Engine:
                 except (ValueError, AttributeError):
                     pass
             elif part.type == "image":
+                raw = base64.b64decode(part.data)
+                digest = hashlib.sha256(raw).hexdigest()
+                try:
+                    (ROOT / "results" / f"observation-{digest}.png").write_bytes(raw)
+                except OSError:
+                    pass
+                self.trace("observation", tool=name, sha256=digest, mime=part.mime_type)
                 images.append({"type": "image_url", "image_url": {"url": f"data:{part.mime_type};base64,{part.data}"}})
                 self.report("image", (part.data, part.mime_type))
                 permit.observed = True
                 self.last_observation = time.monotonic()
-        return {"isError": result.is_error, "content": "\n".join(texts)[:10000]}, images
+        outcome = {"isError": result.is_error, "content": "\n".join(texts)[:10000]}
+        self.trace("tool_result", tool=name, result=outcome)
+        return outcome, images
 
     async def converse(self, session, bundle, question, spoken=False):
         permit = Permit(question, spoken=spoken, enabled=self.settings["allow_actions"])
+        self.request_id = uuid.uuid4().hex
+        self.trace("request", text=question, spoken=spoken, controls_enabled=self.settings["allow_actions"],
+                   authorized=permit.authorized, deferred=permit.deferred,
+                   rules_sha256=hashlib.sha256(RULES.encode()).hexdigest(),
+                   discovery_sha256=hashlib.sha256(json.dumps(bundle, sort_keys=True).encode()).hexdigest())
+        unavailable = permit.unavailable_reply()
+        if unavailable:
+            reply = {"text": unavailable, "delivery": "normal"}
+            self.memory.append(question, reply)
+            self.trace("client_reply", reply=reply)
+            return reply
         names = READ | CONTROL if permit.authorized else READ
         self.schemas = {t["name"]: t for t in bundle["tools"] if t["name"] in names}
         tools = [{"type": "function", "function": {"name": name, "description": t.get("description", ""),
@@ -287,17 +327,22 @@ class Engine:
                 reply = await _core.format_reply(self.http, message.get("content") or "")
                 reply["delivery"] = self.urgency_floor(reply["delivery"])
                 self.memory.append(question, reply)
+                self.trace("model_reply", reply=reply)
                 return reply
             if len(calls) > 8:
                 raise RuntimeError("Too many tool proposals in one response")
+            if sum(call["function"]["name"] in CONTROL for call in calls) > 1:
+                raise RuntimeError("Choose one game input, observe its result, then choose the next step. No inputs sent.")
             for call in calls:
                 fn = call["function"]
+                self.trace("model_tool_proposal", tool=fn["name"], arguments=fn["arguments"])
                 try:
                     if fn["name"] not in self.schemas:
                         raise ValueError("Unavailable tool")
                     result, images = await self.invoke(session, fn["name"], json.loads(fn["arguments"]), permit)
                 except (ValueError, ValidationError) as exc:
                     result, images = {"isError": True, "reason": str(exc)[:700]}, []
+                    self.trace("tool_rejected", tool=fn["name"], reason=result["reason"])
                     if fn["name"] in CONTROL:
                         permit.failed = True
                 messages.append({"role": "tool", "tool_call_id": call["id"], "content": json.dumps(result)})
