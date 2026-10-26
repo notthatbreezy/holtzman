@@ -34,6 +34,12 @@ async def main():
                                                        max_sse_event_size=16 * 1024 * 1024) as (read, write):
                         async with ClientSession(read, write) as session:
                             bundle = await discover(session, await session.initialize())
+                            instruments = await engine.instrument_context(session, include_events=True)
+                            assert instruments["available"]
+                            assert "fuel_main_tonnes" in instruments and instruments["fuel_percentage"] is None
+                            assert instruments["journal_history_refresh_succeeded"] is True
+                            assert "recent_jumps" in instruments["history"]
+                            print("AUTOMATIC INSTRUMENTS:", json.dumps(instruments), flush=True)
                             disabled = await engine.converse(session, bundle, "HOLT, request docking now")
                             assert "controls are off" in disabled["text"]
                             engine.settings["allow_actions"] = True
@@ -84,7 +90,7 @@ if __name__ == "__main__":
             elif isinstance(error, (RuntimeError, ValueError, TypeError, KeyError, AttributeError)):
                 print(type(error).__name__, str(error)[:500])
             elif isinstance(error, httpx2.HTTPStatusError):
-                print("Local HTTP error", error.response.status_code, error.response.text[:500])
+                print("Local HTTP error", error.response.status_code, ascii(error.response.text[:1000]))
             elif isinstance(error, MCPError):
                 print("MCP", error.code, error.message[:700])
             else:

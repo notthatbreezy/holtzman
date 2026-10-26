@@ -31,7 +31,7 @@ async def main():
         "type": "object", "properties": {"system": {"type": "string"}}, "required": ["system"]}}]}
     question = "So, little good news bad news here. I was supposed to go to AD Leonis and not Ross 248. Can you plot me a route to AD Leonis please?"
     with tempfile.TemporaryDirectory(dir=ROOT) as root:
-        engine = Engine(load_settings() | {"allow_actions": True}, lambda *_: None, threading.Event())
+        engine = Engine(load_settings() | {"allow_actions": True, "model_provider": "local"}, lambda *_: None, threading.Event())
         engine.memory = Memory(root)
         engine.clock_skew = 0
         for text, error, confirmed in [("route plotted to AD Leonis: 14 jumps", False, True),

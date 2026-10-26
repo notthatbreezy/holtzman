@@ -12,6 +12,7 @@ DEFAULTS = {
     "allow_actions": True, "mcp_url": "http://skippy:7777/mcp",
     "model_url": "http://127.0.0.1:8080", "transcription_url": "http://127.0.0.1:8081",
     "context_size": 16384, "silence_ms": 850, "max_utterance_seconds": 25,
+    "model_provider": "local", "openai_model": "gpt-5.4-mini", "openai_reasoning": "low",
     "voice": "bm_george", "preferences": "Address me as Captain. Use George's normal register, dry humor and dynamic urgency.",
 }
 

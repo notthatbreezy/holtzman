@@ -39,6 +39,33 @@ Disconnected or stopped input streams are retried every three seconds.
 Capture pauses while HOLT thinks or speaks; physical mute naturally produces silence.
 George's standard delivery runs at 1.15x speed. Ordinary replies are shortened
 to one or two sentences; ask for detail to get a longer explanation.
+HOLT may intentionally leave acknowledgements/asides unanswered. Such turns
+are recorded with `respond:false`, produce no speech or assistant chat bubble,
+and do not appear as errors. Command outcomes and important warnings still need reporting.
+
+## Optional hosted conversation
+
+Choose **OpenAI · GPT-5.4 mini** in the conversation-model selector, save a key
+with **Set OpenAI key**, then Stop/Start. The key is held in Windows Credential
+Manager (`HoltzmanVoice` / `openai-api-key`), or supplied via `OPENAI_API_KEY`.
+The model receives conversation history, selected ship facts/tool results, and
+cockpit images when used. Whisper transcription, George speech and all game
+controls remain local. API usage is billed separately from ChatGPT.
+
+The provider uses the fixed OpenAI HTTPS endpoint, disables response storage
+with `store:false`, and never attaches its credential to MCP, Spansh or speech
+requests. Conversation uses low reasoning effort; auxiliary formatting uses
+none. Local Qwen is not started in hosted mode. Select **Local · Qwen** and
+restart to return to local inference; provider errors never trigger silent
+fallbacks or replay controls.
+
+Token counts, cache hits and estimated API costs are written to
+`.local/holt/results/openai-usage.jsonl`; per-call/session estimates appear in
+Service details. GPT-5.4 mini price estimates use the documented rates as of
+2026-10-26, including cached input; the provider's bill is authoritative.
+`python -m client.evaluate_conversation --openai` runs five paid, offline
+conversation tests without game input. Plain `client.evaluate_conversation`
+compares local prompt/thinking configurations and incurs no OpenAI usage.
 
 Give direct spoken or typed game commands naturally; **HOLT** is optional:
 
@@ -77,6 +104,10 @@ command when ready. Disabled controls are reported before consulting the model.
   llama.cpp's template/token APIs, with a conservative fallback. Large tool
   results are bounded and old images are removed from model context.
 - Current game facts are fetched from MCP, not inferred from old memory.
+  Before each main conversation-model call, the client fetches `status`
+  automatically and supplies a separate current-instruments context. The model
+  need not request basic ship facts. Failed reads explicitly mark them unavailable.
+  Fuel is labelled in tonnes and docked/landed/mass-lock flags are separate.
   Elapsed ages are computed in code. A status timestamp is the last file
   change, not a heartbeat. Clock disagreement is reported and blocks controls.
 - **New conversation** starts a fresh session without deleting old sessions
@@ -96,6 +127,13 @@ The client fetches `ship_computer`, instructions, tools and guide resources
 from the live MCP server on every connection/reconnect. It does not require
 a copied personality file. Basic read-only hull/heat/low-fuel watches notify
 only on threshold transitions with current telemetry, not on a timer.
+The two-second instrument watch also stores a six-hour rolling sample history
+in SQLite. Each conversational turn refreshes selected journal transitions;
+seven days of those events survive restarts. Prompt context includes the last
+eight jumps, continuous observed system/state durations, matching journal arrival
+times, and recent net main-tank fuel change. A rate needs at least a minute of
+continuous samples and is omitted across jumps, refuelling, stale readings or
+gaps. It is labelled a net tank change, not an endurance or engine-burn estimate.
 
 ## Setup and verification
 

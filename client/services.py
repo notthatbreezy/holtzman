@@ -100,16 +100,20 @@ class Services:
         model = self.root / "models/Qwen3.5-35B-A3B-Q4_K_M.gguf"
         projector = self.root / "models/mmproj-F16.gguf"
         speech = self.root / "models/whisper/ggml-small.en.bin"
-        for path in (model, projector, speech):
+        provider = settings.get("model_provider", "local")
+        if provider not in ("local", "openai"):
+            raise RuntimeError("Unknown model provider")
+        for path in ((model, projector, speech) if provider == "local" else (speech,)):
             if not path.exists():
                 raise RuntimeError(f"Missing model asset: {path.name}")
         if settings["model_url"] != "http://127.0.0.1:8080" or settings["transcription_url"] != "http://127.0.0.1:8081":
             raise RuntimeError("Managed services require the default loopback endpoints")
-        self.start_one("model", self.root / "runtime/llama-server.exe", [
+        if provider == "local":
+            self.start_one("model", self.root / "runtime/llama-server.exe", [
             "-m", str(model), "--mmproj", str(projector), "--image-min-tokens", "1024",
             "--alias", "holt", "--host", "127.0.0.1", "--port", "8080", "-ngl", "99",
             "-c", str(settings["context_size"]), "--parallel", "1", "--jinja", "--reasoning", "off"],
-            settings["model_url"] + "/health", stopped)
+                settings["model_url"] + "/health", stopped)
         self.start_one("transcription", self.root / "runtime/whisper/Release/whisper-server.exe", [
             "-m", str(speech), "--host", "127.0.0.1", "--port", "8081", "-l", "en", "-t", "8", "-ng"],
             settings["transcription_url"] + "/", stopped)

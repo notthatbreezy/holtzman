@@ -23,8 +23,8 @@ class App:
     def __init__(self, window, autostart=False):
         self.window = window
         window.title("HOLT · Ship computer")
-        window.geometry("920x780")
-        window.minsize(740, 650)
+        window.geometry("920x820")
+        window.minsize(740, 700)
         self.settings = load_settings()
         self.events = queue.Queue()
         self.worker = None
@@ -40,7 +40,7 @@ class App:
         frame = ttk.Frame(window, padding=18)
         frame.pack(fill="both", expand=True)
         ttk.Label(frame, text="HOLT", font=("Segoe UI", 25, "bold")).pack(anchor="w")
-        ttk.Label(frame, text="Your ship computer · George voice · local inference").pack(anchor="w")
+        ttk.Label(frame, text="Your ship computer · George voice · local speech and game control").pack(anchor="w")
         status = ttk.LabelFrame(frame, text="Operation", padding=10)
         status.pack(fill="x", pady=12)
         ttk.Label(status, textvariable=self.state, font=("Segoe UI", 12, "bold")).pack(anchor="w")
@@ -77,6 +77,14 @@ class App:
         self.preferences = ttk.Entry(options)
         self.preferences.insert(0, self.settings["preferences"])
         self.preferences.grid(row=4, column=1, sticky="ew", pady=(8, 0))
+        ttk.Label(options, text="Conversation model").grid(row=5, column=0, sticky="w", pady=(8, 0))
+        backend_row = ttk.Frame(options)
+        backend_row.grid(row=5, column=1, sticky="ew", pady=(8, 0))
+        self.backend = tk.StringVar(value="OpenAI · GPT-5.4 mini" if self.settings.get("model_provider") == "openai" else "Local · Qwen")
+        ttk.Combobox(backend_row, textvariable=self.backend, state="readonly", width=30,
+                     values=["Local · Qwen", "OpenAI · GPT-5.4 mini"]).pack(side="left")
+        from client.credentials import save_openai_key
+        ttk.Button(backend_row, text="Set OpenAI key", command=lambda: save_openai_key(self.window)).pack(side="right")
         notebook = ttk.Notebook(frame, height=220)
         notebook.pack(fill="both", expand=True, pady=(12, 6))
         chat = ttk.Frame(notebook)
@@ -123,7 +131,8 @@ class App:
         self.settings.update(microphone=None if self.microphone.get() == "Windows default" else self.microphone.get(),
                              speaker=None if self.speaker.get() == "Windows default" else self.speaker.get(),
                              listen=self.listen.get(), speak=self.speak.get(), allow_actions=self.actions.get(),
-                             preferences=self.preferences.get())
+                             preferences=self.preferences.get(),
+                             model_provider="openai" if self.backend.get().startswith("OpenAI") else "local")
         save_settings(self.settings)
 
     def start(self):
