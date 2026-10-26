@@ -56,6 +56,86 @@ pub struct Config {
     /// `full`, `center`, `left`, `right`, `top`, `bottom`.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub screen_regions: BTreeMap<String, Region>,
+    /// Keys and checks for the `nav_target_*` tools (lock an in-system
+    /// station from the left panel's Navigation tab).
+    #[serde(default)]
+    pub nav_target: NavTarget,
+}
+
+/// How the `nav_target_*` tools drive the left panel. Every key sequence is
+/// a recipe so it can be recalibrated without a rebuild.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default, deny_unknown_fields)]
+pub struct NavTarget {
+    /// Opens the left panel. Must end with the panel open.
+    pub open_steps: Vec<Step>,
+    /// Status.json `GuiFocus` while the left panel is open (2 = ExternalPanel).
+    pub panel_gui_focus: i64,
+    /// Bindings that switch tabs and move the list highlight.
+    pub next_tab: String,
+    pub previous_tab: String,
+    pub row_down: String,
+    pub row_up: String,
+    /// Pause between repeated presses, and before a screenshot.
+    pub step_gap_ms: u64,
+    pub settle_ms: u64,
+    /// Where the Navigation list is on screen (window fractions), for the
+    /// screenshots returned to the caller.
+    pub list_region: Region,
+    /// From the highlighted row: press the lock/unlock button.
+    pub lock_steps: Vec<Step>,
+    /// From the highlighted row: press the supercruise assist button.
+    pub assist_steps: Vec<Step>,
+    /// Closes the left panel. Should end back in the cockpit.
+    pub close_steps: Vec<Step>,
+    /// How long to wait for Status.json to show the new destination.
+    pub verify_timeout_ms: u64,
+}
+
+impl Default for NavTarget {
+    /// Uncalibrated guesses: the row's Select shows its buttons with the
+    /// first (lock/unlock) highlighted, and supercruise assist is one below.
+    fn default() -> Self {
+        use Step::*;
+        let b = |name: &str| Binding {
+            name: name.into(),
+            hold_ms: None,
+        };
+        Self {
+            open_steps: vec![
+                b("FocusLeftPanel"),
+                WaitForGui {
+                    focus: 2,
+                    timeout_ms: 3000,
+                },
+                Wait { ms: 700 },
+            ],
+            panel_gui_focus: 2,
+            next_tab: "CycleNextPanel".into(),
+            previous_tab: "CyclePreviousPanel".into(),
+            row_down: "UI_Down".into(),
+            row_up: "UI_Up".into(),
+            step_gap_ms: 150,
+            settle_ms: 500,
+            list_region: Region::builtin("left").expect("built-in region"),
+            lock_steps: vec![b("UI_Select"), Wait { ms: 600 }, b("UI_Select")],
+            assist_steps: vec![
+                b("UI_Select"),
+                Wait { ms: 600 },
+                b("UI_Down"),
+                Wait { ms: 250 },
+                b("UI_Select"),
+            ],
+            close_steps: vec![
+                b("FocusLeftPanel"),
+                WaitForGui {
+                    focus: 0,
+                    timeout_ms: 3000,
+                },
+            ],
+            verify_timeout_ms: 3000,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -236,6 +316,7 @@ impl Config {
             click_targets: BTreeMap::new(),
             screenshot: ScreenshotDefaults::default(),
             screen_regions: BTreeMap::new(),
+            nav_target: NavTarget::default(),
         }
     }
 

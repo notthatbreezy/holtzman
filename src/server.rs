@@ -38,6 +38,7 @@ use crate::{
     config::{ClickTarget, Config},
     input::{KeySender, platform_sender},
     journal::JournalDir,
+    nav::{Nav, NavAction, NavSession, NavView},
     screen::{Format, Region, Screen, platform_screen},
     spansh::{CommodityArgs, MarketSearch, RouteArgs, Spansh},
 };
@@ -56,6 +57,8 @@ pub struct Ship {
     /// Captures the game window for the `screenshot` tool.
     pub screen: Arc<dyn Screen>,
     pub spansh: Spansh,
+    /// The open `nav_target_*` exchange, if any.
+    pub nav: std::sync::Mutex<Option<NavSession>>,
 }
 
 impl Ship {
@@ -70,6 +73,7 @@ impl Ship {
             controls: Mutex::new(()),
             screen: platform_screen(),
             spansh: Spansh::new()?,
+            nav: std::sync::Mutex::new(None),
             config: RwLock::new(config),
             config_path,
         })
@@ -141,6 +145,36 @@ pub struct PressArgs {
         description = "With observe: screen region to return, as for the screenshot tool (default full)"
     )]
     pub region: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct NavStartArgs {
+    #[schemars(description = "Station or carrier name as the Navigation list shows it")]
+    pub station: String,
+    #[schemars(
+        description = "lock, unlock, or supercruise_assist (toggles assist to the station)"
+    )]
+    pub action: NavAction,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct NavMoveArgs {
+    #[schemars(description = "Session id from nav_target_start")]
+    pub session: String,
+    #[schemars(description = "Rows to move the highlight: positive = down, negative = up")]
+    pub rows: Option<i32>,
+    #[schemars(description = "Tabs to switch first: positive = next, negative = previous")]
+    pub tabs: Option<i32>,
+    #[schemars(
+        description = "Name you expect to be highlighted after the move. Must equal the station before nav_target_confirm will run."
+    )]
+    pub expect: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct NavSessionArgs {
+    #[schemars(description = "Session id from nav_target_start")]
+    pub session: Option<String>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -387,6 +421,90 @@ impl Holtzman {
     }
 
     #[tool(
+        description = "Lock (or unlock, or toggle supercruise assist to) a station or carrier in the current system, step 1 of 3. Checks Status.json (refuses if a panel is open, in danger, or the lock is already as asked), opens the left panel, and returns a screenshot of the Navigation list plus a session id. Presses keys: tell the commander first. Then use nav_target_move until the station is highlighted, then nav_target_confirm."
+    )]
+    async fn nav_target_start(
+        &self,
+        Parameters(args): Parameters<NavStartArgs>,
+    ) -> Result<CallToolResult, String> {
+        let _guard = self.controls()?;
+        let bindings = self.ship.bindings()?;
+        let config = self.ship.config();
+        let nav = self.nav(&config, &bindings);
+        let (session, view) = nav.start(&args.station, args.action).await.map_err(err)?;
+        *self.ship.nav.lock().expect("nav lock") = Some(session);
+        self.nav_view(view, config.nav_target.list_region)
+    }
+
+    #[tool(
+        description = "Step 2 of 3: switch tabs (`tabs`) and/or move the Navigation list highlight (`rows`), then return a fresh screenshot of the list. Say in `expect` which name will be highlighted afterwards; when that is the target station, nav_target_confirm is allowed. Use rows 0 to just report what is highlighted now."
+    )]
+    async fn nav_target_move(
+        &self,
+        Parameters(args): Parameters<NavMoveArgs>,
+    ) -> Result<CallToolResult, String> {
+        let _guard = self.controls()?;
+        let mut session = NavSession::resume(
+            self.ship.nav.lock().expect("nav lock").as_ref(),
+            &args.session,
+        )
+        .map_err(err)?;
+        let bindings = self.ship.bindings()?;
+        let config = self.ship.config();
+        let nav = self.nav(&config, &bindings);
+        let view = nav
+            .move_cursor(
+                &mut session,
+                args.rows.unwrap_or(0),
+                args.tabs.unwrap_or(0),
+                args.expect.as_deref(),
+            )
+            .await
+            .map_err(err)?;
+        *self.ship.nav.lock().expect("nav lock") = Some(session);
+        self.nav_view(view, config.nav_target.list_region)
+    }
+
+    #[tool(
+        description = "Step 3 of 3: with the target station highlighted, press the lock/unlock or supercruise assist button, verify the lock in Status.json, and close the panel. For supercruise assist, returns a HUD screenshot to check. Ends the session either way; on failure it does not retry."
+    )]
+    async fn nav_target_confirm(
+        &self,
+        Parameters(args): Parameters<NavSessionArgs>,
+    ) -> Result<CallToolResult, String> {
+        let _guard = self.controls()?;
+        let id = args.session.ok_or("session is required")?;
+        let session = NavSession::resume(self.ship.nav.lock().expect("nav lock").as_ref(), &id)
+            .map_err(err)?;
+        let bindings = self.ship.bindings()?;
+        let config = self.ship.config();
+        let nav = self.nav(&config, &bindings);
+        let result = nav.confirm(&session).await;
+        // One confirm per session, whatever happened.
+        self.ship.nav.lock().expect("nav lock").take();
+        self.nav_view(result.map_err(err)?, Region::FULL)
+    }
+
+    #[tool(
+        description = "Back out of a nav_target exchange: close the left panel (if open) and end the session. Use when something looks wrong."
+    )]
+    async fn nav_target_cancel(
+        &self,
+        Parameters(_args): Parameters<NavSessionArgs>,
+    ) -> Result<String, String> {
+        let _guard = self.controls()?;
+        self.ship.nav.lock().expect("nav lock").take();
+        let bindings = self.ship.bindings()?;
+        let config = self.ship.config();
+        let nav = self.nav(&config, &bindings);
+        if self.ship.journal.gui_focus() != Some(config.nav_target.panel_gui_focus) {
+            return Ok("session ended; the left panel wasn't open".into());
+        }
+        nav.close().await.map_err(err)?;
+        Ok("session ended and the left panel closed".into())
+    }
+
+    #[tool(
         description = "Where the mouse cursor is on the gaming PC, as fractions (0..1) of the game window plus pixels. Use while the commander hovers over a button."
     )]
     async fn cursor_position(&self) -> Result<String, String> {
@@ -457,6 +575,36 @@ impl Holtzman {
             .await
             .map_err(|e| e.to_string())?
             .map_err(err)
+    }
+
+    /// The keyboard, if no other keypress sequence holds it.
+    fn controls(&self) -> Result<tokio::sync::MutexGuard<'_, ()>, String> {
+        self.ship
+            .controls
+            .try_lock()
+            .map_err(|_| "another keypress sequence is already running".to_string())
+    }
+
+    fn nav<'a>(&'a self, config: &'a Config, bindings: &'a Bindings) -> Nav<'a> {
+        Nav {
+            pilot: Pilot {
+                config,
+                bindings,
+                journal: &self.ship.journal,
+                sender: self.ship.sender.as_ref(),
+            },
+            screen: self.ship.screen.clone(),
+        }
+    }
+
+    /// A nav step's report, with its screenshot cropped to `region`.
+    fn nav_view(&self, view: NavView, region: Region) -> Result<CallToolResult, String> {
+        match view.frame {
+            Some(frame) => self.picture(&frame, "nav_target", region, None, None, view.info),
+            None => Ok(CallToolResult::success(vec![ContentBlock::text(pretty(
+                view.info,
+            ))])),
+        }
     }
 
     /// Encode a frame as an image block, preceded by a text block describing

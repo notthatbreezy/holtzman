@@ -31,6 +31,16 @@ impl Pilot<'_> {
         Ok(format!("pressed {name} ({chord})"))
     }
 
+    /// Run a recipe with no paste target, naming the failing step on error.
+    pub async fn run_steps(&self, steps: &[Step]) -> Result<()> {
+        for (i, step) in steps.iter().enumerate() {
+            if let Err(e) = self.run_step(step, "").await {
+                bail!("step {} ({step:?}) failed: {e:#}", i + 1);
+            }
+        }
+        Ok(())
+    }
+
     async fn run_step(&self, step: &Step, target: &str) -> Result<()> {
         match step {
             Step::Binding { name, hold_ms } => {

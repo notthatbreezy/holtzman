@@ -135,6 +135,21 @@ impl JournalDir {
         self.status().ok()?.get("GuiFocus")?.as_i64()
     }
 
+    /// Name of the locked navigation target from Status.json, if any.
+    pub fn destination_name(&self) -> Option<String> {
+        let status = self.status().ok()?;
+        let dest = status.get("Destination")?;
+        dest.get("Name_Localised")
+            .or_else(|| dest.get("Name"))?
+            .as_str()
+            .map(String::from)
+    }
+
+    /// Active Status.json flag names (empty if there is no Status.json).
+    pub fn flags(&self) -> Vec<&'static str> {
+        self.status().map(|s| active_flags(&s)).unwrap_or_default()
+    }
+
     /// What Status.json says about the screen: open panel and active flags.
     pub fn ui_state(&self) -> Result<Value> {
         let status = self.status()?;

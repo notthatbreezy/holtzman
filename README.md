@@ -30,6 +30,7 @@ plotting a route, by pressing your own key bindings.
 | `plot_route` | Galaxy map → search → plot → close, then **verifies** the destination in `NavRoute.json` |
 | `screenshot` | Picture of the game window (never the desktop) plus open panel and status flags; crop by named region or rect |
 | `press_binding` | Press one allow-listed binding (for stepping through menus / tuning recipes); `observe: true` returns a screenshot of the result and how much of the screen changed |
+| `nav_target_start` / `_move` / `_confirm` / `_cancel` | Lock or unlock a station in the current system, or toggle supercruise assist to it, via the left panel's Navigation list (supervised, step by step) |
 | `cursor_position` | Mouse position relative to the game window |
 | `record_click_target` | Save the hovered position as a named click target in `holtzman.toml` |
 | `trade_commodities` | Look up Spansh commodity names |
@@ -148,6 +149,26 @@ h = 0.3
 ```
 
 Check capture from the command line with `holtzman screenshot out.png`.
+
+## Locking a station in the current system
+
+holtzman can't read the Navigation list, so the assistant reads it from
+screenshots while the server presses keys and runs the checks:
+
+1. `nav_target_start(station, action)` refuses if a panel is open, the ship
+   is in danger, or the lock is already as asked (Status.json
+   `Destination`). Otherwise it opens the left panel and returns the list.
+2. `nav_target_move(session, rows, tabs, expect)` moves the highlight and
+   returns the list again. `expect` names what the assistant sees
+   highlighted afterwards; confirm is refused until it is the station.
+3. `nav_target_confirm(session)` presses the lock or supercruise assist
+   button, checks the new `Destination` (lock and unlock), closes the panel,
+   and for supercruise assist returns a HUD screenshot to check.
+
+The keys and timings live in `[nav_target]` in `holtzman.toml`: the open
+and close recipes, the lock and assist button recipes, the row and tab
+bindings, and `list_region` (where the list is, for the screenshots). The
+defaults are uncalibrated guesses; tune them in-game.
 
 ## Tuning `plot_route`
 
