@@ -1,3 +1,5 @@
 /target
+/.local/
+__pycache__/
 # Contains your bearer token.
 holtzman.toml
