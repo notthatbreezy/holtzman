@@ -22,7 +22,7 @@ from mcp.client.streamable_http import streamable_http_client
 
 from client.state import REPO, ROOT, Memory
 from client.policy import READ, KNOWLEDGE_WRITE, Permit
-from client.audio import Microphone, Speaker, wav_bytes
+from client.audio import Microphone, Speaker, wav_bytes, refresh_devices
 from client.telemetry import Watches, reading_age
 from client.diagnostics import trace
 from client.outfitting import SCHEMA as OUTFITTING_SCHEMA, find_module
@@ -637,6 +637,8 @@ class Engine:
             token = WinVaultKeyring().get_password("HoltzmanVoice", "holtzman-bearer")
             if not token:
                 raise RuntimeError("Save the Holtzman credential with scripts/save-holt-credential.ps1")
+            if self.settings["speak"] or self.settings["listen"]:
+                await asyncio.to_thread(refresh_devices)
             if self.settings["speak"]:
                 self.report("state", "Loading George’s voice…")
                 self.speaker = await asyncio.to_thread(Speaker, self.settings, self.stopped)

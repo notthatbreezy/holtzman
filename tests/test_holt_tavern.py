@@ -31,6 +31,12 @@ class ContractTests(unittest.TestCase):
 
 
 class GatewayTests(unittest.IsolatedAsyncioTestCase):
+    async def test_shutdown_closes_event_stream_so_gateway_can_exit(self):
+        self.manager.server = SimpleNamespace(should_exit=True)
+        response = await self.http.get("/events?client=test-shutdown")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.text, "")
+
     async def asyncSetUp(self):
         from client import tavern
         self.gateway = tavern

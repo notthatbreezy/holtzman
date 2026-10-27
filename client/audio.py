@@ -4,10 +4,43 @@ import io
 import queue
 import threading
 import wave
+from contextlib import contextmanager
 
 import numpy as np
 import sounddevice as sd
 import webrtcvad
+
+
+_audio_lock = threading.RLock()
+_audio_users = 0
+
+
+@contextmanager
+def audio_session():
+    """Keep device refresh from invalidating an open capture or playback stream."""
+    global _audio_users
+    with _audio_lock:
+        _audio_users += 1
+    try:
+        yield
+    finally:
+        with _audio_lock:
+            _audio_users -= 1
+
+
+def refresh_devices():
+    """Refresh PortAudio's cached Windows endpoints only before starting audio.
+
+    query_devices alone doesn't re-enumerate reconnected Bluetooth devices. The
+    pinned sounddevice library has no public refresh; balance its initialization
+    helpers once, never from the microphone retry loop while output may be active.
+    """
+    with _audio_lock:
+        if _audio_users:
+            raise RuntimeError("Previous audio stream is still closing; stop HOLT and try Start again")
+        sd.stop()
+        sd._terminate()
+        sd._initialize()
 
 
 def devices(kind):
@@ -100,7 +133,7 @@ class Microphone:
                     except queue.Full:
                         pass
 
-            with sd.RawInputStream(device=device, samplerate=16000, channels=1, dtype="int16",
+            with audio_session(), sd.RawInputStream(device=device, samplerate=16000, channels=1, dtype="int16",
                                    blocksize=480, extra_settings=extra, callback=callback) as stream:
                 self.report("microphone", f"Listening: {actual['name']}")
                 while not self.stopped.is_set():
@@ -166,6 +199,7 @@ class Speaker:
             if self.stopped.is_set() or self.interrupt.is_set():
                 return
             from client.voice_effects import robot_filter
-            sd.play(robot_filter(np.asarray(result.audio), preset=self.effect), 24000,
-                    device=self.device, extra_settings=self.output_settings)
-            sd.wait()
+            with audio_session():
+                sd.play(robot_filter(np.asarray(result.audio), preset=self.effect), 24000,
+                        device=self.device, extra_settings=self.output_settings)
+                sd.wait()

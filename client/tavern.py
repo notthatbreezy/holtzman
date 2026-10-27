@@ -239,7 +239,7 @@ async def handle(request):
                 if cursor > manager.counter:
                     cursor = 0
                 try:
-                    while not await request.is_disconnected():
+                    while not (manager.server and manager.server.should_exit) and not await request.is_disconnected():
                         # An open event stream keeps speech responsive in background tabs.
                         # Closing the page releases the lease; no throttled timer required.
                         if manager.client == client:
