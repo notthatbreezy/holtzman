@@ -1,0 +1,175 @@
+[
+  {
+    "framework": "desktop",
+    "model": "gpt-6-luna",
+    "simulated": true,
+    "passed": true,
+    "reply": {
+      "text": "Captain, coffee is the best reported choice: buy at Coffee Supplier in Sol for 500 Cr/t and sell at Qureshi Orbital for 3,500 Cr/t. Across your full 1,168-tonne hold, that\u2019s an estimated 3,504,000 Cr profit. Uranium: 116,800 Cr; polymers: 350,400 Cr; liquid oxygen: 584,000 Cr. Supplier reports are about 30 minutes old and simulated, so verify availability before committing.",
+      "delivery": "normal"
+    },
+    "compared": [
+      "coffee",
+      "liquid oxygen",
+      "polymers",
+      "uranium"
+    ],
+    "tool_calls": 11,
+    "model_usage": [
+      {
+        "prompt_tokens": 9023,
+        "completion_tokens": 347,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 9020,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 10491,
+        "completion_tokens": 114,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 10488,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      }
+    ],
+    "compactions": []
+  },
+  {
+    "framework": "tavern",
+    "model": "gpt-6-luna",
+    "simulated": true,
+    "passed": true,
+    "reply": {
+      "text": "Best reported: buy 1,168 t of Coffee at Coffee Supplier in Sol (500 cr/t) and sell at Qureshi Orbital (3,500 cr/t): estimated profit 3,504,000 cr for the full hold. Comparisons: Uranium 116,800 cr, Polymers 350,400 cr, Liquid oxygen 584,000 cr. Supplier data is 30 minutes old; reported stock is not guaranteed live.",
+      "delivery": "normal"
+    },
+    "compared": [
+      "coffee",
+      "liquid oxygen",
+      "polymers",
+      "uranium"
+    ],
+    "tool_calls": 11,
+    "model_usage": [
+      {
+        "prompt_tokens": 3982,
+        "completion_tokens": 78,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 3979,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 4131,
+        "completion_tokens": 80,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 4128,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 4063,
+        "completion_tokens": 79,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 4060,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 4127,
+        "completion_tokens": 87,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 4124,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 4076,
+        "completion_tokens": 78,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 4073,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 4035,
+        "completion_tokens": 74,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 4032,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 11688,
+        "completion_tokens": 450,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 11685,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 13573,
+        "completion_tokens": 215,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 13570,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 106
+        },
+        "web_search_calls": 0
+      }
+    ],
+    "compactions": [
+      {
+        "stage": "context_compaction",
+        "before": 82325,
+        "after": 25177,
+        "budget": 32768
+      },
+      {
+        "stage": "context_compaction",
+        "before": 28748,
+        "after": 28748,
+        "budget": 32768
+      }
+    ]
+  }
+]

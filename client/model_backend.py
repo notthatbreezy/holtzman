@@ -61,7 +61,8 @@ def completion_result(data):
              "prompt_tokens_details": usage.get("input_tokens_details", {}),
              "completion_tokens_details": usage.get("output_tokens_details", {}),
              "web_search_calls": sum(i["type"] == "web_search_call" for i in output)}
-    message = {"role": "assistant", "content": "\n".join(text), "_response_items": output, "_sources": sources}
+    message = {"role": "assistant", "content": "\n".join(text), "_response_items": output, "_sources": sources,
+               "_reasoning_tokens": usage.get("completion_tokens_details", {}).get("reasoning_tokens", 0)}
     if calls:
         message["tool_calls"] = calls
     finish = "length" if data.get("status") == "incomplete" else "tool_calls" if calls else "stop"
