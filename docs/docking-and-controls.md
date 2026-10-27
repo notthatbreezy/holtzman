@@ -50,3 +50,10 @@ press both FocusLeftPanel and a keyboard action outside a legacy allow-list.
 simulated observations and simulated controls only; it never controls the game.
 The draft remains unverified for live cockpit variations until a real session
 confirms them.
+
+
+After updating, `holtzman --version` and the MCP `status.server_build` field show
+the compiled commit (or `unknown` when Git metadata was unavailable at build time).
+A checkout's `git log` alone does not identify an already-running installed binary.
+The fresh pre-update endpoint advertised 19 tools and none of the three playbook
+tools, even though the reported source revision e03ffa6 includes them.

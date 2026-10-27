@@ -1,0 +1,141 @@
+[
+  {
+    "framework": "desktop",
+    "model": "gpt-6-luna",
+    "simulated": true,
+    "passed": true,
+    "reply": {
+      "text": "Captain, Coffee is the best reported choice: buying at Coffee Supplier in Sol for 500 Cr/t and selling at Qureshi Orbital for 3,500 Cr/t gives an estimated 3,504,000 Cr profit per 1,168-tonne full hold. The supplier reports enough stock; data is 0.5 hours old and simulated, so prices and availability aren\u2019t guaranteed. Uranium: 116,800 Cr; polymers: 350,400 Cr; liquid oxygen: 584,000 Cr estimated profit per full load.",
+      "delivery": "normal"
+    },
+    "compared": [
+      "coffee",
+      "liquid oxygen",
+      "polymers",
+      "uranium"
+    ],
+    "tool_calls": 17,
+    "model_usage": [
+      {
+        "prompt_tokens": 9337,
+        "completion_tokens": 89,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 9334,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 9624,
+        "completion_tokens": 193,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 9621,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 10458,
+        "completion_tokens": 193,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 10455,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 11312,
+        "completion_tokens": 126,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 11309,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      }
+    ],
+    "compactions": []
+  },
+  {
+    "framework": "tavern",
+    "model": "gpt-6-luna",
+    "simulated": true,
+    "passed": true,
+    "reply": {
+      "text": "Best reported: coffee, bought at Coffee Supplier, Sol for 500 Cr/t and sold at Qureshi Orbital for 3,500 Cr/t: 3,000 Cr/t, or 3,504,000 Cr across your 1,168-tonne hold. Data is simulated, about 30 minutes old, and availability isn\u2019t guaranteed; I did not plot a route.",
+      "delivery": "normal"
+    },
+    "compared": [
+      "coffee",
+      "liquid oxygen",
+      "polymers",
+      "uranium"
+    ],
+    "tool_calls": 11,
+    "model_usage": [
+      {
+        "prompt_tokens": 34902,
+        "completion_tokens": 356,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 34899,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      },
+      {
+        "prompt_tokens": 36599,
+        "completion_tokens": 88,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 36596,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      }
+    ],
+    "compactions": []
+  },
+  {
+    "framework": "tavern-mic-check",
+    "model": "gpt-6-luna",
+    "simulated": true,
+    "passed": true,
+    "reply": {
+      "text": "Loud and clear, Captain. My receivers report a successful hail\u2014mercifully, no manifest attached.",
+      "delivery": "normal"
+    },
+    "compared": [],
+    "tool_calls": 2,
+    "model_usage": [
+      {
+        "prompt_tokens": 35054,
+        "completion_tokens": 33,
+        "prompt_tokens_details": {
+          "cache_write_tokens": 35051,
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "web_search_calls": 0
+      }
+    ],
+    "compactions": []
+  }
+]

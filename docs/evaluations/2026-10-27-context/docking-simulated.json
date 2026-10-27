@@ -1,0 +1,112 @@
+{
+  "simulated": true,
+  "passed": true,
+  "reply": {
+    "text": "Docking clearance granted at Crown Station; pad 12 assigned and the docking timer is running. I have requested clearance, Captain\u2014not landed.",
+    "delivery": "normal"
+  },
+  "controls": [
+    "FocusLeftPanel",
+    "CycleNextPanel",
+    "UI_Right",
+    "UI_Select"
+  ],
+  "model_usage": [
+    {
+      "prompt_tokens": 9255,
+      "completion_tokens": 50,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 9252,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "web_search_calls": 0
+    },
+    {
+      "prompt_tokens": 9896,
+      "completion_tokens": 18,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 9893,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "web_search_calls": 0
+    },
+    {
+      "prompt_tokens": 9958,
+      "completion_tokens": 34,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 9955,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 9
+      },
+      "web_search_calls": 0
+    },
+    {
+      "prompt_tokens": 10048,
+      "completion_tokens": 57,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 10045,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "web_search_calls": 0
+    },
+    {
+      "prompt_tokens": 10159,
+      "completion_tokens": 55,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 10156,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 9
+      },
+      "web_search_calls": 0
+    },
+    {
+      "prompt_tokens": 10268,
+      "completion_tokens": 54,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 10265,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 7
+      },
+      "web_search_calls": 0
+    },
+    {
+      "prompt_tokens": 10370,
+      "completion_tokens": 56,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 10367,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 9
+      },
+      "web_search_calls": 0
+    },
+    {
+      "prompt_tokens": 10481,
+      "completion_tokens": 40,
+      "prompt_tokens_details": {
+        "cache_write_tokens": 10478,
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "web_search_calls": 0
+    }
+  ]
+}

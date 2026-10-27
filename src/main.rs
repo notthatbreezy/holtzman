@@ -14,7 +14,7 @@ use holtzman::{
 
 /// Ship computer for Elite Dangerous, served over MCP.
 #[derive(Parser)]
-#[command(version, about)]
+#[command(version = concat!(env!("CARGO_PKG_VERSION"), " (", env!("HOLTZMAN_GIT_COMMIT"), ")"), about)]
 struct Cli {
     /// Path to holtzman.toml
     #[arg(long, short, global = true, default_value = "holtzman.toml")]

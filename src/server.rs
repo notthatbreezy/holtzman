@@ -255,6 +255,7 @@ impl Holtzman {
     )]
     async fn status(&self) -> Result<String, String> {
         let mut state = self.ship.journal.summary().map_err(err)?;
+        state["server_build"] = serde_json::json!({"version": env!("CARGO_PKG_VERSION"), "commit": env!("HOLTZMAN_GIT_COMMIT")});
         if let Ok(bindings) = self.ship.bindings() {
             let menu: Vec<_> = bindings
                 .keyboard

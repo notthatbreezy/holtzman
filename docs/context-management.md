@@ -104,3 +104,12 @@ succeeded with an IPv4 socket to the original skippy hostname. The ship transpor
 now prefers IPv4 for skippy/skippy.local only. It keeps the same URL, Host validation
 and bearer credential; other MCP hostnames retain their normal address selection.
 Nested transport exceptions now report a credential-safe underlying error type.
+
+
+Final combined synthetic checks all passed: desktop four-commodity comparison,
+long-history ST comparison, ST audibility check with no market lookups, and the
+observed docking procedure. The ST comparison completed at 36,599 actual provider
+input tokens with no forced compaction. Docking used FocusLeftPanel,
+CycleNextPanel, UI_Right and UI_Select, and verified a simulated pad assignment.
+See [final hosted results](evaluations/2026-10-27-context/hosted-final.json) and
+[simulated docking](evaluations/2026-10-27-context/docking-simulated.json).
