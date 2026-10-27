@@ -98,6 +98,58 @@ async fn rejects_missing_token() {
 }
 
 #[tokio::test]
+async fn all_configured_keyboard_actions_are_discoverable_and_pressable() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("Custom.4.0.binds"), r#"<Root><FocusLeftPanel><Primary Device="Keyboard" Key="Key_1"/></FocusLeftPanel><PrimaryFire><Primary Device="Keyboard" Key="Key_Space"/></PrimaryFire></Root>"#).unwrap();
+    let (url, token) = spawn_with(
+        |c| {
+            c.bindings_dir = Some(dir.path().into());
+            c.pressable = vec!["UI_Select".into()];
+        },
+        None,
+    )
+    .await;
+    let (sid, _) = rpc(&url, &token, None, json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+        "protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"0"}}})).await;
+    let sid = sid.unwrap();
+    rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","method":"notifications/initialized"}),
+    )
+    .await;
+    let (_, list) = rpc(
+        &url,
+        &token,
+        Some(&sid),
+        json!({"jsonrpc":"2.0","id":2,"method":"tools/call",
+        "params":{"name":"list_bindings","arguments":{"query":"Focus"}}}),
+    )
+    .await;
+    let result: Value =
+        serde_json::from_str(list["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(result["actions"][0]["name"], "FocusLeftPanel");
+    for (id, binding) in [(3, "FocusLeftPanel"), (4, "PrimaryFire")] {
+        let (_, pressed) = rpc(
+            &url,
+            &token,
+            Some(&sid),
+            json!({"jsonrpc":"2.0","id":id,"method":"tools/call",
+            "params":{"name":"press_binding","arguments":{"binding":binding}}}),
+        )
+        .await;
+        assert_ne!(pressed["result"]["isError"], true, "{pressed}");
+        assert!(
+            pressed["result"]["content"][0]["text"]
+                .as_str()
+                .unwrap()
+                .contains(binding)
+        );
+    }
+}
+
+#[tokio::test]
 async fn playbooks_round_trip_over_authenticated_mcp() {
     let temp = tempfile::tempdir().unwrap();
     let (url, token) = spawn_with(

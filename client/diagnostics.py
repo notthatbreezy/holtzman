@@ -36,3 +36,15 @@ def record(error):
                     frames(child)
         frames(error)
     return describe(error)
+
+
+def exception_detail(exc):
+    """Task-group wrappers must not hide a timeout or device failure."""
+    if isinstance(exc, BaseExceptionGroup):
+        return "; ".join(dict.fromkeys(exception_detail(child) for child in exc.exceptions))[:500]
+    # Avoid exception strings which can embed requests, headers or credentials.
+    known = {"ConnectTimeout": "connection timed out", "ReadTimeout": "response timed out",
+             "ConnectError": "connection could not be established", "ReadError": "connection interrupted",
+             "MCPError": "MCP server/session error", "PortAudioError": "audio device failure"}
+    name = type(exc).__name__
+    return name + (": " + known[name] if name in known else "")

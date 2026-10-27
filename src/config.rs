@@ -34,9 +34,8 @@ pub struct Config {
     /// How long a tap holds a key down. Elite misses taps shorter than ~50 ms.
     #[serde(default = "default_tap_ms")]
     pub tap_ms: u64,
-    /// Bindings the `press_binding` tool may trigger. Keep weapons and
-    /// anything destructive off this list.
-    #[serde(default = "default_pressable")]
+    /// Legacy field accepted for existing configs; binding access is no longer restricted.
+    #[serde(default, skip_serializing)]
     pub pressable: Vec<String>,
     /// Markdown file to serve as the `ship_computer` prompt instead of the
     /// built-in one (re-read on every request; relative to this file).
@@ -231,28 +230,6 @@ fn default_tap_ms() -> u64 {
     80
 }
 
-fn default_pressable() -> Vec<String> {
-    [
-        "GalaxyMapOpen",
-        "SystemMapOpen",
-        "UI_Up",
-        "UI_Down",
-        "UI_Left",
-        "UI_Right",
-        "UI_Select",
-        "UI_Back",
-        "CycleNextPanel",
-        "CyclePreviousPanel",
-        "FocusLeftPanel",
-        "FocusRightPanel",
-        "TargetNextRouteSystem",
-        "SetSpeedZero",
-    ]
-    .into_iter()
-    .map(String::from)
-    .collect()
-}
-
 impl Default for PlotRoute {
     /// The Odyssey galaxy map recipe, as calibrated on a real game (4.4):
     /// UI_Up focuses the search box (UI keys must not share keys with map
@@ -318,7 +295,7 @@ impl Config {
             bindings_dir: None,
             dry_run: false,
             tap_ms: default_tap_ms(),
-            pressable: default_pressable(),
+            pressable: Vec::new(),
             ship_prompt: None,
             guides_dir: None,
             playbooks_dir: None,

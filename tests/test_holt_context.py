@@ -4,11 +4,11 @@ import tempfile
 import threading
 import unittest
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import httpx2
 
-from client.context import dumps, estimate_tokens, read_receipts, tool_content
+from client.context import context_limits, dumps, estimate_tokens, read_receipts, tool_content
 from client.model_backend import completion_result, openai_payload
 
 
@@ -18,6 +18,22 @@ def response(message, finish="stop"):
 
 
 class ContextRepresentationTests(unittest.TestCase):
+    def test_skippy_uses_ipv4_without_rewriting_the_hostname(self):
+        from client.ship_link import ship_transport
+        with patch("client.ship_link.httpx2.AsyncHTTPTransport") as transport:
+            ship_transport("http://skippy:7777/mcp")
+            transport.assert_called_once_with(trust_env=False, local_address="0.0.0.0")
+            transport.reset_mock()
+            ship_transport("http://[::1]:7777/mcp")
+            transport.assert_called_once_with(trust_env=False)
+
+    def test_connection_errors_unwrap_task_groups_without_exposing_exception_payloads(self):
+        from client.diagnostics import exception_detail
+        error = ExceptionGroup("outer", [ExceptionGroup("inner", [httpx2.ConnectTimeout("private request payload")])])
+        detail = exception_detail(error)
+        self.assertIn("ConnectTimeout", detail)
+        self.assertNotIn("private request payload", detail)
+
     def test_opaque_reasoning_is_preserved_but_not_counted_as_base64_text(self):
         output = [{"type": "reasoning", "encrypted_content": "x" * 200000, "summary": []},
                   {"type": "function_call", "call_id": "c1", "name": "market", "arguments": "{}"}]
@@ -47,6 +63,53 @@ class ContextRepresentationTests(unittest.TestCase):
 
 
 class ContextRecoveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_luna_handles_fifty_thousand_tokens_without_forced_compaction(self):
+        with tempfile.TemporaryDirectory() as root:
+            engine = self.engine(root)
+            try:
+                engine.settings.update(openai_model="gpt-6-luna")
+                engine.context_budget, engine.context_soft_limit = context_limits(engine.settings)
+                messages = [{"role": "system", "content": "Instructions"},
+                            {"role": "user", "content": "Compare the community goal commodities"},
+                            {"role": "tool", "tool_call_id": "read", "content": "Market and journal evidence. " * 5000}]
+                self.assertGreater(await engine.token_count(messages, []), 32768)
+                await engine.fit_context(messages, [], 1)
+                engine.model_post.assert_not_awaited()
+                self.assertEqual(engine.context_budget, 1050000)
+            finally:
+                engine.memory.close()
+
+    async def test_optional_compaction_failure_does_not_block_a_model_sized_request(self):
+        with tempfile.TemporaryDirectory() as root:
+            engine = self.engine(root)
+            try:
+                engine.settings.update(openai_model="gpt-6-luna")
+                engine.context_budget, engine.context_soft_limit = context_limits(engine.settings)
+                engine.context_soft_limit = 1000
+                engine.context_summary = AsyncMock(side_effect=RuntimeError("Summary did not finish"))
+                messages = [{"role": "system", "content": "Instructions"},
+                            {"role": "user", "content": "Historical " * 1500},
+                            *[{"role": "assistant", "content": "old answer"}] * 6,
+                            {"role": "user", "content": "Current question"}]
+                index = await engine.fit_context(messages, [], len(messages)-1)
+                self.assertEqual(messages[index]["content"], "Current question")
+            finally:
+                engine.memory.close()
+
+    async def test_docking_guide_is_available_even_before_the_mcp_server_update(self):
+        with tempfile.TemporaryDirectory() as root:
+            engine = self.engine(root)
+            try:
+                from client.policy import Permit
+                engine.schemas = {"read_guide": {"inputSchema": {"type": "object"}}}
+                session = SimpleNamespace(call_tool=AsyncMock())
+                result, _ = await engine.invoke(session, "read_guide", {"name": "docking"}, Permit("request docking", enabled=True, natural=True))
+                self.assertIn("FocusLeftPanel", result["content"])
+                self.assertIn("do not ask for confirmation again", result["content"])
+                session.call_tool.assert_not_called()
+            finally:
+                engine.memory.close()
+
     def engine(self, root):
         from client.engine import Engine
         from client.state import DEFAULTS, Memory
@@ -145,3 +208,23 @@ class ContextRecoveryTests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(calls, 5)
                 finally:
                     engine.memory.close()
+
+    async def test_larger_read_only_batch_does_not_hit_the_old_eight_tool_limit(self):
+        with tempfile.TemporaryDirectory() as root:
+            engine = self.engine(root)
+            try:
+                engine.instrument_context = AsyncMock(return_value={"available": True})
+                session = SimpleNamespace(call_tool=AsyncMock(return_value=SimpleNamespace(is_error=False,
+                    content=[SimpleNamespace(type="text", text='{"markets":[]}')])))
+                engine.model_post = AsyncMock(side_effect=[
+                    response({"role": "assistant", "tool_calls": [{"id": str(n), "function": {
+                        "name": "find_commodity_market", "arguments": dumps({"commodity": "Coffee", "radius_ly": n + 1})}}
+                        for n in range(12)]}, "tool_calls"),
+                    response({"role": "assistant", "content": '{"text":"No reported markets matched.","delivery":"normal"}'})])
+                bundle = {"initialize": {}, "tools": [{"name": "find_commodity_market", "annotations": {"readOnlyHint": True},
+                    "inputSchema": {"type": "object"}}]}
+                reply = await engine.converse(session, bundle, "Compare nearby coffee markets")
+                self.assertIn("No reported", reply["text"])
+                self.assertEqual(session.call_tool.await_count, 12)
+            finally:
+                engine.memory.close()

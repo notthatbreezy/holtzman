@@ -2,7 +2,7 @@
 import re
 import time
 
-READ = frozenset({"status", "fleet", "cargo", "market", "nav_route", "recent_events", "read_guide", "search_playbooks", "read_playbook",
+READ = frozenset({"status", "fleet", "cargo", "market", "nav_route", "recent_events", "read_guide", "search_playbooks", "read_playbook", "list_bindings",
                   "trade_commodities", "find_commodity_market", "plan_trade_route", "screenshot", "find_module", "cursor_position"})
 KNOWLEDGE_WRITE = frozenset({"save_playbook"})
 CONTROL = frozenset({"plot_route", "nav_target_start", "nav_target_move", "nav_target_confirm",

@@ -30,7 +30,8 @@ plotting a route, by pressing your own key bindings.
 | `recent_events` | Latest journal events (noise filtered), optionally by type |
 | `plot_route` | Galaxy map → search → plot → close, then **verifies** the destination in `NavRoute.json` |
 | `screenshot` | Picture of the game window (never the desktop) plus open panel and status flags; crop by named region or rect |
-| `press_binding` | Press one allow-listed binding (for stepping through menus / tuning recipes); `observe: true` returns a screenshot of the result and how much of the screen changed |
+| `list_bindings` | Discover exact active keyboard action names and chords |
+| `press_binding` | Press any active keyboard binding (for stepping through menus / tuning recipes); `observe: true` returns a screenshot of the result and how much of the screen changed |
 | `nav_target_start` / `_move` / `_confirm` / `_cancel` | Lock or unlock a station in the current system, or toggle supercruise assist to it, via the left panel's Navigation list (supervised, step by step) |
 | `read_guide` | Field guides: game concepts (fuel, heat, jump range, …) and mission profiles (trading, exploration, mining, …); no name lists them |
 | `cursor_position` | Mouse position relative to the game window |
@@ -318,3 +319,5 @@ HOLT automatically retrieves a small relevant index before normal model turns.
 Records persist beside the server config, separate from chat compaction and authored
 field guides. See [Persistent agent playbooks](docs/playbooks.md) for usage, storage,
 revision conflicts and deployment.
+
+Binding allow-lists have been removed. Legacy `pressable` configuration is accepted but ignored; all keyboard-bound actions in the active Elite preset are available.

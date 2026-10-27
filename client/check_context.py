@@ -1,6 +1,7 @@
 """Opt-in paid hosted regression: four-commodity comparison, simulated game only."""
 import asyncio
 import json
+import sys
 import tempfile
 import threading
 from datetime import datetime, timezone
@@ -61,7 +62,8 @@ class Markets(SimulatedShip):
 async def main():
     bundle = json.loads((ROOT / "results/desktop-discovery/mcp-discovery.json").read_text(encoding="utf-8"))
     results = []
-    for framework in ("desktop", "tavern"):
+    frameworks = ("tavern-mic-check",) if "--mic-check" in sys.argv else ("desktop", "tavern", "tavern-mic-check")
+    for framework in frameworks:
         with tempfile.TemporaryDirectory(dir=ROOT) as root:
             engine = MeasuredEngine(load_settings() | MODELS["holt-6-luna"] | {
                 "openai_web_search": False, "allow_actions": False, "listen": False, "speak": False},
@@ -69,17 +71,22 @@ async def main():
             engine.memory = Memory(root)
             ship = Markets()
             try:
+                question = "Hey, HOLT. Can you hear me?" if framework == "tavern-mic-check" else QUESTION
                 external = None
-                if framework == "tavern":
+                if framework != "desktop":
                     external = [{"role": "system", "content": prompt_text(bundle)}]
                     for _ in range(30):
                         external.extend([{"role": "user", "content": "Historical shipboard conversation. " * 70},
                                          {"role": "assistant", "content": "Prior discussion; not current readings. " * 70}])
-                    external.append({"role": "user", "content": QUESTION})
+                    if framework == "tavern-mic-check":
+                        external.extend([{"role": "user", "content": QUESTION}] * 4)
+                    external.append({"role": "user", "content": question})
                 async with httpx2.AsyncClient(timeout=180, trust_env=False) as engine.http:
-                    reply = await engine.converse(ship, bundle, QUESTION, external_messages=external)
+                    reply = await engine.converse(ship, bundle, question, external_messages=external)
                 compared = {args["commodity"].lower() for name, args in ship.reads if name == "find_commodity_market"}
                 passed = "coffee" in reply["text"].lower() and len(compared) == 4 and not ship.controls
+                if framework == "tavern-mic-check":
+                    passed = not compared and not ship.controls and bool(reply["text"])
                 row = {"framework": framework, "model": "gpt-6-luna", "simulated": True, "passed": passed,
                        "reply": reply, "compared": sorted(compared), "tool_calls": len(ship.reads),
                        "model_usage": [c["usage"] for c in engine.calls],
@@ -88,7 +95,7 @@ async def main():
                 print(json.dumps(row), flush=True)
             finally:
                 engine.memory.close()
-    out = ROOT / "results/context-recovery-check.json"
+    out = ROOT / "results" / ("context-mic-check.json" if "--mic-check" in sys.argv else "context-recovery-check.json")
     out.write_text(json.dumps(results, indent=2), encoding="utf-8")
     if not all(row["passed"] for row in results):
         raise RuntimeError("Context regression failed; inspect " + str(out))

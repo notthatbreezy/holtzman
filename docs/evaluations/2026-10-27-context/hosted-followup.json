@@ -1,0 +1,512 @@
+{
+  "comparison_checks": [
+    {
+      "framework": "desktop",
+      "model": "gpt-6-luna",
+      "simulated": true,
+      "passed": true,
+      "reply": {
+        "text": "Captain, coffee is the best reported choice: buying at Coffee Supplier in Sol for 500 Cr/t and selling at Qureshi Orbital for 3,500 Cr/t yields an estimated 3,000 Cr/t, or 3,504,000 Cr for your 1,168-tonne hold. The other full-load estimates are uranium 116,800 Cr, polymers 350,400 Cr, and liquid oxygen 584,000 Cr. Reports are simulated, about 30 minutes old, and not guaranteed live stock; no route plotted.",
+        "delivery": "normal"
+      },
+      "compared": [
+        "coffee",
+        "liquid oxygen",
+        "polymers",
+        "uranium"
+      ],
+      "tool_calls": 11,
+      "model_usage": [
+        {
+          "prompt_tokens": 9125,
+          "completion_tokens": 314,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 9122,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 10738,
+          "completion_tokens": 126,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 10735,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        }
+      ],
+      "compactions": []
+    },
+    {
+      "framework": "tavern",
+      "model": "gpt-6-luna",
+      "simulated": true,
+      "passed": true,
+      "reply": {
+        "text": "Best reported: coffee, at 3,000 Cr/tonne spread, or 3,504,000 Cr gross spread for your full 1,168-tonne hold. Uranium: 116,800 Cr; polymers: 350,400 Cr; liquid oxygen: 584,000 Cr.\n\nThese estimates pair nearby supplier listings in Sol with Qureshi Orbital\u2019s sell prices; all reports are about 30 minutes old and simulated Spansh data, not guaranteed live stock or profit. No route plotted.",
+        "delivery": "normal"
+      },
+      "compared": [
+        "coffee",
+        "liquid oxygen",
+        "polymers",
+        "uranium"
+      ],
+      "tool_calls": 17,
+      "model_usage": [
+        {
+          "prompt_tokens": 4043,
+          "completion_tokens": 128,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 4040
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4244,
+          "completion_tokens": 116,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4241,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4161,
+          "completion_tokens": 133,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4158,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4242,
+          "completion_tokens": 132,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4239,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4183,
+          "completion_tokens": 133,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4180,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4154,
+          "completion_tokens": 144,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4151,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 11860,
+          "completion_tokens": 89,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 11857,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 12147,
+          "completion_tokens": 273,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 12144,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 13161,
+          "completion_tokens": 273,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 13158,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 14155,
+          "completion_tokens": 115,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 14152,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        }
+      ],
+      "compactions": [
+        {
+          "stage": "context_compaction",
+          "before": 82529,
+          "after": 25492,
+          "budget": 32768
+        },
+        {
+          "stage": "context_compaction",
+          "before": 27958,
+          "after": 27958,
+          "budget": 32768
+        },
+        {
+          "stage": "context_compaction",
+          "before": 29824,
+          "after": 29824,
+          "budget": 32768
+        }
+      ]
+    }
+  ],
+  "mic_check_before_targeted_rule": [
+    {
+      "framework": "tavern-mic-check",
+      "model": "gpt-6-luna",
+      "simulated": true,
+      "passed": false,
+      "reply": {
+        "text": "Yes, Captain. Loud and clear.",
+        "delivery": "normal"
+      },
+      "compared": [
+        "coffee",
+        "liquid oxygen",
+        "polymers",
+        "uranium"
+      ],
+      "tool_calls": 15,
+      "model_usage": [
+        {
+          "prompt_tokens": 3996,
+          "completion_tokens": 68,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 3993,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4134,
+          "completion_tokens": 71,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4131,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4066,
+          "completion_tokens": 63,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4063,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4122,
+          "completion_tokens": 72,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4119,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4073,
+          "completion_tokens": 69,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4070,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4124,
+          "completion_tokens": 68,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4121,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 1858,
+          "completion_tokens": 63,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 1855,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 10227,
+          "completion_tokens": 19,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 10224,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 10383,
+          "completion_tokens": 17,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 10380,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 10485,
+          "completion_tokens": 19,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 10482,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 10590,
+          "completion_tokens": 18,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 10587,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 10693,
+          "completion_tokens": 177,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 10690,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 11495,
+          "completion_tokens": 65,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 11492,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 51
+          },
+          "web_search_calls": 0
+        }
+      ],
+      "compactions": [
+        {
+          "stage": "context_compaction",
+          "before": 82810,
+          "after": 21380,
+          "budget": 32768
+        }
+      ]
+    }
+  ],
+  "mic_check_after_targeted_rule": [
+    {
+      "framework": "tavern-mic-check",
+      "model": "gpt-6-luna",
+      "simulated": true,
+      "passed": true,
+      "reply": {
+        "text": "Loud and clear, Captain. I\u2019m here\u2014though I\u2019ll spare you another recital of the historical conversation.",
+        "delivery": "normal"
+      },
+      "compared": [],
+      "tool_calls": 2,
+      "model_usage": [
+        {
+          "prompt_tokens": 3996,
+          "completion_tokens": 56,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 3993
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4122,
+          "completion_tokens": 50,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4119,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4045,
+          "completion_tokens": 53,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4042,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4112,
+          "completion_tokens": 32,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4109,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4033,
+          "completion_tokens": 50,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4030,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 4105,
+          "completion_tokens": 53,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 4102,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 1843,
+          "completion_tokens": 43,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 1840,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        },
+        {
+          "prompt_tokens": 10237,
+          "completion_tokens": 27,
+          "prompt_tokens_details": {
+            "cache_write_tokens": 10234,
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "web_search_calls": 0
+        }
+      ],
+      "compactions": [
+        {
+          "stage": "context_compaction",
+          "before": 82878,
+          "after": 21408,
+          "budget": 32768
+        }
+      ]
+    }
+  ]
+}

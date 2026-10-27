@@ -31,6 +31,11 @@ macro_rules! guide {
 
 pub const BUILTIN: &[Guide] = &[
     guide!(
+        "docking",
+        "procedure",
+        "Request docking using discovered bindings and observed Contacts menus"
+    ),
+    guide!(
         "fuel",
         "concept",
         "Scoopable stars, the fuel gauge, running dry"

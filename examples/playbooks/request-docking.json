@@ -1,0 +1,37 @@
+{
+  "name": "request-docking",
+  "expected_revision": 0,
+  "change_note": "Initial docking procedure requested by the Captain; validate against a live session before marking reported_working.",
+  "procedure": {
+    "title": "Request station docking",
+    "summary": "Use discovered Elite action names and observed Contacts menus to request and verify clearance.",
+    "when_to_use": "The Captain requests docking or station clearance now.",
+    "tags": [
+      "docking",
+      "contacts",
+      "station"
+    ],
+    "required_tools": [
+      "screenshot",
+      "press_binding",
+      "recent_events"
+    ],
+    "steps": [
+      "Read current instruments and screenshot; verify intended station, normal space and distance within 7.5 km.",
+      "Discover exact action names with list_bindings when advertised; FocusLeftPanel opens the left panel. PanelLeft and UI panel left are not action IDs.",
+      "Read and follow the docking guide. Open Contacts and select the observed station using one observed step at a time.",
+      "Select Request Docking without asking for an extra approval: the current docking order already authorizes this.",
+      "Verify clearance, pad/timer or a fresh DockingGranted event before reporting success."
+    ],
+    "success_checks": [
+      "An observed grant and assigned pad/timer, or a fresh DockingGranted journal event."
+    ],
+    "stop_conditions": [
+      "Unknown target/range, supercruise, already docked, unexpected menu, or uncertain input outcome.",
+      "Actual missing keyboard mapping or unsupported key; discover mappings before concluding a control is unavailable."
+    ],
+    "validation": "draft",
+    "evidence": null,
+    "archived": false
+  }
+}

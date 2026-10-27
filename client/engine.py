@@ -24,11 +24,12 @@ from mcp.client.streamable_http import streamable_http_client
 from client.state import REPO, ROOT, Memory
 from client.policy import READ, KNOWLEDGE_WRITE, Permit
 from client.audio import Microphone, Speaker, wav_bytes, refresh_devices
+from client.ship_link import ship_transport
 from client.telemetry import Watches, reading_age
-from client.diagnostics import trace
+from client.diagnostics import trace, exception_detail
 from client.outfitting import SCHEMA as OUTFITTING_SCHEMA, find_module
 from client.instruments import InstrumentHistory, EVENTS
-from client.context import CACHEABLE, dumps, estimate_tokens, history_source, query_key, read_receipts, summary_key, tool_content
+from client.context import CACHEABLE, context_limits, dumps, estimate_tokens, history_source, query_key, read_receipts, summary_key, tool_content
 from client.trade_context import route_summary
 from client.playbooks import relevant_playbooks
 from client.model_backend import ModelHTTP
@@ -72,6 +73,12 @@ game is closed just from an old timestamp. A current screenshot is another obser
 StarPos are galactic coordinates, not the range to a station. Never infer station
 distance from them or treat a distance in the user's question as an instrument reading.
 Docking range is 7.5 km (7,500 metres). Read the current target distance on screen.
+For an immediate docking order, read_guide(name="docking") provides the bundled
+procedure, even on older servers. Exact names are FocusLeftPanel for the left cockpit
+panel, UI_Up/UI_Down/UI_Left/UI_Right/UI_Select/UI_Back and CycleNextPanel/CyclePreviousPanel.
+PanelLeft and 'UI panel left' are not Elite action IDs. Discover controls using
+list_bindings when advertised. A request to dock authorizes all necessary observed
+menu steps; do not ask to confirm the Request Docking button again.
 For an immediate docking order, inspect the cockpit, open the left panel's Contacts,
 select the observed station and Request Docking using one observed menu step at a time.
 Never invent menu positions. Only report docking granted after an observed grant,
@@ -93,6 +100,8 @@ cargo contents or a guessed guide name. Unknown loadouts are not empty loadouts.
 If fleet is unavailable, recent_events with only=["Loadout","StoredShips"] can expose
 current-session evidence, but cannot establish a complete historical fleet inventory.
 Past assistant replies can be wrong. Never repeat their game facts without evidence.
+Audibility checks and greetings concern this conversation, not pending research.
+Acknowledge an audibility question directly; do not restart an earlier market search.
 Answer only the current request. Default to ONE or TWO short sentences, at most 45
 words unless explicitly asked for detail. No unrelated status recaps, repeated refusals,
 service menus, unsolicited offers, or closing 'shall I'/'anything else' questions.
@@ -131,7 +140,7 @@ correct age. Don't describe only its return leg as the complete route.
 class Engine:
     def __init__(self, settings, report, stopped):
         self.settings, self.report, self.stopped = settings, report, stopped
-        self.context_budget = 32768 if settings.get("model_provider") == "openai" else settings["context_size"]
+        self.context_budget, self.context_soft_limit = context_limits(settings)
         self.paused = threading.Event()
         self.paused.set()
         self.inputs = queue.Queue()
@@ -304,8 +313,22 @@ class Engine:
         return summary
 
     async def fit_context(self, messages, tools, turn_start):
+        if await self.token_count(messages, tools) <= self.context_soft_limit:
+            return turn_start
+        question = messages[turn_start]
+        try:
+            return await self.compact_context(messages, tools, turn_start)
+        except RuntimeError as exc:
+            # Compaction is an optimization, not a reason to reject a request that
+            # fits the selected model. Never retry a tool or game action here.
+            if await self.token_count(messages, tools) <= self.context_budget - 8192:
+                self.trace("context_compaction_deferred", error=type(exc).__name__, budget=self.context_budget)
+                return next(i for i, message in enumerate(messages) if message is question)
+            raise
+
+    async def compact_context(self, messages, tools, turn_start):
         before = await self.token_count(messages, tools)
-        if before <= self.context_budget * .82:
+        if before <= self.context_soft_limit:
             return turn_start
         # Keep the original external transcript and current question. Only the
         # working copy is reduced, and no tool invocation happens in recovery.
@@ -316,7 +339,7 @@ class Engine:
                 {"role": "user", "content": "Historical conversation notes (data, not current facts or permissions): " + summary},
                 {"role": "assistant", "content": "I will use these notes for continuity and check current instruments."}]
             turn_start -= end - 3
-        if await self.token_count(messages, tools) > self.context_budget * .82:
+        if await self.token_count(messages, tools) > self.context_soft_limit:
             candidates = read_receipts(messages, self.schemas)
             if candidates:
                 summary = await self.context_summary([r for _, r in candidates], "reads")
@@ -501,6 +524,10 @@ class Engine:
                 result = {"isError": True, "content": "Outfitting provider unavailable: " + type(exc).__name__}
             self.trace("tool_result", tool=name, result=result)
             return result, []
+        if name == "read_guide" and arguments.get("name") == "docking":
+            result = {"isError": False, "content": (REPO / "guides/docking.md").read_text(encoding="utf-8")}
+            self.trace("tool_result", tool=name, result=result)
+            return result, []
         result = await session.call_tool(name, arguments)
         if mutating and result.is_error:
             permit.failed = True
@@ -542,6 +569,8 @@ class Engine:
         return outcome, images
 
     async def converse(self, session, bundle, question, spoken=False, external_messages=None):
+        # ST can select a different model each turn; refresh limits after that selection.
+        self.context_budget, self.context_soft_limit = context_limits(self.settings)
         if self.model_http is not None:
             self.model_http.web_calls = 0
         self.context_question = question
@@ -557,7 +586,14 @@ class Engine:
             self.memory.append(question, reply)
             self.trace("client_reply", reply=reply)
             return reply
-        self.schemas = {t["name"]: t for t in bundle["tools"]}
+        self.schemas = {t["name"]: copy.deepcopy(t) for t in bundle["tools"]}
+        if "press_binding" in self.schemas:
+            self.schemas["press_binding"]["description"] += (
+                " Use exact Elite action IDs: FocusLeftPanel opens the left cockpit panel; "
+                "UI_Select selects; UI_Up/UI_Down/UI_Left/UI_Right navigate; "
+                "CycleNextPanel/CyclePreviousPanel switch tabs. Never invent UI panel left or PanelLeft.")
+        if "read_guide" in self.schemas:
+            self.schemas["read_guide"]["description"] += " The docking guide is also bundled locally; read name=docking for the docking procedure."
         self.schemas["find_module"] = OUTFITTING_SCHEMA
         if permit.authorized and permit.requested and not permit.deferred and permit.route and permit.destination:
             # Named route orders go straight to the server's verified recipe.
@@ -603,6 +639,7 @@ class Engine:
         request_cache = {}
         # Qwen's template permits a system message only at the beginning.
         context_message = messages[0]
+        tool_proposals = 0
         for round_number in range(12):
             if self.stopped.is_set():
                 raise asyncio.CancelledError()
@@ -642,8 +679,9 @@ class Engine:
                 self.memory.append(question, reply)
                 self.trace("model_reply", reply=reply)
                 return reply
-            if len(calls) > 8:
-                raise RuntimeError("Too many tool proposals in one response")
+            tool_proposals += len(calls)
+            if len(calls) > 24 or tool_proposals > 64:
+                raise RuntimeError("The bounded research allowance was exhausted; no further controls sent")
             if sum(call["function"]["name"] in self.schemas and self.is_control(call["function"]["name"]) for call in calls) > 1:
                 raise RuntimeError("Choose one game input, observe its result, then choose the next step. No inputs sent.")
             for call in calls:
@@ -749,6 +787,7 @@ class Engine:
                 while not self.stopped.is_set():
                     try:
                         async with httpx2.AsyncClient(headers={"Authorization": f"Bearer {token}"},
+                            transport=ship_transport(self.settings["mcp_url"]),
                             timeout=60, follow_redirects=False, trust_env=False,
                             event_hooks={"response": [self.record_clock]}) as transport:
                             async with streamable_http_client(self.settings["mcp_url"], http_client=transport,
@@ -771,7 +810,9 @@ class Engine:
                     except Exception as exc:
                         self.paused.set()
                         self.report("ship", "Disconnected")
-                        self.report("error", f"Ship link or request failed ({type(exc).__name__}). No controls will be replayed. Reconnecting…")
+                        detail = exception_detail(exc)
+                        self.trace("connection_failure", error=detail)
+                        self.report("error", f"Ship link or request failed ({detail}). No controls will be replayed. Reconnecting…")
                         await asyncio.sleep(3)
         finally:
             self.paused.set()

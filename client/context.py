@@ -9,6 +9,15 @@ CACHEABLE = frozenset({"trade_commodities", "find_commodity_market", "plan_trade
 SUMMARIZABLE = CACHEABLE | {"market", "fleet", "cargo", "status", "recent_events", "nav_route"}
 
 
+def context_limits(settings):
+    if settings.get("model_provider") != "openai":
+        budget = settings["context_size"]
+    else:
+        # Verified official specifications; the old 32K client cap was not a Luna limit.
+        budget = {"gpt-6-luna": 1050000, "gpt-6.1-sol": 1050000}.get(settings.get("openai_model"), 32768)
+    return budget, min(int(budget * .82), 131072)
+
+
 def dumps(value):
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 

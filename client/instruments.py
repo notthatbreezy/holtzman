@@ -40,6 +40,7 @@ def snapshot(facts, now=None):
             "docked": "Docked" in flags, "landed": "Landed" in flags,
             "mass_locked": "FsdMassLocked" in flags, "supercruise": "Supercruise" in flags,
             "flags": flags, "gui_focus": status.get("gui_focus"),
+            "controls": facts.get("controls"),
             "destination": status.get("destination"), "plotted_route_to": facts.get("plotted_route_to"),
             "loadout_note": "Installed modules and free optional slots are not provided by this snapshot."}
 

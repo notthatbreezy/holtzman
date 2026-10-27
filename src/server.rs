@@ -174,6 +174,12 @@ pub struct PressArgs {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+pub struct BindingArgs {
+    /// Case-insensitive part of an actual action name; omit to list all.
+    pub query: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct GuideArgs {
     #[schemars(
         description = "Guide to read, e.g. \"fuel\" or \"exploration\". Omit to list them all."
@@ -248,7 +254,20 @@ impl Holtzman {
         description = "Commander snapshot: location (system/station), ship and cargo capacity, credits, fuel, active status flags, open GUI panel, and plotted route destination. Read from the live game journal."
     )]
     async fn status(&self) -> Result<String, String> {
-        self.ship.journal.summary().map(pretty).map_err(err)
+        let mut state = self.ship.journal.summary().map_err(err)?;
+        if let Ok(bindings) = self.ship.bindings() {
+            let menu: Vec<_> = bindings
+                .keyboard
+                .keys()
+                .filter(|name| {
+                    name.starts_with("UI_")
+                        || name.starts_with("Focus")
+                        || name.starts_with("Cycle")
+                })
+                .collect();
+            state["controls"] = serde_json::json!({"access": "all configured keyboard actions", "discovery_tool": "list_bindings", "menu_bindings": menu});
+        }
+        Ok(pretty(state))
     }
 
     #[tool(
@@ -387,30 +406,50 @@ impl Holtzman {
     }
 
     #[tool(
-        description = "Press one allow-listed game binding (see `pressable` in holtzman.toml). Useful for stepping through menus and tuning recipes. Set `observe` to get a screenshot of the result and how much of the screen changed, in the same call."
+        description = "List actual keyboard-bound actions in the active Elite preset, with their exact action names and key chords. All configured keyboard actions are available; there is no binding allow-list. Filter by query such as Focus, UI_, or Panel. Read this instead of guessing human labels or declaring a control unavailable.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
+    )]
+    async fn list_bindings(
+        &self,
+        Parameters(args): Parameters<BindingArgs>,
+    ) -> Result<String, String> {
+        let query = args.query.unwrap_or_default().to_lowercase();
+        if query.len() > 128 {
+            return Err("query is limited to 128 bytes".into());
+        }
+        let bindings = self.ship.bindings()?;
+        let actions: Vec<_> = bindings
+            .keyboard
+            .iter()
+            .filter(|(name, _)| name.to_lowercase().contains(&query))
+            .map(|(name, chord)| serde_json::json!({"name": name, "keys": chord.to_string()}))
+            .collect();
+        Ok(pretty(
+            serde_json::json!({"actions": actions, "note": "All active keyboard bindings are available. Joystick-only actions require a keyboard secondary binding."}),
+        ))
+    }
+
+    #[tool(
+        description = "Press any keyboard-bound action in the active Elite controls preset. Discover exact names with list_bindings; FocusLeftPanel opens the left cockpit panel. Set `observe` to get a screenshot of the result and how much of the screen changed, in the same call."
     )]
     async fn press_binding(
         &self,
         Parameters(args): Parameters<PressArgs>,
     ) -> Result<CallToolResult, String> {
-        if !self
-            .ship
-            .config()
-            .pressable
-            .iter()
-            .any(|p| p == &args.binding)
-        {
-            return Err(format!(
-                "`{}` is not in the pressable allow-list in holtzman.toml",
-                args.binding
-            ));
-        }
         let _guard = self
             .ship
             .controls
             .try_lock()
             .map_err(|_| "another keypress sequence is already running".to_string())?;
         let bindings = self.ship.bindings()?;
+        bindings
+            .get(&args.binding)
+            .and_then(|c| c.scan_codes())
+            .map_err(err)?;
         // Resolve the view and grab the "before" frame first, so a bad region
         // or failed capture stops us before any key is pressed.
         let observe = match args.observe.unwrap_or(false) {
@@ -921,11 +960,12 @@ impl ServerHandler for Holtzman {
              and use format png to read small text. Look before acting whenever you're unsure \
              what is highlighted. Images cost context: don't screenshot after every step.\n\n\
              ACTING: action tools press keys in the running game. Say what you're about to do \
-             before calling them, and never chain them without the commander in the loop. \
+             before calling them. A requested task authorizes its observed menu steps; do not ask again for each step. \
              press_binding with observe=true returns the screen after the press plus \
              screen_changed_pct; near 0 means the press probably didn't land (often the game \
              lost focus), so look and ask rather than retry. plot_route plots to another \
              system; nav_target_start/move/confirm/cancel lock a station in this system.\n\n\
+             BINDINGS: list_bindings discovers exact active action names. All configured keyboard actions are available. Do not invent labels such as PanelLeft; use FocusLeftPanel for the left cockpit panel.\n\n\
              GUIDES: read_guide (or resources guide://<name>) holds game concepts and mission \
              profiles. Read the matching profile when the commander starts an activity.\n\n\
              PLAYBOOKS: search_playbooks discovers durable agent-saved workflows; read_playbook \
