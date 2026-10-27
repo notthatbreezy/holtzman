@@ -64,10 +64,16 @@ required for this client-only change. Existing audio choices and saved chats rem
 
 ### Recorded result
 
-All 65 Python regressions passed locally. The two paid GPT-6 Luna checks passed
+All 66 Python regressions passed locally. The two paid GPT-6 Luna checks passed
 with simulated markets and no game controls. Both compared all four commodities
 and correctly chose Coffee, with a full-load reported profit of 3,504,000 credits.
 The synthetic long ST history was reduced from an estimated 82,325 to 25,177
 working tokens and the comparison completed. These numbers describe a synthetic
 regression, not live prices or a guarantee of model quality on every request.
 Detailed outputs and usage: [hosted-check.json](evaluations/2026-10-27-context/hosted-check.json).
+
+The live rollout also exposed a summary that exhausted its output allowance. The
+summarizer now retries only its own bounded, tool-free request with a larger
+allowance, never the game operation. Summaries are scoped to the current question;
+the current request is explicit in the operational contract so unanswered earlier
+trade questions are not treated as queued work during a microphone check.

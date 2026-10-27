@@ -77,6 +77,24 @@ class ContextRecoveryTests(unittest.IsolatedAsyncioTestCase):
             finally:
                 engine.memory.close()
 
+    async def test_truncated_summary_retries_only_the_summary_and_never_caches_partial_notes(self):
+        with tempfile.TemporaryDirectory() as root:
+            engine = self.engine(root)
+            try:
+                engine.model_post = AsyncMock(side_effect=[
+                    response({"content": "Partial notes"}, "length"), response({"content": "Complete historical notes"})])
+                source = [{"station": "Qureshi Orbital", "price": 4800}]
+                self.assertEqual(await engine.context_summary(source, "reads"), "Complete historical notes")
+                self.assertEqual(engine.model_post.await_count, 2)
+                budgets = [call.kwargs["json"]["max_tokens"] for call in engine.model_post.await_args_list]
+                self.assertEqual(budgets, [1800, 3000])
+                for call in engine.model_post.await_args_list:
+                    self.assertNotIn("tools", call.kwargs["json"])
+                self.assertEqual(await engine.context_summary(source, "reads"), "Complete historical notes")
+                self.assertEqual(engine.model_post.await_count, 2)
+            finally:
+                engine.memory.close()
+
     async def test_read_checkpoint_keeps_every_call_id_and_action_receipt(self):
         with tempfile.TemporaryDirectory() as root:
             engine = self.engine(root)
