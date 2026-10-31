@@ -9,7 +9,7 @@ are HOLT.
 
 ## What is installed
 
-- **HOLT**, version `1.1-standalone`, in the existing `HOLT.png` character slot.
+- **HOLT**, version `1.2-standalone`, in the existing `HOLT.png` character slot.
   Its image and chat history are retained. The description, personality, scenario,
   opening, examples and author notes were populated from the established HOLT canon
   and conversational preferences.
@@ -48,6 +48,12 @@ The card favours one or two useful sentences, measured dry humour, more urgency
 when needed, and less compulsory last-word chatter. Requested research and game
 tasks should use the tools actually connected to the active session, with observed
 results determining what HOLT can truthfully report.
+
+Version 1.2 adds a short **Character's Note**, inserted as a system instruction at
+depth 0. It tells HOLT to turn tool results into one or two natural spoken sentences,
+omit unrequested fields and closing offers, and qualify old records as "last recorded"
+rather than "currently". This supplements the personality instructions close to the
+active request. It is character configuration, not an old-chat summary.
 
 Standalone ST does not automatically support HOLT's gateway-specific delivery JSON
 or silence marker. The card therefore follows a client's supported conventions

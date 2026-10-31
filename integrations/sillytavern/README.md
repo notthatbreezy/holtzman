@@ -7,6 +7,11 @@ standalone SillyTavern and is separate from HOLT's personal fictional canon.
 To populate a standalone HOLT character and its human Captain persona through the
 local API, see [character/persona setup](../../docs/holt-character-and-persona.md).
 
+For **standalone ST using its MCP extension directly**, use the
+[HOLT local MCP connection](../../docs/sillytavern-direct-mcp.md). It keeps inference
+on Ollama and requires ST function calling **on**. The gateway instructions below
+describe a different tool loop and keep ST function calling off.
+
 Start with the **HOLT Tavern** desktop shortcut or **HOLT-Tavern.cmd** in the repository root. The browser opens after the
 local server becomes ready. Click **Start HOLT**: it selects the HOLT character,
 connects SillyTavern to the gateway, starts the speech services and connects SKIPPY.
