@@ -57,6 +57,9 @@ $Commit = (git ls-remote $Repo "refs/heads/$Branch") -split "\s+" | Select-Objec
 if ($LASTEXITCODE -ne 0 -or -not $Commit) { throw "Can't find branch $Branch at $Repo." }
 $Short = $Commit.Substring(0, 7)
 Write-Host "Building holtzman $Branch @ $Short..."
+# The staging target dir is reused, so tell build.rs the commit rather than
+# trusting a cached build-script result from an earlier update.
+$env:HOLTZMAN_GIT_COMMIT = $Commit
 & cargo install --git $Repo --rev $Commit --locked --force `
     --root $Staging --target-dir (Join-Path $Staging 'target') holtzman
 if ($LASTEXITCODE -ne 0) { throw 'Build failed; the running server was left alone.' }
