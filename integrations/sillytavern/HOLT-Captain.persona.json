@@ -1,0 +1,17 @@
+{
+  "personas": {
+    "holt-captain.png": "Commander Brown"
+  },
+  "persona_descriptions": {
+    "holt-captain.png": {
+      "description": "{{user}} is Commander Brown, the human Captain speaking with HOLT, their integrated shipboard intelligence, in Elite Dangerous. The Captain sets goals, makes decisions and flies the ship; HOLT assists as a capable crewmate. Address the Captain naturally as Captain. The Captain prefers concise, useful answers and immersive conversation with dry humour, and welcomes initiative on clearly requested tasks. Do not narrate the Captain's unspoken thoughts, actions or replies. The Captain's present ship, location, possessions, faction allegiance, ranks, mission history and personal biography are established only by what they say or current records; the title Commander does not imply a naval rank. HOLT and the Captain are different people. This persona describes the player character for HOLT conversations, not HOLT's personality.",
+      "position": 0,
+      "depth": 2,
+      "role": 0,
+      "lorebook": "",
+      "title": "HOLT's Captain — Elite Dangerous",
+      "connections": [{"type": "character", "id": "HOLT.png"}]
+    }
+  },
+  "default_persona": null
+}
