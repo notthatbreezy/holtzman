@@ -21,7 +21,7 @@ from client.audio import wav_bytes
 from client.engine import Engine
 from client.replies import non_speech
 from client.services import Services, healthy
-from client.state import ROOT, load_settings
+from client.state import ROOT, load_settings, save_settings
 from client.tavern_contract import MODELS, ORIGINS, Receipts, normalize_messages, request_key
 
 RUNTIME = ROOT / "sillytavern"
@@ -36,47 +36,30 @@ class TavernEngine(Engine):
 
     async def connected(self, session, bundle):
         self.manager.connected = True
+        self.session = session
+        self.paused.clear()
         self.report("state", "Ready — listening" if self.settings["listen"] else "Ready — text input")
+        turns = asyncio.Queue(maxsize=8)
+        ingest = asyncio.create_task(self.ingest(session, bundle, turns, tavern=True))
         try:
             while not self.stopped.is_set():
-                if self.watcher and self.watcher.done():
-                    await self.watcher
-                live = time.monotonic() - self.manager.lease < 12 and not self.manager.awaiting_voice
-                if live and self.settings["listen"] and not self.busy:
-                    self.paused.clear()
-                else:
-                    self.paused.set()
+                if ingest.done():
+                    await ingest
                 try:
-                    kind, value = self.inputs.get_nowait()
-                except queue.Empty:
-                    await asyncio.sleep(.05)
+                    kind, value, trace_id, queued_at = await asyncio.wait_for(turns.get(), .2)
+                except asyncio.TimeoutError:
                     continue
-                if kind == "audio":
-                    if not live or not self.settings["listen"]:
-                        continue
-                    self.paused.set()
-                    self.busy = True
-                    self.report("state", "Transcribing…")
-                    try:
-                        response = await self.http.post(self.settings["transcription_url"] + "/inference",
-                            files={"file": ("utterance.wav", wav_bytes(value), "audio/wav")},
-                            data={"response_format": "json", "language": "en", "prompt": "Elite Dangerous. HOLT. AD Leonis. Ross 248. Homer Platform."})
-                        response.raise_for_status()
-                        text = response.json().get("text", "").strip()
-                        if text and not non_speech(text):
-                            self.manager.awaiting_voice = True
-                            self.manager.report("transcript", text)
-                    finally:
-                        # Keep capture paused while ST constructs and sends this turn.
-                        self.busy = False
-                    continue
+                self.trace_id.set(trace_id)
                 if kind != "tavern":
                     continue
                 body, future = value
                 if future.cancelled():
                     continue
+                if time.monotonic()-queued_at > 30:
+                    future.set_exception(RuntimeError("Queued request expired; no commands were replayed"))
+                    continue
                 self.busy = True
-                self.paused.set()
+
                 self.report("state", "Thinking…")
                 original = dict(self.settings)
                 try:
@@ -93,6 +76,8 @@ class TavernEngine(Engine):
                         self.settings["allow_actions"] = False
                     chat = str(uuid.uuid5(uuid.NAMESPACE_URL, str(meta.get("chat", "tavern"))))
                     self.memory.db.execute("INSERT OR IGNORE INTO sessions(id,created) VALUES(?,?)", (chat, self.memory.now()))
+                    if self.memory.session != chat:
+                        self.reset_reflex_context()
                     self.memory.session = chat
                     self.memory.db.commit()
                     messages = normalize_messages(body["messages"])
@@ -100,7 +85,7 @@ class TavernEngine(Engine):
                     if auxiliary:
                         # Summary/quiet generations never enter the game tool loop or TTS.
                         response = await self.model_post(self.settings["model_url"] + "/v1/chat/completions",
-                            json={"model": "holt", "messages": messages, "max_tokens": min(body.get("max_tokens", 700), 1200), "temperature": 0})
+                            json={"model": "holt", "messages": messages, "tools": [], "max_tokens": min(body.get("max_tokens", 700), 1200), "temperature": 0})
                         response.raise_for_status()
                         reply = {"text": response.json()["choices"][0]["message"].get("content", ""), "delivery": "normal"}
                     else:
@@ -128,6 +113,9 @@ class TavernEngine(Engine):
                     self.busy = False
                     self.report("state", "Ready — listening" if self.settings["listen"] else "Ready — text input")
         finally:
+            ingest.cancel()
+            await asyncio.gather(ingest, return_exceptions=True)
+            self.session = None
             self.manager.connected = False
 
 
@@ -157,7 +145,7 @@ class Manager:
                 self.state = str(value)
             self.counter += 1
             self.events.append({"id": self.counter, "kind": kind, "value": value,
-                                **({"client": self.client} if kind == "transcript" else {})})
+                                **({"client": self.client} if kind in {"transcript", "fastpath"} else {})})
             self.events = self.events[-100:]
 
     async def start(self, listen=True, speak=True):
@@ -248,7 +236,7 @@ async def handle(request):
                             if event["id"] <= cursor:
                                 continue
                             cursor = event["id"]
-                            if event["kind"] == "transcript" and event.get("client") != client:
+                            if event["kind"] in {"transcript", "fastpath"} and event.get("client") != client:
                                 continue
                             yield f"id: {event['id']}\ndata: {json.dumps(event)}\n\n"
                         yield ": heartbeat\n\n"
@@ -262,7 +250,7 @@ async def handle(request):
             return JSONResponse({"state": manager.state, "connected": manager.connected,
                 "running": bool(manager.task and not manager.task.done()), "controls": manager.controls,
                 "events": [e for e in manager.events if e["id"] > after and
-                           (e["kind"] != "transcript" or e.get("client") == request.query_params.get("client"))]})
+                           (e["kind"] not in {"transcript", "fastpath"} or e.get("client") == request.query_params.get("client"))]})
         return JSONResponse({"error": "Unknown endpoint"}, status_code=404)
     if request.method != "POST":
         return Response(status_code=405)
@@ -287,6 +275,19 @@ async def handle(request):
             manager.controls = bool(body["enabled"])
             if manager.engine:
                 manager.engine.settings["allow_actions"] = manager.controls
+        elif action == "settings":
+            if manager.task and not manager.task.done():
+                raise ValueError("Stop HOLT before changing speech settings")
+            mode = body.get("ptt_mode", manager.settings["ptt_mode"])
+            fastpath = body.get("fastpath_enabled", manager.settings["fastpath_enabled"])
+            if mode not in {"off", "hold", "hybrid"} or type(fastpath) is not bool:
+                raise ValueError("Invalid PTT mode or command-reflex setting")
+            manager.settings.update(ptt_mode=mode, fastpath_enabled=fastpath)
+            save_settings(manager.settings)
+        elif action == "ptt":
+            if not manager.engine:
+                raise ValueError("Start HOLT before configuring push-to-talk")
+            return JSONResponse(await manager.engine.configure_ptt(str(body.get("input", "learn"))))
         elif action == "lease":
             client = str(body["client"])[:100]
             if time.monotonic() - manager.lease < 12 and manager.client != client and body.get("takeover") is not True:
@@ -346,7 +347,7 @@ async def handle(request):
                 if meta.get("mode") == "chat":
                     receipt(uncertain)
                 future = asyncio.get_running_loop().create_future()
-                manager.engine.inputs.put(("tavern", (body, future)))
+                manager.engine.inputs.put_nowait(("tavern", (body, future)))
                 # The browser's cancellation must cancel this request, never retry it.
                 async def disconnected():
                     while not await request.is_disconnected():

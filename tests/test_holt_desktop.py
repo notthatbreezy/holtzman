@@ -147,10 +147,10 @@ class OutfittingTests(unittest.TestCase):
         now = datetime.now(timezone.utc)
         facts = {"status": {"timestamp": now.isoformat(), "flags": []}, "ship": {"hull_health": .25}}
         watches = Watches()
-        self.assertEqual(watches.update(facts, now)[0]["delivery"], "urgent")
-        self.assertEqual(watches.update(facts, now), [])
-        facts["ship"]["hull_health"] = .1
-        self.assertEqual(watches.update(facts, now)[0]["delivery"], "critical")
+        self.assertEqual(watches.update(facts, now), [])  # stale Loadout hull is ignored
+        self.assertEqual(watches.journal({"event":"HullDamage","Health":.4,"PlayerPilot":True})[0]["delivery"], "urgent")
+        self.assertEqual(watches.journal({"event":"HullDamage","Health":.3,"PlayerPilot":True}), [])
+        self.assertEqual(watches.journal({"event":"HullDamage","Health":.2,"PlayerPilot":True})[0]["delivery"], "critical")
         facts["status"]["flags"] = ["Docked"]
         self.assertEqual(watches.update(facts, now), [])
 

@@ -210,12 +210,22 @@ impl Nav<'_> {
             } else {
                 &cfg.previous_tab
             };
-            for _ in 0..tabs.abs() {
+            for index in 0..tabs.abs() {
+                self.pilot.sender.progress(
+                    index as usize + 1,
+                    (tabs.abs() + rows.abs()) as usize,
+                    "moving navigation tab",
+                );
                 self.pilot.press_binding(tab, None).await?;
                 self.settle(cfg.step_gap_ms).await;
             }
             let row = if rows > 0 { &cfg.row_down } else { &cfg.row_up };
-            for _ in 0..rows.abs() {
+            for index in 0..rows.abs() {
+                self.pilot.sender.progress(
+                    (tabs.abs() + index) as usize + 1,
+                    (tabs.abs() + rows.abs()) as usize,
+                    "moving navigation row",
+                );
                 self.pilot.press_binding(row, None).await?;
                 self.settle(cfg.step_gap_ms).await;
             }

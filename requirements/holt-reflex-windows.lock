@@ -1,0 +1,13 @@
+# Hash-pinned Windows supplemental wheels for CPython 3.12/3.13.
+# Install after holt-windows.lock, with --no-deps --require-hashes.
+rapidfuzz==3.14.6 \
+    --hash=sha256:cfca36e4612208875e08611a779164b6cb8900ab8bbd3d82d4cfdfae9efbfac9 \
+    --hash=sha256:c69fb0e064d10c79908dcda76d7ca8ecdf8393a39acbb74dbad3f709f2c60e95
+onnxruntime==1.31.1 \
+    --hash=sha256:ae8a9a351efda685cc59a66226cdefaa37a126c1d66872ca23a2de9425326130 \
+    --hash=sha256:0558f29d5f6ac09957390c9c5495931485ee8ae7f0ce781ccee86a0ae5c2348b
+flatbuffers==25.12.19 \
+    --hash=sha256:7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4
+protobuf==7.36.2 \
+    --hash=sha256:a300819d441e078a5608c0d3c709796bb548136058fda017ae51d425b44fd353 \
+    --hash=sha256:bdb3a345d48db958e6ce1f18e508beb0cc981d64f24088427549c866cd039f1e

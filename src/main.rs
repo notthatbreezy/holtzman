@@ -105,6 +105,12 @@ async fn main() -> Result<()> {
             for (action, chord) in &b.keyboard {
                 println!("{action:40} {chord}");
             }
+            for action in holtzman::actions::coverage(&config, &b) {
+                println!(
+                    "{} {} {}",
+                    action["status"], action["action"], action["binding"]
+                );
+            }
             for needed in ["GalaxyMapOpen", "UI_Up", "UI_Select"] {
                 if !b.keyboard.contains_key(needed) {
                     println!("!! {needed} has no keyboard binding; plot_route needs one");

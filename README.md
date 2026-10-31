@@ -284,13 +284,17 @@ for installed paths, benchmarks, dependencies and launch commands.
 
 Frontier allows macros and voice-command tools; unattended automated play is
 botting. holtzman is designed to keep the commander in the loop. Every action
-is a single, short, supervised UI chore. Please keep it that way.
+is a single, short, supervised chore explicitly ordered by the commander, including
+ship-system voice commands. Alerts never trigger game input.
+
+The HOLT command-reflex implementation and its pending supervised checks are
+documented in [Implementation status](docs/holt-implementation-status.md).
 
 ## Roadmap
 
 - `holtzman bridge`: built-in stdio↔HTTP proxy (drop the `npx` dependency)
 - Spansh follow-ups: neutron plotting and broader station search
-- Journal watch → MCP notifications (docked, market opened, interdicted)
+- Journal notifications now use authenticated `/events` SSE and `events_since` long polling.
 - More recipes: target next system, request docking
 
 See [Trade-planning research and deferred integration design](docs/trade-planning-design.md)

@@ -10,7 +10,7 @@ keywords = ["elite-dangerous", "mcp", "model-context-protocol"]
 
 [dependencies]
 anyhow = "1"
-axum = { version = "0.8", default-features = false, features = ["http1", "tokio"] }
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "json"] }
 base64 = "0.22"
 clap = { version = "4", features = ["derive"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
@@ -23,6 +23,9 @@ schemars = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time", "net", "signal"] }
+tokio-util = "0.7"
+futures-util = "0.3"
+toml_edit = "0.23"
 toml = "0.9"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -31,6 +34,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 arboard = { version = "3", default-features = false }
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
+    "Win32_Devices_HumanInterfaceDevice",
+    "Win32_Security",
+    "Win32_System_LibraryLoader",
+    "Win32_Storage_FileSystem",
     "Win32_Graphics_Gdi",
     "Win32_Storage_Xps",
     "Win32_UI_HiDpi",

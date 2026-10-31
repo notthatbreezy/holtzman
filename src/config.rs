@@ -49,6 +49,12 @@ pub struct Config {
     /// Agent-saved procedural knowledge; defaults to playbooks/ beside this config.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub playbooks_dir: Option<PathBuf>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub captains_log_dir: Option<PathBuf>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub ship_actions: BTreeMap<String, crate::actions::Override>,
+    #[serde(default)]
+    pub ptt: crate::ptt::Config,
     pub plot_route: PlotRoute,
     /// Named screen positions for `click` steps, as fractions (0..1) of the
     /// game window, so they survive resolution changes. Record them with the
@@ -299,6 +305,9 @@ impl Config {
             ship_prompt: None,
             guides_dir: None,
             playbooks_dir: None,
+            captains_log_dir: None,
+            ship_actions: BTreeMap::new(),
+            ptt: crate::ptt::Config::default(),
             plot_route: PlotRoute::default(),
             click_targets: BTreeMap::new(),
             screenshot: ScreenshotDefaults::default(),
@@ -325,7 +334,10 @@ impl Config {
     pub fn load(path: &Path) -> Result<Self> {
         let text = std::fs::read_to_string(path)
             .with_context(|| format!("reading {} (run `holtzman init` first)", path.display()))?;
-        toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))
+        let config: Self =
+            toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
+        config.ptt.validate().map_err(anyhow::Error::msg)?;
+        Ok(config)
     }
 
     pub fn to_toml(&self) -> Result<String> {

@@ -56,18 +56,34 @@ impl std::fmt::Display for KeyChord {
 pub struct Bindings {
     pub source: Option<PathBuf>,
     pub keyboard: BTreeMap<String, KeyChord>,
+    pub hold_mode: std::collections::BTreeSet<String>,
 }
 
 impl Bindings {
     pub fn parse(xml: &str) -> Result<Self> {
         let doc = roxmltree::Document::parse(xml).context("parsing .binds XML")?;
         let mut keyboard = BTreeMap::new();
+        let mut hold_mode = std::collections::BTreeSet::new();
         for action in doc.root_element().children().filter(|n| n.is_element()) {
+            if action.children().any(|n| {
+                n.is_element()
+                    && n.tag_name().name() == "ToggleOn"
+                    && n.attribute("Value") == Some("0")
+            }) {
+                hold_mode.insert(action.tag_name().name().to_string());
+            }
             let chord = ["Primary", "Secondary"].iter().find_map(|slot| {
                 let node = action
                     .children()
                     .find(|c| c.is_element() && c.tag_name().name() == *slot)?;
                 if node.attribute("Device") != Some("Keyboard") {
+                    return None;
+                }
+                if node.children().any(|c| {
+                    c.is_element()
+                        && c.tag_name().name() == "Modifier"
+                        && c.attribute("Device") != Some("Keyboard")
+                }) {
                     return None;
                 }
                 let key = node.attribute("Key")?.to_string();
@@ -89,6 +105,7 @@ impl Bindings {
         Ok(Self {
             source: None,
             keyboard,
+            hold_mode,
         })
     }
 
@@ -190,6 +207,12 @@ mod tests {
         assert_eq!(sys.to_string(), "Key_LeftShift+Key_M");
         assert!(b.get("PrimaryFire").is_err());
         assert!(b.get("MouseXMode").is_err());
+    }
+
+    #[test]
+    fn mixed_device_modifiers_do_not_become_incomplete_keyboard_chords() {
+        let b=Bindings::parse(r#"<Root><DeployHeatSink><Primary Device="Keyboard" Key="Key_H"><Modifier Device="Joystick" Key="Joy_1"/></Primary><Secondary Device="Keyboard" Key="Key_V"/></DeployHeatSink></Root>"#).unwrap();
+        assert_eq!(b.get("DeployHeatSink").unwrap().key, "Key_V");
     }
 
     #[test]

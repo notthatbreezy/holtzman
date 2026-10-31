@@ -28,6 +28,10 @@ pub struct CursorPos {
 
 /// Something that can press keys, click, and set the clipboard.
 pub trait KeySender: Send + Sync {
+    fn modifiers_down(&self) -> bool {
+        false
+    }
+    fn progress(&self, _step: usize, _total: usize, _description: &str) {}
     fn key_down(&self, key: ScanCode) -> Result<()>;
     fn key_up(&self, key: ScanCode) -> Result<()>;
     fn set_clipboard(&self, text: &str) -> Result<()>;
@@ -43,6 +47,8 @@ pub trait KeySender: Send + Sync {
 
 /// Move to (x, y) in game-window fractions and left-click.
 pub async fn click(sender: &dyn KeySender, x: f64, y: f64, hold: Duration) -> Result<()> {
+    let held = HeldInputs::new(sender);
+    let sender: &dyn KeySender = &held;
     if !(0.0..=1.0).contains(&x) || !(0.0..=1.0).contains(&y) {
         anyhow::bail!("click target ({x}, {y}) is outside the game window");
     }
@@ -62,6 +68,8 @@ pub async fn press(
     modifiers: &[ScanCode],
     hold: Duration,
 ) -> Result<()> {
+    let held = HeldInputs::new(sender);
+    let sender: &dyn KeySender = &held;
     for m in modifiers {
         sender.key_down(*m)?;
     }
@@ -75,6 +83,123 @@ pub async fn press(
         sender.key_up(*m)?;
     }
     Ok(())
+}
+
+/// Releases partial chords and mouse holds even if an async operation is dropped.
+pub struct HeldInputs<'a> {
+    sender: &'a dyn KeySender,
+    keys: Mutex<Vec<ScanCode>>,
+    mouse: Mutex<bool>,
+}
+impl<'a> HeldInputs<'a> {
+    pub fn new(sender: &'a dyn KeySender) -> Self {
+        Self {
+            sender,
+            keys: Mutex::new(Vec::new()),
+            mouse: Mutex::new(false),
+        }
+    }
+}
+impl KeySender for HeldInputs<'_> {
+    fn modifiers_down(&self) -> bool {
+        self.sender.modifiers_down()
+    }
+    fn progress(&self, step: usize, total: usize, description: &str) {
+        self.sender.progress(step, total, description);
+    }
+    fn key_down(&self, key: ScanCode) -> Result<()> {
+        self.keys.lock().unwrap().push(key);
+        self.sender.key_down(key)
+    }
+    fn key_up(&self, key: ScanCode) -> Result<()> {
+        self.sender.key_up(key)?;
+        self.keys.lock().unwrap().retain(|k| *k != key);
+        Ok(())
+    }
+    fn left_button(&self, down: bool) -> Result<()> {
+        if down {
+            *self.mouse.lock().unwrap() = true;
+        }
+        self.sender.left_button(down)?;
+        *self.mouse.lock().unwrap() = down;
+        Ok(())
+    }
+    fn set_clipboard(&self, text: &str) -> Result<()> {
+        self.sender.set_clipboard(text)
+    }
+    fn focus_game(&self) -> Result<()> {
+        self.sender.focus_game()
+    }
+    fn move_mouse(&self, x: f64, y: f64) -> Result<()> {
+        self.sender.move_mouse(x, y)
+    }
+    fn cursor(&self) -> Result<CursorPos> {
+        self.sender.cursor()
+    }
+}
+
+pub struct TrackingSender {
+    pub inner: Arc<dyn KeySender>,
+    pub registry: Arc<crate::actions::Registry>,
+    pub events: Arc<crate::events::Bus>,
+}
+impl KeySender for TrackingSender {
+    fn modifiers_down(&self) -> bool {
+        self.inner.modifiers_down()
+    }
+    fn progress(&self, step: usize, total: usize, description: &str) {
+        self.registry.step(step, total, description);
+        self.events.publish(
+            "controls",
+            "action",
+            serde_json::json!({"phase":"step","action":self.registry.status()}),
+        );
+    }
+    fn key_down(&self, key: ScanCode) -> Result<()> {
+        self.inner.key_down(key)
+    }
+    fn key_up(&self, key: ScanCode) -> Result<()> {
+        self.inner.key_up(key)
+    }
+    fn left_button(&self, down: bool) -> Result<()> {
+        self.inner.left_button(down)
+    }
+    fn set_clipboard(&self, text: &str) -> Result<()> {
+        self.inner.set_clipboard(text)
+    }
+    fn focus_game(&self) -> Result<()> {
+        self.inner.focus_game()
+    }
+    fn move_mouse(&self, x: f64, y: f64) -> Result<()> {
+        self.inner.move_mouse(x, y)
+    }
+    fn cursor(&self) -> Result<CursorPos> {
+        self.inner.cursor()
+    }
+}
+impl Drop for HeldInputs<'_> {
+    fn drop(&mut self) {
+        for key in self.keys.lock().unwrap().iter().rev() {
+            let _ = self.sender.key_up(*key);
+        }
+        if *self.mouse.lock().unwrap() {
+            let _ = self.sender.left_button(false);
+        }
+    }
+}
+
+pub fn physical_modifiers_down() -> bool {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
+        [0x10, 0x11, 0x12]
+            .iter()
+            .any(|key| unsafe { GetAsyncKeyState(*key) } < 0)
+    }
+    #[cfg(not(windows))]
+    {
+        false
+    }
 }
 
 /// Records calls instead of sending them. Used off-Windows and in tests.
@@ -274,6 +399,9 @@ pub(crate) mod windows {
     }
 
     impl super::KeySender for WindowsSender {
+        fn modifiers_down(&self) -> bool {
+            super::physical_modifiers_down()
+        }
         fn key_down(&self, key: ScanCode) -> Result<()> {
             send(key, false)
         }
@@ -301,8 +429,9 @@ pub(crate) mod windows {
                     code: 0x38,
                     extended: false,
                 };
-                send(alt, false)?;
-                send(alt, true)?;
+                let held = super::HeldInputs::new(self);
+                super::KeySender::key_down(&held, alt)?;
+                super::KeySender::key_up(&held, alt)?;
                 SetForegroundWindow(hwnd);
                 std::thread::sleep(std::time::Duration::from_millis(150));
                 if GetForegroundWindow() != hwnd {

@@ -46,6 +46,8 @@ const FLAGS: &[(u32, &str)] = &[
     (24, "InMainShip"),
     (25, "InFighter"),
     (26, "InSRV"),
+    (27, "HudInAnalysisMode"),
+    (28, "NightVision"),
     (30, "FsdJump"),
 ];
 
@@ -94,7 +96,7 @@ pub fn decode_flags(flags: u64, table: &'static [(u32, &'static str)]) -> Vec<&'
 }
 
 /// Names of the set `Flags` and `Flags2` bits in a Status.json value.
-fn active_flags(status: &Value) -> Vec<&'static str> {
+pub fn active_flags(status: &Value) -> Vec<&'static str> {
     let flags = status.get("Flags").and_then(Value::as_u64).unwrap_or(0);
     let flags2 = status.get("Flags2").and_then(Value::as_u64).unwrap_or(0);
     let mut active = decode_flags(flags, FLAGS);
@@ -296,6 +298,12 @@ impl JournalDir {
                         ],
                     );
                     out.insert("ship".into(), Value::Object(ship));
+                    if let Some(modules) = e["Modules"].as_array() {
+                        out["ship"]["has_shield_generator"] =
+                            json!(modules.iter().any(|m| m["Item"].as_str().is_some_and(|i| {
+                                i.to_ascii_lowercase().contains("shieldgenerator")
+                            })));
+                    }
                 }
                 "Rank" | "Progress" => {
                     let key = ev.to_ascii_lowercase();

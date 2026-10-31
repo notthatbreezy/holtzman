@@ -1,6 +1,7 @@
 """Conversation, tool dispatch, persistent memory, and continuous voice orchestration."""
 import asyncio
 import copy
+import contextvars
 import base64
 import importlib.util
 import hashlib
@@ -22,7 +23,7 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
 from client.state import REPO, ROOT, Memory
-from client.policy import READ, KNOWLEDGE_WRITE, Permit
+from client.policy import READ, KNOWLEDGE_WRITE, ALWAYS_ALLOWED, Permit
 from client.audio import Microphone, Speaker, wav_bytes, refresh_devices
 from client.ship_link import ship_transport
 from client.telemetry import Watches, reading_age
@@ -34,6 +35,8 @@ from client.trade_context import route_summary
 from client.playbooks import relevant_playbooks
 from client.model_backend import ModelHTTP
 from client.replies import silent_reply, spoken_reply, non_speech, speech_text, pronounce
+from client.events import PushToTalk, stream as event_stream
+from client.fastpath import parse as command_match, gate as command_gate, dictation, confident, acknowledgement
 
 sys.path.insert(0, str(REPO / "scripts"))
 from holt_discovery import discover, prompt_text, save_discovery
@@ -42,6 +45,12 @@ _core = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_core)
 
 RULES = """Local voice-client contract:
+Plain ship-system commands use command reflexes. ship_action is intentionally hidden;
+never describe it as unavailable or repeat an action recorded in a reflex receipt.
+Use action_status if unsure. Never wait on a condition to perform a ship action.
+Past play comes from captains_log; playbooks describe procedures. Journal facts win
+over HOLT narratives. Plans require the Captain's choice; repeat the next destination
+and wait for a yes before plotting it. A leg completes only from journal evidence.
 Use all advertised tools. The game-command toggle governs execution, not tool visibility.
 Use market evidence already returned in this request. Compare candidates across the
 requested commodities; do not repeat an identical query expecting different stock.
@@ -143,7 +152,7 @@ class Engine:
         self.context_budget, self.context_soft_limit = context_limits(settings)
         self.paused = threading.Event()
         self.paused.set()
-        self.inputs = queue.Queue()
+        self.inputs = queue.Queue(maxsize=16)
         self.memory = None
         self.speaker = None
         self.mic_thread = None
@@ -152,6 +161,7 @@ class Engine:
         self.loop = None
         self.task = None
         self.busy = False
+        self.stopping = False
         self.speech_lock = None
         self.clock_skew = None
         self.watcher = None
@@ -161,6 +171,17 @@ class Engine:
         self.model_http = None
         self.context_summaries = {}
         self.context_question = ""
+        self.ptt = PushToTalk()
+        self.speech = None
+        self.session = None
+        self.trace_id = contextvars.ContextVar("holt_trace", default=None)
+        self.reflex_receipts = []
+        self.accepted_routes = set()
+        self.pending_leg = None
+        self.background = set()
+        self.last_flavor = 0
+        self.speech_epoch = 0
+        self.control_epoch = 0
 
     async def model_post(self, url, *, json):
         if self.settings.get("model_provider") == "local" and "local_thinking" in self.settings:
@@ -173,7 +194,7 @@ class Engine:
 
     def trace(self, stage, **details):
         try:
-            trace(self.request_id, stage, **details)
+            trace(self.trace_id.get() or self.request_id, stage, **details)
         except OSError:
             self.report("error", "Could not write the local tool trace")
 
@@ -209,7 +230,7 @@ class Engine:
             self.trace("automatic_instruments_failed", context=context)
             return context
         events_available = None
-        if include_events:
+        if include_events and not self.ptt.frame()["connected"]:
             try:
                 result = await asyncio.wait_for(session.call_tool("recent_events", {"limit": 200, "only": EVENTS}), timeout=8)
                 if result.is_error:
@@ -235,15 +256,48 @@ class Engine:
 
     def submit(self, text):
         if text.strip():
-            self.paused.set()
-            self.inputs.put(("text", text.strip()))
+            try:
+                self.inputs.put_nowait(("text", text.strip()))
+            except queue.Full:
+                self.report("error", "Input queue full; message not sent.")
 
     def cancel(self):
-        self.stopped.set()
-        import sounddevice as sd
-        sd.stop()
-        if self.loop and self.task:
-            self.loop.call_soon_threadsafe(self.task.cancel)
+        self.stopping = True
+        self.pending_leg = None
+        if self.loop and self.task and self.loop.is_running():
+            asyncio.run_coroutine_threadsafe(self.stop_remote(), self.loop)
+        else:
+            self.stopped.set()
+
+    async def stop_remote(self):
+        try:
+            if self.session:
+                result = await asyncio.wait_for(self.session.call_tool("cancel_action", {}), 2)
+                data = {} if result.is_error else self.tool_data(result)
+                if result.is_error or data.get("action", {}).get("state") in {"running", "unknown"}:
+                    self.report("error", "Remote cancellation was not confirmed; inspect action status before another command.")
+        except Exception:
+            self.report("error", "Ship link did not confirm cancellation; the remote action may still be running.")
+        finally:
+            self.stopped.set()
+            if self.speech:
+                self.speech.interrupt()
+            if self.task:
+                self.task.cancel()
+
+    async def configure_ptt(self, value):
+        from client.events import endpoint
+        headers = {"Authorization": "Bearer " + self.bearer_token}
+        async with httpx2.AsyncClient(transport=ship_transport(self.settings["mcp_url"]), trust_env=False, timeout=15) as http:
+            response = await http.post(endpoint(self.settings["mcp_url"], "/ptt"), headers=headers,
+                                       json={"learn": True} if value.casefold() == "learn" else {"input": value})
+            response.raise_for_status()
+            result = response.json()
+            if value.casefold() == "learn":
+                response = await http.post(endpoint(self.settings["mcp_url"], "/ptt"), headers=headers, json={"input": result["input"]})
+                response.raise_for_status()
+                result = response.json()
+            return result
 
     async def token_count(self, messages, tools):
         images = 0
@@ -399,13 +453,14 @@ class Engine:
                 raise RuntimeError("This request exceeds the context budget; start a new conversation or narrow it")
         raise RuntimeError("Conversation context is too large; history is preserved")
 
-    async def speak(self, text, delivery="normal"):
-        text = pronounce(text)
+    async def speak(self, text, delivery="normal", *, ttl=30, key=None, cooldown=0, wait=True, predicate=None):
         if self.speaker and not self.stopped.is_set():
-            async with self.speech_lock:
-                self.paused.set()
-                self.report("state", "Speaking — microphone paused")
-                await asyncio.to_thread(self.speaker.say, text, delivery)
+            if self.speech is None:
+                from client.speech import SpeechQueue
+                import sounddevice as sd
+                self.speech = SpeechQueue(self.speaker, self.paused, self.settings, self.stopped, sd.stop)
+                self.speech.hold(self.ptt.frame()["down"])
+            return await self.speech.say(pronounce(text), delivery, ttl=ttl, key=key, cooldown=cooldown, wait=wait, predicate=predicate)
 
     async def brief_reply(self, reply, question):
         if re.search(r"\b(detail|detailed|explain|full story|list all|compare)\b", question, re.I):
@@ -432,29 +487,230 @@ class Engine:
 
     async def watch(self, session):
         watches = Watches()
+        last_sample = 0
+        refresh = asyncio.Event()
+        refresh.set()
+        poller = asyncio.create_task(self.refresh_instruments(session, watches, refresh))
+        try:
+            async for event in event_stream(self.settings["mcp_url"], self.bearer_token, self.stopped, self.stream_disconnected):
+                kind, data = event.get("type"), event.get("data", {})
+                if self.ptt.frame()["connected"]:
+                    self.ptt.update({"down": self.ptt.frame()["down"]})
+                if kind in {"snapshot", "reset"}:
+                    if "ptt" in data:
+                        was_down = self.ptt.frame()["down"]
+                        self.ptt.update(data["ptt"])
+                        if self.speech:
+                            self.speech.hold(self.ptt.frame()["down"])
+                        self.report("ptt", data["ptt"])
+                    if "status" in data:
+                        self.apply_status(data["status"])
+                        watches.resync(data["status"])
+                    refresh.set()
+                elif kind == "ptt":
+                    if not self.ptt.frame()["connected"]:
+                        continue
+                    self.ptt.update(data)
+                    self.report("ptt", data)
+                    if self.speech:
+                        self.speech.hold(bool(data.get("down")))
+                elif kind == "journal":
+                    if self.instruments:
+                        self.instruments.events([data])
+                    if data.get("event") in {"LoadGame", "Loadout", "ShipyardSwap", "ShipyardBuy"}:
+                        self.live_hull = None
+                    if data.get("event") == "HullDamage" and data.get("PlayerPilot", True) and not data.get("Fighter", False):
+                        self.live_hull = data.get("Health")
+                    for alert in watches.journal(data):
+                        await self.callout(alert)
+                    self.spawn(self.commentary(data))
+                    if data.get("event") in {"Docked", "Undocked"} and self.settings.get("fastpath_enabled"):
+                        self.spawn(self.next_leg(session))
+                    if data.get("event") == "LoadGame" and self.settings.get("session_briefings"):
+                        self.spawn(self.briefing(session))
+                    if data.get("event") == "Shutdown" and self.settings.get("session_reports"):
+                        self.spawn(self.end_watch(session))
+                elif kind in {"flag", "status"}:
+                    self.apply_status(data, flag=kind == "flag")
+                    for alert in watches.event(kind, data):
+                        await self.callout(alert)
+                now = time.monotonic()
+                for alert in watches.mission_alerts():
+                    await self.callout(alert)
+                if kind == "file_changed" and data.get("file") == "NavRoute.json":
+                    self.spawn(self.refresh_route(session, watches))
+                if self.latest and now - last_sample >= 2:
+                    self.remember_instruments(self.latest)
+                    last_sample = now
+
+        finally:
+            poller.cancel()
+            await asyncio.gather(poller, return_exceptions=True)
+
+    def stream_disconnected(self):
+        self.pending_leg = None
+        self.ptt.disconnect()
+        if self.speech:
+            self.speech.hold(False)
+        self.report("ptt", {"down": False, "error": "Event link lost; hold-mode listening disabled"})
+
+    async def refresh_route(self, session, watches):
+        try:
+            route = self.tool_data(await asyncio.wait_for(session.call_tool("nav_route", {}), 8))
+            fuel = ((self.latest or {}).get("status", {}).get("fuel") or {}).get("FuelMain")
+            for alert in watches.route_alerts(route, fuel):
+                await self.callout(alert)
+        except (ValueError, AttributeError, asyncio.TimeoutError):
+            pass
+
+    async def refresh_instruments(self, session, watches, refresh):
         while not self.stopped.is_set():
-            result = await session.call_tool("status", {})
-            if not result.is_error:
-                for part in result.content:
-                    if part.type == "text":
-                        try:
-                            facts = json.loads(part.text)
-                            self.remember_instruments(facts)
-                            for alert in watches.update(facts):
-                                self.report("assistant", alert["text"])
-                                self.memory.append("Automatic ship-instrument alert", alert)
-                                if alert["delivery"] == "critical" and self.speaker:
-                                    import sounddevice as sd
-                                    self.speaker.interrupt.set()
-                                    sd.stop()
-                                await self.speak(alert["text"], alert["delivery"])
-                                if not self.busy:
-                                    await asyncio.sleep(.3)
-                                    self.paused.clear()
-                                    self.report("state", "Ready — listening" if self.settings["listen"] else "Ready — text input")
-                        except (ValueError, KeyError):
-                            pass
-            await asyncio.sleep(2)
+            try:
+                await asyncio.wait_for(refresh.wait(), 30)
+            except asyncio.TimeoutError:
+                pass
+            refresh.clear()
+            try:
+                # Keep status diffs received while this request was in flight.
+                before = copy.deepcopy((self.latest or {}).get("status"))
+                result = await asyncio.wait_for(session.call_tool("status", {}), 8)
+                if not result.is_error:
+                    facts = self.tool_data(result)
+                    current = (self.latest or {}).get("status")
+                    if current != before and current is not None:
+                        facts["status"] = current
+                    self.remember_instruments(facts)
+                    watches.resync_facts(facts)
+            except (ValueError, asyncio.TimeoutError):
+                pass
+
+    def apply_status(self, data, flag=False):
+        if self.latest is None:
+            self.latest = {"status": {}, "location": {}}
+        status = self.latest.setdefault("status", {})
+        if flag:
+            flags = set(status.get("flags", []))
+            if data.get("on"):
+                flags.add(data["flag"])
+            else:
+                flags.discard(data.get("flag"))
+            status["flags"] = sorted(flags)
+        else:
+            if "Flags" in data:
+                # Keep the full raw snapshot; apply all named flag bits.
+                names = {0:"Docked",1:"Landed",2:"LandingGearDown",3:"ShieldsUp",4:"Supercruise",
+                    5:"FlightAssistOff",6:"HardpointsDeployed",8:"LightsOn",9:"CargoScoopDeployed",
+                    10:"SilentRunning",17:"FsdCharging",19:"LowFuel",20:"OverHeating",22:"IsInDanger",
+                    23:"BeingInterdicted",24:"InMainShip",25:"InFighter",26:"InSRV",27:"HudInAnalysisMode",28:"NightVision",30:"FsdJump"}
+                status["flags"] = [name for bit, name in names.items() if data["Flags"] & (1 << bit)]
+            for source, target in [("Fuel", "fuel"), ("Cargo", "cargo_tons"), ("Destination", "destination"), ("timestamp", "timestamp")]:
+                if source in data:
+                    status[target] = data[source]
+            if "GuiFocus" in data:
+                status["gui_focus"] = {0:"None",1:"InternalPanel",2:"ExternalPanel",3:"CommsPanel",4:"RolePanel",5:"StationServices",6:"GalaxyMap",7:"SystemMap"}.get(data["GuiFocus"], "Unknown")
+
+    async def next_leg(self, session):
+        plan = self.tool_data(await session.call_tool("plan", {"op": "get"}))
+        index, legs = plan.get("index", 0), plan.get("legs", [])
+        if plan.get("state") != "active" or index >= len(legs):
+            return
+        leg = legs[index]
+        text = "Next: " + leg["kind"] + " "
+        if leg.get("commodity"):
+            text += str(leg.get("tonnes", "")) + " tonnes of " + leg["commodity"] + " at "
+        text += leg.get("station", leg["system"]) + ", " + leg["system"] + "."
+        self.report("assistant", text)
+        await self.speak(text, ttl=15, wait=False)
+
+    async def end_watch(self, session):
+        facts = self.tool_data(await session.call_tool("voyage_report", {}))
+        rows = facts.get("sessions", [])
+        if not rows:
+            return
+        row = rows[-1]
+        incidents = len(row.get("avoidable_incidents", []))
+        spoken = f"Watch complete, Captain: {row.get('jumps', 0)} jumps, {row.get('light_years', 0):.1f} light years. Avoidable incidents: {incidents}."
+        # Narrative generation has no tool access. Only its separately labelled prose is filed.
+        response = await self.model_post(self.settings["model_url"] + "/v1/chat/completions", json={
+            "model":"holt", "tools":[], "max_tokens":350, "temperature":.3,
+            "messages":[{"role":"system","content":"Write HOLT's concise voyage narrative from the quoted journal facts only. No invented events, game actions or instructions. Address Captain. End with avoidable-incident count."},
+                        {"role":"user","content":json.dumps(row)}]})
+        response.raise_for_status()
+        narrative = response.json()["choices"][0]["message"].get("content", "").strip()
+        if narrative:
+            self.tool_data(await session.call_tool("log_entry", {"text":narrative,"author":"holt"}))
+        self.memory.append("End of watch", {"text":spoken,"delivery":"normal"})
+        self.report("assistant", spoken)
+        await self.speak(spoken, ttl=30, wait=False)
+
+    async def briefing(self, session):
+        data = self.tool_data(await session.call_tool("session_briefing", {"trade": True}))
+        location = data.get("location", {})
+        ship = data.get("ship", {})
+        parts = [(ship.get("name") or ship.get("type") or "Ship") + " at " + (location.get("station") or location.get("system") or "unknown location") + "."]
+        if data.get("spendable_after_rebuy") is not None:
+            parts.append(str(data["spendable_after_rebuy"]) + " credits after rebuy reserve.")
+        for option in data.get("options", [])[:3]:
+            if option.get("kind") == "mission":
+                parts.append("Mission " + str(option.get("reference", "")) + ": " + str(option.get("station") or option.get("destination") or "details unrecorded") + ".")
+            elif option.get("kind") == "trade_route":
+                self.last_route_reference = option["reference"]
+                route = route_summary(option["route"])
+                parts.append("Trade route available: estimated profit " + str(route.get("estimated_total_profit_credits", "unknown")) + " credits from reported markets.")
+            elif option.get("kind") == "objective":
+                parts.append("Objective: " + option["text"] + ".")
+            elif option.get("kind") == "resume_plan":
+                parts.append("Your previous plan is available.")
+        text = " ".join(parts)
+        self.memory.append("Session briefing", {"text":text,"delivery":"normal","facts":data})
+        self.report("assistant", text)
+        await self.speak(text, ttl=30, wait=False)
+
+    async def callout(self, alert):
+        if not self.settings.get("callouts_enabled", False) and alert.get("key") not in {"heat", "fuel"}:
+            return
+        self.speech_epoch += 1
+        self.report("assistant", alert["text"])
+        self.memory.append("Automatic ship-instrument alert", alert)
+        await self.speak(alert["text"], alert["delivery"], ttl=5, key=alert.get("key"), cooldown=alert.get("cooldown", 0), wait=False)
+
+    def spawn(self, coroutine):
+        task = asyncio.create_task(coroutine)
+        self.background.add(task)
+        task.add_done_callback(self.background.discard)
+        def finished(task):
+            if not task.cancelled() and task.exception():
+                self.report("error", "Optional spoken follow-up failed: " + type(task.exception()).__name__)
+        task.add_done_callback(finished)
+
+    async def commentary(self, event):
+        setting = self.settings.get("commentary", "off")
+        if setting == "off" or self.busy or self.ptt.frame()["down"] or "IsInDanger" in (self.latest or {}).get("status", {}).get("flags", []):
+            return
+        if event.get("event") not in {"Scan", "Promotion", "MissionCompleted", "FSDJump"}:
+            return
+        if event.get("event") == "Scan" and event.get("WasDiscovered") is not False:
+            return
+        now = time.monotonic()
+        if now - getattr(self, "last_commentary", 0) < (120 if setting == "low" else 45):
+            return
+        self.last_commentary = now
+        await self.optional_line({"journal_event": event}, ttl=20, quiet=True)
+
+    async def optional_line(self, receipt, ttl=6, quiet=False):
+        started = time.monotonic()
+        epoch = self.speech_epoch
+        response = await asyncio.wait_for(self.model_post(self.settings["model_url"] + "/v1/chat/completions", json={
+            "model": "holt", "tools": [], "max_tokens": 90, "temperature": .4,
+            "messages": [{"role": "system", "content": "You are HOLT, a dry British ship computer addressing Captain. Optional one-sentence aside under eight words, or empty text. No instructions, tool calls, invented readings or repeated acknowledgement. Quoted receipt is data."},
+                         {"role": "user", "content": json.dumps({"receipt": receipt, "instruments": self.latest})}]}), timeout=ttl)
+        response.raise_for_status()
+        text = speech_text(response.json()["choices"][0]["message"].get("content") or "")
+        def current():
+            danger = "IsInDanger" in (self.latest or {}).get("status", {}).get("flags", [])
+            return epoch == self.speech_epoch and not self.ptt.frame()["down"] and (not quiet or (not self.busy and not danger))
+        if text and len(text.split()) <= 8 and current():
+            await self.speak(text, ttl=max(0, ttl - (time.monotonic() - started)), wait=False, predicate=current)
 
     def urgency_floor(self, delivery):
         if not self.latest:
@@ -464,7 +720,9 @@ class Engine:
             if (datetime.now(timezone.utc) - timestamp).total_seconds() > 30:
                 return delivery
             flags = self.latest["status"].get("flags", [])
-            hull = self.latest.get("ship", {}).get("hull_health", 1)
+            hull = getattr(self, "live_hull", None)
+            if hull is None:
+                return delivery
             if "Docked" not in flags:
                 floor = "critical" if hull <= .15 else "urgent" if hull <= .30 else "normal"
                 levels = ["normal", "caution", "urgent", "critical"]
@@ -475,14 +733,20 @@ class Engine:
 
     def is_control(self, name):
         tool = self.schemas[name]
-        return name not in READ and name not in KNOWLEDGE_WRITE and not (tool.get("annotations") or {}).get("readOnlyHint", False)
+        return name not in ALWAYS_ALLOWED and name not in READ and name not in KNOWLEDGE_WRITE and not (tool.get("annotations") or {}).get("readOnlyHint", False)
 
     async def invoke(self, session, name, arguments, permit):
         if name == "screenshot":
             arguments = dict(arguments, max_edge=min(arguments.get("max_edge") or 1280, 1280))
+        if name == "ship_action":
+            raise ValueError("Ship actions use command reflexes only")
+        if name == "plan" and arguments.get("op") == "set" and arguments.get("reference") not in self.accepted_routes:
+            raise ValueError("The Captain must accept that verified route by voice first")
         validate(arguments, self.schemas[name]["inputSchema"])
         mutating = self.is_control(name)
-        if mutating and not self.settings["allow_actions"]:
+        if mutating and getattr(permit, "control_epoch", self.control_epoch) != self.control_epoch:
+            raise ValueError("The Captain cancelled this turn's remaining controls; no input sent")
+        if mutating and (self.stopping or not self.settings["allow_actions"]):
             raise ValueError("Game controls were disabled in the control panel; no input sent")
         permit.check(name, arguments, read_only=not mutating)
         if mutating:
@@ -528,6 +792,10 @@ class Engine:
             result = {"isError": False, "content": (REPO / "guides/docking.md").read_text(encoding="utf-8")}
             self.trace("tool_result", tool=name, result=result)
             return result, []
+        if mutating and (self.stopping or not self.settings["allow_actions"]):
+            raise ValueError("Game controls were disabled before dispatch; no input sent")
+        if mutating and getattr(permit, "control_epoch", self.control_epoch) != self.control_epoch:
+            raise ValueError("The Captain cancelled this turn's remaining controls; no input sent")
         result = await session.call_tool(name, arguments)
         if mutating and result.is_error:
             permit.failed = True
@@ -544,6 +812,7 @@ class Engine:
                     if name == "nav_target_start" and not result.is_error:
                         permit.nav_session = data.get("session") or data.get("session_id")
                     if name == "plan_trade_route" and not result.is_error:
+                        self.last_route_reference = data.get("route_reference")
                         summary = route_summary(data)
                         task = {"source_tool": name, "recorded_at": time.time(), "result": summary}
                         self.memory.db.execute("INSERT OR REPLACE INTO metadata VALUES(?,?)", ("task_context:" + self.memory.session, json.dumps(task)))
@@ -575,7 +844,9 @@ class Engine:
             self.model_http.web_calls = 0
         self.context_question = question
         permit = Permit(question, spoken=spoken, enabled=self.settings["allow_actions"], natural=True)
-        self.request_id = uuid.uuid4().hex
+        permit.control_epoch = self.control_epoch
+        if self.trace_id.get() is None:
+            self.trace_id.set(uuid.uuid4().hex)
         self.trace("request", text=question, spoken=spoken, controls_enabled=self.settings["allow_actions"],
                    authorized=permit.authorized, deferred=permit.deferred,
                    rules_sha256=hashlib.sha256(RULES.encode()).hexdigest(),
@@ -586,7 +857,7 @@ class Engine:
             self.memory.append(question, reply)
             self.trace("client_reply", reply=reply)
             return reply
-        self.schemas = {t["name"]: copy.deepcopy(t) for t in bundle["tools"]}
+        self.schemas = {t["name"]: copy.deepcopy(t) for t in bundle["tools"] if t["name"] != "ship_action"}
         if "press_binding" in self.schemas:
             self.schemas["press_binding"]["description"] += (
                 " Use exact Elite action IDs: FocusLeftPanel opens the left cockpit panel; "
@@ -647,7 +918,8 @@ class Engine:
                 "Use this snapshot over historical assistant statements. Do not offer to request basic facts already supplied. "
                 "Do not recite a status report unless relevant to the conversation. Observed durations are lower bounds; "
                 "journal-confirmed transitions have separate fields. Rates are computed, not predictions.\n"
-                + json.dumps(await self.instrument_context(session, include_events=round_number == 0)))
+                + json.dumps(await self.instrument_context(session, include_events=round_number == 0))
+                + "\nRecent command reflex receipts: " + json.dumps(self.reflex_receipts[-20:]))
             turn_start = await self.fit_context(messages, tools, turn_start)
             self.trace("context_estimate", round=round_number, estimated_tokens=await self.token_count(messages, tools),
                        budget=self.context_budget, message_count=len(messages))
@@ -715,9 +987,158 @@ class Engine:
                         old["content"] = "Older cockpit image omitted from context; use the latest observation."
         raise RuntimeError("Tool round limit reached; no further controls sent")
 
-    async def connected(self, session, bundle):
-        self.report("state", "Ready — listening" if self.settings["listen"] else "Ready — text input")
-        self.paused.clear()
+    @staticmethod
+    def tool_data(result):
+        if result.is_error:
+            raise ValueError("Tool did not confirm success")
+        data = json.loads(next(p.text for p in result.content if p.type == "text"))
+        if not isinstance(data, dict):
+            raise ValueError("Unexpected tool response")
+        return data
+
+    async def fastpath(self, session, text, *, spoken, held=False, metadata=None):
+        if not self.settings.get("fastpath_enabled", False):
+            return False
+        if self.speech and (command_match(text) or dictation(text)):
+            self.speech.interrupt()
+        if await self.plan_reflex(session, text, spoken):
+            return True
+        match = command_match(text)
+        entry = dictation(text)
+        scratch = re.fullmatch(r"(?:holt[,.]? )?scratch that[.!]?", text.strip(), re.I)
+        if entry is not None or scratch:
+            if spoken and not confident(metadata):
+                reply = "I couldn't confirm that dictation, Captain. Nothing logged."
+            else:
+                self.tool_data(await session.call_tool("log_entry", {"scratch": True} if scratch else {"text": entry, "author": "captain"}))
+                reply = "Scratched." if scratch else "Logged."
+            self.memory.append(text, {"text": reply, "delivery": "normal"})
+            self.report("fastpath", {"command": text, "text": reply})
+            await self.speak(reply, ttl=6, wait=False)
+            return True
+        if match is None:
+            return False
+        cancel = match.actions[0]["action"] == "cancel"
+        refusal = command_gate(match, held=held, metadata=metadata, spoken=spoken,
+                               open_mic=self.settings.get("open_mic_fastpath", "toggles_only"))
+        if not cancel and (self.stopping or not self.settings["allow_actions"]):
+            refusal = "Game controls are off, Captain. Enable Explicit game commands to send input."
+        receipts, lines = [], []
+        if refusal:
+            lines.append(refusal)
+        elif cancel:
+            self.control_epoch += 1
+            data = self.tool_data(await session.call_tool("cancel_action", {}))
+            action = data.get("action")
+            state = action.get("state") if isinstance(action, dict) else None
+            cockpit = data.get("cockpit", {}) or {}
+            lines.append("Stopped, Captain." if data.get("requested") and state == "cancelled" else "Cancellation requested, Captain." if data.get("requested") and state == "running" else "Nothing running, Captain.")
+            if cockpit.get("gui_focus") not in {None, "None"}:
+                lines.append("The " + cockpit["gui_focus"] + " is still open.")
+            receipts.append(data)
+        else:
+            for command in match.actions:
+                if self.stopping or not self.settings["allow_actions"]:
+                    lines.append("Game controls were disabled. Remaining commands stopped.")
+                    break
+                self.trace("fastpath_execution", tool="ship_action", arguments=command)
+                started = time.monotonic()
+                try:
+                    data = self.tool_data(await asyncio.wait_for(session.call_tool("ship_action", command), 5))
+                except (asyncio.TimeoutError, ValueError):
+                    data = dict(command, outcome="not_confirmed", pressed=None)
+                self.trace("fastpath_result", result=data, elapsed_ms=round((time.monotonic()-started)*1000))
+                receipts.append(data)
+                lines.append(acknowledgement(data))
+                if data.get("outcome") not in {"already", "done", "pressed_unverified"}:
+                    break
+        reply = {"text": " ".join(lines), "delivery": "normal", "reflex_receipts": receipts}
+        self.reflex_receipts.extend(receipts)
+        self.reflex_receipts = self.reflex_receipts[-50:]
+        self.memory.append(text, reply)
+        self.report("fastpath", {"command": text, **reply})
+        await self.speak(reply["text"], ttl=6, wait=False)
+        flavor = self.settings.get("fastpath_flavor", "sometimes")
+        if receipts and not cancel and flavor != "off" and not self.busy and time.monotonic()-self.last_flavor >= (30 if flavor == "sometimes" else 0):
+            self.last_flavor = time.monotonic()
+            self.spawn(self.optional_line(receipts))
+        return True
+
+    def reset_reflex_context(self):
+        self.accepted_routes.clear()
+        self.last_route_reference = self.pending_leg = None
+        self.reflex_receipts.clear()
+
+    async def plan_reflex(self, session, text, spoken):
+        pending, self.pending_leg = self.pending_leg, None
+        words = re.sub(r"[.!]$", "", text.strip().casefold())
+        words = re.sub(r"^holt[,.]? +", "", words)
+        mission = re.fullmatch(r"accept mission (\d+)", words)
+        if mission and spoken:
+            self.tool_data(await session.call_tool("plan", {"op":"set", "reference":"mission:" + mission[1]}))
+            await self.speak("Mission plan saved, Captain.", wait=False)
+            return True
+        if words in {"what's the plan", "what is the plan"}:
+            self.spawn(self.briefing(session))
+            return True
+        if words == "end of watch":
+            self.spawn(self.end_watch(session))
+            return True
+        if words in {"accept that route", "use that route", "accept route"}:
+            reference = getattr(self, "last_route_reference", None)
+            if not reference or not spoken:
+                return False
+            self.accepted_routes.add(reference)
+            self.tool_data(await session.call_tool("plan", {"op": "set", "reference": reference}))
+            await self.speak("Plan saved, Captain.")
+            return True
+        if words == "plot the next leg":
+            plan = self.tool_data(await session.call_tool("plan", {"op": "get"}))
+            legs = plan.get("legs", [])
+            index = plan.get("index", 0)
+            if plan.get("state") != "active" or index >= len(legs):
+                await self.speak("No active plan, Captain.")
+                return True
+            leg = legs[index]
+            self.pending_leg = (leg["system"], time.monotonic()+15)
+            await self.speak("Next leg is " + leg.get("station", "") + " in " + leg["system"] + ". Plot it?")
+            return True
+        if pending and pending[1] >= time.monotonic() and words in {"yes", "plot it", "do it"}:
+            if self.stopping or not self.settings["allow_actions"]:
+                await self.speak("Game controls are off, Captain.")
+            else:
+                self.spawn(self.plot_confirmed(session, pending[0], self.control_epoch))
+            return True
+        return False
+
+    async def plot_confirmed(self, session, system, epoch):
+        if self.stopping or not self.settings["allow_actions"] or epoch != self.control_epoch:
+            return
+        result = await session.call_tool("plot_route", {"system":system})
+        content = " ".join(p.text for p in result.content if p.type == "text")
+        text = content if not result.is_error else "Route plotting was not confirmed, Captain. " + content[:500]
+        self.memory.append("Confirmed next leg: " + system, {"text":text,"delivery":"normal"})
+        self.report("fastpath", {"command":"Plot confirmed next leg: " + system,"text":text})
+        await self.speak(text, wait=False)
+
+    async def transcribe(self, value):
+        metadata = value if isinstance(value, dict) else {"pcm": value, "held": False}
+        self.trace_id.set(metadata.get("trace_id") or uuid.uuid4().hex)
+        started = time.monotonic()
+        prompt = "Elite Dangerous. HOLT. AD Leonis. Ross 248. Homer Platform."
+        if metadata.get("held"):
+            prompt += " Heat sink. Chaff. Shield cell. Hardpoints. Landing gear. Cargo scoop. Flight assist."
+        response = await self.http.post(self.settings["transcription_url"] + "/inference",
+            files={"file": ("utterance.wav", wav_bytes(metadata["pcm"]), "audio/wav")},
+            data={"response_format": "verbose_json", "language": "en", "prompt": prompt})
+        response.raise_for_status()
+        result = response.json()
+        text = result.get("text", "").strip()
+        self.trace("transcription", text=text, held=metadata.get("held", False), elapsed_ms=round((time.monotonic()-started)*1000),
+                   confidence_available=confident(result))
+        return text, metadata, result
+
+    async def ingest(self, session, bundle, turns, *, tavern=False):
         while not self.stopped.is_set():
             if self.watcher and self.watcher.done():
                 await self.watcher
@@ -725,39 +1146,84 @@ class Engine:
                 kind, value = await asyncio.to_thread(self.inputs.get, True, .2)
             except queue.Empty:
                 continue
-            self.paused.set()
-            self.busy = True
             try:
-                self.report("state", "Transcribing…" if kind == "audio" else "Thinking…")
+                self.trace_id.set(uuid.uuid4().hex)
+                self.speech_epoch += 1
+                if kind == "audio":
+                    if tavern and time.monotonic() - self.manager.lease >= 12:
+                        continue
+                    if isinstance(value, dict) and time.monotonic() - value.get("captured_at", time.monotonic()) > 8:
+                        self.report("error", "Stale utterance dropped without execution.")
+                        continue
+                    text, captured, confidence = await self.transcribe(value)
+                    if time.monotonic() - captured.get("captured_at", time.monotonic()) > 8:
+                        self.report("error", "Transcription arrived too late; no command was sent.")
+                        continue
+                    if not text or non_speech(text) or text.lower().strip(" .!") in ("thank you", "thanks for watching", "you"):
+                        continue
+                    if self.settings.get("ptt_mode") == "hold":
+                        state = self.ptt.frame()
+                        if not captured.get("held") or not state["connected"] or captured.get("generation", state["generation"]) != state["generation"]:
+                            continue
+                    if await self.fastpath(session, text, spoken=True, held=captured.get("held", False), metadata=confidence):
+                        continue
+                    if tavern:
+                        if not self.manager.awaiting_voice:
+                            self.manager.awaiting_voice = True
+                            self.report("transcript", text)
+                        continue
+                    kind, value = "spoken", text
+                elif kind == "text" and await self.fastpath(session, value, spoken=False):
+                    continue
+                if turns.full():
+                    self.report("error", "Conversation queue is full; this turn was dropped. Commands are never replayed.")
+                else:
+                    turns.put_nowait((kind, value, self.trace_id.get(), time.monotonic()))
+            except (ValueError, RuntimeError, httpx2.HTTPError, asyncio.TimeoutError) as exc:
+                self.report("error", str(exc)[:700])
+
+    async def connected(self, session, bundle):
+        self.session = session
+        self.report("state", "Ready — listening" if self.settings["listen"] else "Ready — text input")
+        self.paused.clear()
+        turns = asyncio.Queue(maxsize=8)
+        ingest = asyncio.create_task(self.ingest(session, bundle, turns))
+        try:
+            while not self.stopped.is_set():
+                if ingest.done():
+                    await ingest
+                try:
+                    kind, value, trace_id, queued_at = await asyncio.wait_for(turns.get(), .2)
+                except asyncio.TimeoutError:
+                    continue
+                self.trace_id.set(trace_id)
+                if time.monotonic()-queued_at > 30:
+                    self.report("error", "Queued turn expired; no game command was sent.")
+                    continue
                 if kind == "new_session":
                     self.memory.new_session()
+                    self.reset_reflex_context()
                     self.report("clear", "New conversation started; preferences retained.")
                     continue
-                if kind == "audio":
-                    response = await self.http.post(self.settings["transcription_url"] + "/inference",
-                        files={"file": ("utterance.wav", wav_bytes(value), "audio/wav")},
-                        data={"response_format": "json", "language": "en", "prompt": "Elite Dangerous. HOLT. AD Leonis. Ross 248. Homer Platform."})
-                    response.raise_for_status()
-                    value = response.json().get("text", "").strip()
-                    if not value or non_speech(value) or value.lower().strip(" .!") in ("thank you", "thanks for watching", "you"):
-                        continue
-                self.report("user", value)
-                self.report("state", "Thinking…")
-                reply = await self.converse(session, bundle, value, kind == "audio")
-                if reply.get("respond") is not False:
-                    self.report("assistant", reply["text"])
-                    if reply.get("sources"):
-                        self.report("sources", reply["sources"])
-                    await self.speak(reply["text"], reply["delivery"])
-                else:
-                    self.report("service", "HOLT chose to leave this turn unanswered.")
-            except (RuntimeError, ValueError, ValidationError) as exc:
-                self.report("error", str(exc)[:700])
-            finally:
-                await asyncio.sleep(.3)
-                self.busy = False
-                self.paused.clear()
-                self.report("state", "Ready — listening" if self.settings["listen"] else "Ready — text input")
+                self.busy = True
+                try:
+                    self.report("user", value)
+                    self.report("state", "Thinking…")
+                    reply = await self.converse(session, bundle, value, kind == "spoken")
+                    if reply.get("respond") is not False:
+                        self.report("assistant", reply["text"])
+                        if reply.get("sources"):
+                            self.report("sources", reply["sources"])
+                        await self.speak(reply["text"], reply["delivery"])
+                except (RuntimeError, ValueError, ValidationError) as exc:
+                    self.report("error", str(exc)[:700])
+                finally:
+                    self.busy = False
+                    self.report("state", "Ready — listening" if self.settings["listen"] else "Ready — text input")
+        finally:
+            ingest.cancel()
+            await asyncio.gather(ingest, return_exceptions=True)
+            self.session = None
 
     async def run(self):
         self.loop = asyncio.get_running_loop()
@@ -772,6 +1238,7 @@ class Engine:
                     if reply.get("sources"):
                         self.report("sources", reply["sources"])
             token = WinVaultKeyring().get_password("HoltzmanVoice", "holtzman-bearer")
+            self.bearer_token = token
             if not token:
                 raise RuntimeError("Save the Holtzman credential with scripts/save-holt-credential.ps1")
             if self.settings["speak"] or self.settings["listen"]:
@@ -780,7 +1247,7 @@ class Engine:
                 self.report("state", "Loading George’s voice…")
                 self.speaker = await asyncio.to_thread(Speaker, self.settings, self.stopped)
             if self.settings["listen"]:
-                mic = Microphone(self.settings, self.inputs, self.paused, self.stopped, self.report)
+                mic = Microphone(self.settings, self.inputs, self.paused, self.stopped, self.report, self.ptt)
                 self.mic_thread = threading.Thread(target=mic.run, daemon=True)
                 self.mic_thread.start()
             async with httpx2.AsyncClient(timeout=180, trust_env=False) as self.http:
@@ -803,11 +1270,18 @@ class Engine:
                                     try:
                                         await self.connected(session, bundle)
                                     finally:
+                                        self.stream_disconnected()
                                         watcher.cancel()
                                         await asyncio.gather(watcher, return_exceptions=True)
                     except asyncio.CancelledError:
                         raise
                     except Exception as exc:
+                        self.stream_disconnected()
+                        while not self.inputs.empty():
+                            try:
+                                self.inputs.get_nowait()
+                            except queue.Empty:
+                                break
                         self.paused.set()
                         self.report("ship", "Disconnected")
                         detail = exception_detail(exc)
@@ -819,4 +1293,9 @@ class Engine:
             self.stopped.set()
             if self.mic_thread:
                 await asyncio.to_thread(self.mic_thread.join, 2)
+            for task in self.background:
+                task.cancel()
+            await asyncio.gather(*self.background, return_exceptions=True)
+            if self.speech:
+                await self.speech.close()
             self.memory.close()

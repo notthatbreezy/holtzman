@@ -2,9 +2,10 @@
 import re
 import time
 
-READ = frozenset({"status", "fleet", "cargo", "market", "nav_route", "recent_events", "read_guide", "search_playbooks", "read_playbook", "list_bindings",
+READ = frozenset({"action_status", "events_since", "captains_log", "voyage_report", "status", "fleet", "cargo", "market", "nav_route", "recent_events", "read_guide", "search_playbooks", "read_playbook", "list_bindings",
                   "trade_commodities", "find_commodity_market", "plan_trade_route", "screenshot", "find_module", "cursor_position"})
-KNOWLEDGE_WRITE = frozenset({"save_playbook"})
+KNOWLEDGE_WRITE = frozenset({"save_playbook", "log_entry", "objectives", "plan"})
+ALWAYS_ALLOWED = frozenset({"cancel_action"})
 CONTROL = frozenset({"plot_route", "nav_target_start", "nav_target_move", "nav_target_confirm",
                      "nav_target_cancel", "press_binding", "record_click_target"})
 MENU_KEYS = frozenset({"FocusLeftPanel", "UI_Up", "UI_Down", "UI_Left", "UI_Right", "UI_Select",
@@ -60,6 +61,14 @@ class Permit:
         return " ".join(reasons) or None
 
     def check(self, name, arguments, read_only=False):
+        if name in ALWAYS_ALLOWED:
+            return
+        if name == "ship_action":
+            raise ValueError("Ship actions are handled only by command reflexes")
+        if name == "press_binding" and self.deferred:
+            from client.fastpath import SHIP_BINDINGS
+            if arguments.get("binding") in SHIP_BINDINGS:
+                raise ValueError("I cannot wait on a condition. Give the ship-system command when it is needed.")
         if name in READ or name in KNOWLEDGE_WRITE or read_only:
             return
         if self.natural:

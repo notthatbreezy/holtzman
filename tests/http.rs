@@ -98,6 +98,178 @@ async fn rejects_missing_token() {
 }
 
 #[tokio::test]
+async fn event_stream_and_ptt_share_auth_host_checks_and_preserve_comments() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("holtzman.toml");
+    let mut config = Config::generate();
+    config.journal_dir = Some(FIXTURES.into());
+    config.dry_run = true;
+    std::fs::write(
+        &path,
+        format!("# captain's settings\n{}", config.to_toml().unwrap()),
+    )
+    .unwrap();
+    let ship = Arc::new(Ship::new(config.clone(), Some(path.clone())).unwrap());
+    ship.events
+        .publish("input", "ptt", json!({"down":true,"input":"Mouse5"}));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    tokio::spawn(async move { axum::serve(listener, app(ship)).await.unwrap() });
+    let http = reqwest::Client::new();
+    for endpoint in ["events", "ptt"] {
+        assert_eq!(
+            http.get(format!("{base}/{endpoint}"))
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            401
+        );
+        assert_eq!(
+            http.get(format!("{base}/{endpoint}"))
+                .bearer_auth(&config.token)
+                .header("Host", "attacker.example")
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            403
+        );
+    }
+    let mut response = http
+        .get(format!("{base}/events"))
+        .bearer_auth(&config.token)
+        .send()
+        .await
+        .unwrap();
+    let first = tokio::time::timeout(std::time::Duration::from_secs(2), response.chunk())
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert!(String::from_utf8_lossy(&first).contains("snapshot"));
+    let post = http
+        .post(format!("{base}/ptt"))
+        .bearer_auth(&config.token)
+        .json(&json!({"input":"Mouse5"}))
+        .send()
+        .await
+        .unwrap();
+    assert!(post.status().is_success());
+    let text = std::fs::read_to_string(path).unwrap();
+    assert!(text.contains("# captain's settings"));
+    assert!(text.contains("Mouse5"));
+    assert_eq!(
+        http.post(format!("{base}/ptt"))
+            .bearer_auth(&config.token)
+            .json(&json!({"input":"Key_A"}))
+            .send()
+            .await
+            .unwrap()
+            .status(),
+        400
+    );
+    let mut reset = http
+        .get(format!("{base}/events"))
+        .bearer_auth(&config.token)
+        .header("Last-Event-ID", "999999")
+        .send()
+        .await
+        .unwrap();
+    let first = tokio::time::timeout(std::time::Duration::from_secs(2), reset.chunk())
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+    assert!(String::from_utf8_lossy(&first).contains("reset"));
+}
+
+#[tokio::test]
+async fn cancel_during_gui_wait_stops_before_the_next_input() {
+    use holtzman::{
+        config::Step,
+        input::{Recorder, TrackingSender},
+    };
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("Status.json"),
+        json!({"Flags":1<<24,"GuiFocus":0}).to_string(),
+    )
+    .unwrap();
+    std::fs::write(dir.path().join("Custom.4.0.binds"),r#"<Root><GalaxyMapOpen><Primary Device="Keyboard" Key="Key_M"/></GalaxyMapOpen><UI_Select><Primary Device="Keyboard" Key="Key_Space"/></UI_Select></Root>"#).unwrap();
+    let mut config = Config::generate();
+    config.dry_run = true;
+    config.tap_ms = 1;
+    config.journal_dir = Some(dir.path().into());
+    config.bindings_dir = Some(dir.path().into());
+    config.plot_route.steps = vec![
+        Step::Binding {
+            name: "GalaxyMapOpen".into(),
+            hold_ms: Some(1),
+        },
+        Step::WaitForGui {
+            focus: 6,
+            timeout_ms: 30000,
+        },
+        Step::Binding {
+            name: "UI_Select".into(),
+            hold_ms: Some(1),
+        },
+    ];
+    let token = config.token.clone();
+    let mut ship = Ship::new(config, None).unwrap();
+    let recorder = Recorder::default();
+    ship.sender = Arc::new(TrackingSender {
+        inner: Arc::new(recorder.clone()),
+        registry: ship.actions.clone(),
+        events: ship.events.clone(),
+    });
+    ship.screen = Arc::new(TestPattern);
+    // Enable real wait semantics with the sender and screen explicitly replaced by fakes.
+    ship.config.write().unwrap().dry_run = false;
+    let ship = Arc::new(ship);
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/mcp", listener.local_addr().unwrap());
+    let serving = ship.clone();
+    tokio::spawn(async move { axum::serve(listener, app(serving)).await.unwrap() });
+    let(sid,_)=rpc(&url,&token,None,json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"cancel-test","version":"0"}}})).await;
+    let sid = sid.unwrap();
+    let (plot_url, plot_token, plot_sid) = (url.clone(), token.clone(), sid.clone());
+    let plot = tokio::spawn(async move {
+        rpc(&plot_url,&plot_token,Some(&plot_sid),json!({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"plot_route","arguments":{"system":"Sol"}}})).await
+    });
+    for _ in 0..100 {
+        if ship.actions.status()["step"] == 2 {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+    }
+    assert_eq!(ship.actions.status()["step"], 2);
+    let(_,cancel)=rpc(&url,&token,Some(&sid),json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"cancel_action","arguments":{}}})).await;
+    assert!(cancel.to_string().contains("cancelled"), "{cancel}");
+    let _ = tokio::time::timeout(std::time::Duration::from_secs(1), plot)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        recorder
+            .entries()
+            .iter()
+            .filter(|e| e.starts_with("down "))
+            .count(),
+        1
+    );
+    assert_eq!(
+        recorder
+            .entries()
+            .iter()
+            .filter(|e| e.starts_with("up "))
+            .count(),
+        1
+    );
+}
+
+#[tokio::test]
 async fn all_configured_keyboard_actions_are_discoverable_and_pressable() {
     let dir = tempfile::tempdir().unwrap();
     std::fs::write(dir.path().join("Custom.4.0.binds"), r#"<Root><FocusLeftPanel><Primary Device="Keyboard" Key="Key_1"/></FocusLeftPanel><PrimaryFire><Primary Device="Keyboard" Key="Key_Space"/></PrimaryFire></Root>"#).unwrap();

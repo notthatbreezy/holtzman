@@ -62,6 +62,10 @@ pub struct Ship {
     pub playbooks: crate::playbooks::Store,
     /// The open `nav_target_*` exchange, if any.
     pub nav: std::sync::Mutex<Option<NavSession>>,
+    pub actions: Arc<crate::actions::Registry>,
+    pub events: Arc<crate::events::Bus>,
+    pub ptt: Arc<crate::ptt::Reader>,
+    pub log: crate::captains_log::Store,
 }
 
 impl Ship {
@@ -79,10 +83,32 @@ impl Ship {
             ),
             _ => None,
         };
-        let sender = platform_sender(config.dry_run);
+        let log_root = config_path
+            .as_ref()
+            .map(|p| {
+                p.parent().unwrap_or(std::path::Path::new(".")).join(
+                    config
+                        .captains_log_dir
+                        .clone()
+                        .unwrap_or_else(|| "captains_log".into()),
+                )
+            })
+            .or_else(|| config.captains_log_dir.clone());
+        let events = Arc::new(crate::events::Bus::default());
+        let ptt = Arc::new(crate::ptt::Reader::new(config.ptt.clone(), events.clone()));
+        let actions = Arc::new(crate::actions::Registry::default());
+        let sender: Arc<dyn KeySender> = Arc::new(crate::input::TrackingSender {
+            inner: platform_sender(config.dry_run),
+            registry: actions.clone(),
+            events: events.clone(),
+        });
         Ok(Self {
             journal: JournalDir::new(dir),
             sender,
+            actions,
+            events,
+            ptt,
+            log: crate::captains_log::Store::new(log_root),
             controls: Mutex::new(()),
             screen: platform_screen(),
             spansh: Spansh::new()?,
@@ -113,6 +139,7 @@ pub struct Holtzman {
     ship: Arc<Ship>,
     #[allow(dead_code, reason = "read by the #[tool_handler] macro")]
     tool_router: ToolRouter<Self>,
+    route_references: Arc<std::sync::Mutex<std::collections::HashSet<String>>>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -127,6 +154,21 @@ pub struct EventsArgs {
     pub limit: Option<usize>,
     #[schemars(description = "Only these event types, e.g. [\"MarketSell\", \"FSDJump\"]")]
     pub only: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct StreamArgs {
+    pub cursor: Option<u64>,
+    pub wait_ms: Option<u64>,
+    pub types: Option<Vec<String>>,
+}
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ReportArgs {
+    pub session: Option<String>,
+}
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct BriefingArgs {
+    pub trade: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -247,7 +289,235 @@ impl Holtzman {
         Self {
             ship,
             tool_router: Self::tool_router(),
+            route_references: Default::default(),
         }
+    }
+
+    #[tool(
+        description = "Press a named ship system explicitly ordered in the Captain's current message; never conditional or automatic. Toggles require state on/off/toggle. Status.json checks and verification are included.",
+        annotations(read_only_hint = false, destructive_hint = true)
+    )]
+    async fn ship_action(
+        &self,
+        Parameters(args): Parameters<crate::actions::Args>,
+    ) -> Result<String, String> {
+        let name = args.action.clone();
+        let result=self.controlled("ship_action",async {
+            let bindings=match self.ship.bindings(){
+                Ok(b)=>b,
+                Err(reason)=>return Ok(pretty(serde_json::json!({"action":args.action,"outcome":"unbound","pressed":false,"before":null,"after":null,"elapsed_ms":0,"reason":reason}))),
+            };
+            Ok(pretty(crate::actions::execute(&args,&self.ship.config(),&bindings,&self.ship.journal,self.ship.sender.as_ref()).await))
+        }).await;
+        match result {
+            Err(reason) if reason == "another keypress sequence is already running" => Ok(pretty(
+                serde_json::json!({"action":name,"outcome":"busy","pressed":false,"before":null,"after":null,"elapsed_ms":0}),
+            )),
+            other => other,
+        }
+    }
+
+    #[tool(
+        description = "Cancel the running control without taking the input lock; report termination and current cockpit state.",
+        annotations(read_only_hint = false, destructive_hint = false)
+    )]
+    async fn cancel_action(&self) -> Result<String, String> {
+        let target = self.ship.actions.cancel();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_millis(500);
+        while target
+            .as_ref()
+            .is_some_and(|id| self.ship.actions.record(id)["state"] == "running")
+            && std::time::Instant::now() < deadline
+        {
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+        let action = target
+            .as_ref()
+            .map(|id| self.ship.actions.record(id))
+            .unwrap_or_else(|| self.ship.actions.status());
+        Ok(pretty(
+            serde_json::json!({"requested":target.is_some(),"action":action,"cockpit":self.ship.journal.ui_state().ok()}),
+        ))
+    }
+    #[tool(
+        description = "Read the running or last control action.",
+        annotations(read_only_hint = true)
+    )]
+    async fn action_status(&self) -> Result<String, String> {
+        Ok(pretty(self.ship.actions.status()))
+    }
+    #[tool(
+        description = "Read numbered ship events, optionally waiting up to 25000 ms; reset/snapshot silently resynchronizes state.",
+        annotations(read_only_hint = true)
+    )]
+    async fn events_since(
+        &self,
+        Parameters(args): Parameters<StreamArgs>,
+    ) -> Result<String, String> {
+        Ok(pretty(
+            self.ship
+                .events
+                .wait(
+                    args.cursor,
+                    args.wait_ms.unwrap_or(0),
+                    &args.types.unwrap_or_default(),
+                )
+                .await,
+        ))
+    }
+    #[tool(
+        description = "Look up past sessions from journal facts, verbatim captain entries, and separately labelled HOLT narratives.",
+        annotations(read_only_hint = true)
+    )]
+    async fn captains_log(
+        &self,
+        Parameters(args): Parameters<crate::captains_log::Query>,
+    ) -> Result<String, String> {
+        self.ship
+            .log
+            .query(args, &self.ship.journal)
+            .map(pretty)
+            .map_err(err)
+    }
+    #[tool(
+        description = "Read one session's voyage facts, earnings, discoveries and avoidable incidents.",
+        annotations(read_only_hint = true)
+    )]
+    async fn voyage_report(
+        &self,
+        Parameters(args): Parameters<ReportArgs>,
+    ) -> Result<String, String> {
+        self.ship
+            .log
+            .report(args.session, &self.ship.journal)
+            .map(pretty)
+            .map_err(err)
+    }
+    #[tool(
+        description = "Save a verbatim Captain entry or labelled HOLT narrative; scratch=true deletes the last captain entry within one minute.",
+        annotations(read_only_hint = false, destructive_hint = false)
+    )]
+    async fn log_entry(
+        &self,
+        Parameters(args): Parameters<crate::captains_log::EntryArgs>,
+    ) -> Result<String, String> {
+        self.ship
+            .log
+            .entry(args, &self.ship.journal)
+            .map(pretty)
+            .map_err(err)
+    }
+    #[tool(
+        description = "List, set or close standing objectives; knowledge writes never authorize controls.",
+        annotations(read_only_hint = false, destructive_hint = false)
+    )]
+    async fn objectives(
+        &self,
+        Parameters(args): Parameters<crate::captains_log::ObjectiveArgs>,
+    ) -> Result<String, String> {
+        self.ship
+            .log
+            .objectives(args, &self.ship.journal)
+            .map(pretty)
+            .map_err(err)
+    }
+    #[tool(
+        description = "Read a code-built session briefing: ship/location, rebuy reserve, active missions, objectives and grounded choices; Captain selects.",
+        annotations(read_only_hint = true)
+    )]
+    async fn session_briefing(
+        &self,
+        Parameters(args): Parameters<BriefingArgs>,
+    ) -> Result<String, String> {
+        let objectives = self
+            .ship
+            .log
+            .objectives(
+                crate::captains_log::ObjectiveArgs {
+                    op: "list".into(),
+                    text: None,
+                    measure: None,
+                    id: None,
+                },
+                &self.ship.journal,
+            )
+            .map_err(err)?;
+        let plan = self
+            .ship
+            .log
+            .plan(
+                crate::captains_log::PlanArgs {
+                    op: "get".into(),
+                    reference: None,
+                },
+                &self.ship.journal,
+            )
+            .map_err(err)?;
+        let mut briefing = crate::planning::briefing(&self.ship.journal, objectives, plan);
+        if args.trade.unwrap_or(false) {
+            let facts = self.ship.journal.summary().map_err(err)?;
+            let free = facts["ship"]["cargo_capacity"]
+                .as_u64()
+                .zip(facts["status"]["cargo_tons"].as_u64())
+                .map(|(capacity, cargo)| capacity.saturating_sub(cargo));
+            if facts["status"]["flags"]
+                .as_array()
+                .is_some_and(|flags| flags.iter().any(|f| f == "Docked"))
+                && free.is_some_and(|n| n > 0)
+                && briefing["spendable_after_rebuy"]
+                    .as_u64()
+                    .is_some_and(|n| n > 0)
+                && let Ok(query) = serde_json::from_value::<RouteArgs>(
+                    serde_json::json!({"system":facts["location"]["system"],"station":facts["location"]["station"],"cargo_tonnes":free,"budget_credits":briefing["spendable_after_rebuy"],"max_legs":2}),
+                )
+            {
+                match tokio::time::timeout(
+                    std::time::Duration::from_secs(8),
+                    self.ship.spansh.route(query),
+                )
+                .await
+                {
+                    Ok(Ok(route)) => {
+                        let reference = self.ship.log.cache_route(route.clone());
+                        self.route_references
+                            .lock()
+                            .unwrap()
+                            .insert(reference.clone());
+                        if let Some(options) = briefing["options"].as_array_mut() {
+                            options.truncate(2);
+                            options.push(serde_json::json!({"kind":"trade_route","reference":reference,"route":route}));
+                        }
+                    }
+                    _ => {
+                        briefing["trade_search"] = serde_json::json!(
+                            "unavailable within briefing budget; no offer invented"
+                        );
+                    }
+                }
+            }
+        }
+        Ok(pretty(briefing))
+    }
+    #[tool(
+        description = "Set/get/skip_leg/clear a persistent plan from a verified route_reference accepted by the Captain; arbitrary legs are refused. Never grants control.",
+        annotations(read_only_hint = false, destructive_hint = false)
+    )]
+    async fn plan(
+        &self,
+        Parameters(args): Parameters<crate::captains_log::PlanArgs>,
+    ) -> Result<String, String> {
+        if args.op == "set"
+            && args.reference.as_ref().is_some_and(|r| {
+                !r.starts_with("mission:") && !self.route_references.lock().unwrap().contains(r)
+            })
+        {
+            return Err("route reference belongs to a different MCP session".into());
+        }
+        self.ship
+            .log
+            .plan(args, &self.ship.journal)
+            .map(pretty)
+            .map_err(err)
     }
 
     #[tool(
@@ -383,27 +653,32 @@ impl Holtzman {
         &self,
         Parameters(args): Parameters<RouteArgs>,
     ) -> Result<String, String> {
-        self.ship.spansh.route(args).await.map(pretty).map_err(err)
+        let mut result = self.ship.spansh.route(args).await.map_err(err)?;
+        let reference = self.ship.log.cache_route(result.clone());
+        self.route_references
+            .lock()
+            .unwrap()
+            .insert(reference.clone());
+        result["route_reference"] = serde_json::json!(reference);
+        Ok(pretty(result))
     }
 
     #[tool(
         description = "Plot a route to a star system: opens the galaxy map, searches for the system, plots, closes the map, then confirms via NavRoute.json. Takes control of the keyboard for ~10 s, so tell the commander first. The game must be focused with no panel open."
     )]
     async fn plot_route(&self, Parameters(args): Parameters<PlotArgs>) -> Result<String, String> {
-        let _guard = self
-            .ship
-            .controls
-            .try_lock()
-            .map_err(|_| "another keypress sequence is already running".to_string())?;
-        let bindings = self.ship.bindings()?;
-        let config = self.ship.config();
-        let pilot = Pilot {
-            config: &config,
-            bindings: &bindings,
-            journal: &self.ship.journal,
-            sender: self.ship.sender.as_ref(),
-        };
-        pilot.plot_route(&args.system).await.map_err(err)
+        self.controlled("plot_route", async {
+            let bindings = self.ship.bindings()?;
+            let config = self.ship.config();
+            let pilot = Pilot {
+                config: &config,
+                bindings: &bindings,
+                journal: &self.ship.journal,
+                sender: self.ship.sender.as_ref(),
+            };
+            pilot.plot_route(&args.system).await.map_err(err)
+        })
+        .await
     }
 
     #[tool(
@@ -430,7 +705,7 @@ impl Holtzman {
             .map(|(name, chord)| serde_json::json!({"name": name, "keys": chord.to_string()}))
             .collect();
         Ok(pretty(
-            serde_json::json!({"actions": actions, "note": "All active keyboard bindings are available. Joystick-only actions require a keyboard secondary binding."}),
+            serde_json::json!({"actions": actions, "ship_actions": crate::actions::coverage(&self.ship.config(), &bindings), "note": "All active keyboard bindings are available. Joystick-only actions require a keyboard secondary binding."}),
         ))
     }
 
@@ -441,56 +716,71 @@ impl Holtzman {
         &self,
         Parameters(args): Parameters<PressArgs>,
     ) -> Result<CallToolResult, String> {
-        let _guard = self
-            .ship
-            .controls
-            .try_lock()
-            .map_err(|_| "another keypress sequence is already running".to_string())?;
-        let bindings = self.ship.bindings()?;
-        bindings
-            .get(&args.binding)
-            .and_then(|c| c.scan_codes())
-            .map_err(err)?;
-        // Resolve the view and grab the "before" frame first, so a bad region
-        // or failed capture stops us before any key is pressed.
-        let observe = match args.observe.unwrap_or(false) {
-            true => {
-                let view = self.view(args.region.as_deref(), None)?;
-                Some((view, self.grab().await?))
+        self.controlled("press_binding", async {
+            let bindings = self.ship.bindings()?;
+            bindings
+                .get(&args.binding)
+                .and_then(|c| c.scan_codes())
+                .map_err(err)?;
+            if let Some(action) = crate::actions::by_binding(&args.binding) {
+                action.precondition(
+                    &self.ship.config(),
+                    &bindings,
+                    &self.ship.journal.status().map_err(err)?,
+                )?;
+                if self.ship.sender.modifiers_down() {
+                    return Err("release Shift, Ctrl and Alt first".into());
+                }
             }
-            false => None,
-        };
-        self.ship.sender.focus_game().map_err(err)?;
-        let config = self.ship.config();
-        let pilot = Pilot {
-            config: &config,
-            bindings: &bindings,
-            journal: &self.ship.journal,
-            sender: self.ship.sender.as_ref(),
-        };
-        let pressed = pilot
-            .press_binding(&args.binding, args.hold_ms)
-            .await
-            .map_err(err)?;
-        let Some(((name, region), before)) = observe else {
-            return Ok(CallToolResult::success(vec![ContentBlock::text(pressed)]));
-        };
-        let settle = args.settle_ms.unwrap_or(500).min(5000);
-        tokio::time::sleep(std::time::Duration::from_millis(settle)).await;
-        let after = self.grab().await?;
-        let changed = crate::screen::changed_fraction(&before, &after);
-        self.picture(
-            &after,
-            &name,
-            region,
-            None,
-            None,
-            serde_json::json!({
-                "pressed": pressed,
-                "settle_ms": settle,
-                "screen_changed_pct": (changed * 1000.0).round() / 10.0,
-            }),
-        )
+            // Resolve the view and grab the "before" frame first, so a bad region
+            // or failed capture stops us before any key is pressed.
+            let observe = match args.observe.unwrap_or(false) {
+                true => {
+                    let view = self.view(args.region.as_deref(), None)?;
+                    Some((view, self.grab().await?))
+                }
+                false => None,
+            };
+            self.ship.sender.focus_game().map_err(err)?;
+            let config = self.ship.config();
+            if let Some(action) = crate::actions::by_binding(&args.binding) {
+                action.precondition(
+                    &config,
+                    &bindings,
+                    &self.ship.journal.status().map_err(err)?,
+                )?;
+            }
+            let pilot = Pilot {
+                config: &config,
+                bindings: &bindings,
+                journal: &self.ship.journal,
+                sender: self.ship.sender.as_ref(),
+            };
+            let pressed = pilot
+                .press_binding(&args.binding, args.hold_ms)
+                .await
+                .map_err(err)?;
+            let Some(((name, region), before)) = observe else {
+                return Ok(CallToolResult::success(vec![ContentBlock::text(pressed)]));
+            };
+            let settle = args.settle_ms.unwrap_or(500).min(5000);
+            tokio::time::sleep(std::time::Duration::from_millis(settle)).await;
+            let after = self.grab().await?;
+            let changed = crate::screen::changed_fraction(&before, &after);
+            self.picture(
+                &after,
+                &name,
+                region,
+                None,
+                None,
+                serde_json::json!({
+                    "pressed": pressed,
+                    "settle_ms": settle,
+                    "screen_changed_pct": (changed * 1000.0).round() / 10.0,
+                }),
+            )
+        })
+        .await
     }
 
     #[tool(
@@ -524,13 +814,15 @@ impl Holtzman {
         &self,
         Parameters(args): Parameters<NavStartArgs>,
     ) -> Result<CallToolResult, String> {
-        let _guard = self.controls()?;
-        let bindings = self.ship.bindings()?;
-        let config = self.ship.config();
-        let nav = self.nav(&config, &bindings);
-        let (session, view) = nav.start(&args.station, args.action).await.map_err(err)?;
-        *self.ship.nav.lock().expect("nav lock") = Some(session);
-        self.nav_view(view, config.nav_target.list_region)
+        self.controlled("nav_target_start", async {
+            let bindings = self.ship.bindings()?;
+            let config = self.ship.config();
+            let nav = self.nav(&config, &bindings);
+            let (session, view) = nav.start(&args.station, args.action).await.map_err(err)?;
+            *self.ship.nav.lock().expect("nav lock") = Some(session);
+            self.nav_view(view, config.nav_target.list_region)
+        })
+        .await
     }
 
     #[tool(
@@ -540,26 +832,28 @@ impl Holtzman {
         &self,
         Parameters(args): Parameters<NavMoveArgs>,
     ) -> Result<CallToolResult, String> {
-        let _guard = self.controls()?;
-        let mut session = NavSession::resume(
-            self.ship.nav.lock().expect("nav lock").as_ref(),
-            &args.session,
-        )
-        .map_err(err)?;
-        let bindings = self.ship.bindings()?;
-        let config = self.ship.config();
-        let nav = self.nav(&config, &bindings);
-        let view = nav
-            .move_cursor(
-                &mut session,
-                args.rows.unwrap_or(0),
-                args.tabs.unwrap_or(0),
-                args.expect.as_deref(),
+        self.controlled("nav_target_move", async {
+            let mut session = NavSession::resume(
+                self.ship.nav.lock().expect("nav lock").as_ref(),
+                &args.session,
             )
-            .await
             .map_err(err)?;
-        *self.ship.nav.lock().expect("nav lock") = Some(session);
-        self.nav_view(view, config.nav_target.list_region)
+            let bindings = self.ship.bindings()?;
+            let config = self.ship.config();
+            let nav = self.nav(&config, &bindings);
+            let view = nav
+                .move_cursor(
+                    &mut session,
+                    args.rows.unwrap_or(0),
+                    args.tabs.unwrap_or(0),
+                    args.expect.as_deref(),
+                )
+                .await
+                .map_err(err)?;
+            *self.ship.nav.lock().expect("nav lock") = Some(session);
+            self.nav_view(view, config.nav_target.list_region)
+        })
+        .await
     }
 
     #[tool(
@@ -569,17 +863,19 @@ impl Holtzman {
         &self,
         Parameters(args): Parameters<NavSessionArgs>,
     ) -> Result<CallToolResult, String> {
-        let _guard = self.controls()?;
-        let id = args.session.ok_or("session is required")?;
-        let session = NavSession::resume(self.ship.nav.lock().expect("nav lock").as_ref(), &id)
-            .map_err(err)?;
-        let bindings = self.ship.bindings()?;
-        let config = self.ship.config();
-        let nav = self.nav(&config, &bindings);
-        let result = nav.confirm(&session).await;
-        // One confirm per session, whatever happened.
-        self.ship.nav.lock().expect("nav lock").take();
-        self.nav_view(result.map_err(err)?, Region::FULL)
+        self.controlled("nav_target_confirm", async {
+            let id = args.session.ok_or("session is required")?;
+            let session = NavSession::resume(self.ship.nav.lock().expect("nav lock").as_ref(), &id)
+                .map_err(err)?;
+            let bindings = self.ship.bindings()?;
+            let config = self.ship.config();
+            let nav = self.nav(&config, &bindings);
+            let result = nav.confirm(&session).await;
+            // One confirm per session, whatever happened.
+            self.ship.nav.lock().expect("nav lock").take();
+            self.nav_view(result.map_err(err)?, Region::FULL)
+        })
+        .await
     }
 
     #[tool(
@@ -589,16 +885,18 @@ impl Holtzman {
         &self,
         Parameters(_args): Parameters<NavSessionArgs>,
     ) -> Result<String, String> {
-        let _guard = self.controls()?;
-        self.ship.nav.lock().expect("nav lock").take();
-        let bindings = self.ship.bindings()?;
-        let config = self.ship.config();
-        let nav = self.nav(&config, &bindings);
-        if self.ship.journal.gui_focus() != Some(config.nav_target.panel_gui_focus) {
-            return Ok("session ended; the left panel wasn't open".into());
-        }
-        nav.close().await.map_err(err)?;
-        Ok("session ended and the left panel closed".into())
+        self.controlled("nav_target_cancel", async {
+            self.ship.nav.lock().expect("nav lock").take();
+            let bindings = self.ship.bindings()?;
+            let config = self.ship.config();
+            let nav = self.nav(&config, &bindings);
+            if self.ship.journal.gui_focus() != Some(config.nav_target.panel_gui_focus) {
+                return Ok("session ended; the left panel wasn't open".into());
+            }
+            nav.close().await.map_err(err)?;
+            Ok("session ended and the left panel closed".into())
+        })
+        .await
     }
 
     #[tool(
@@ -715,19 +1013,26 @@ impl Holtzman {
                 pos.x, pos.y
             ));
         }
-        let snapshot = {
-            let mut config = self.ship.config.write().expect("config lock");
+        let mut config = self.ship.config.write().expect("config lock");
+        let saved = if let Some(path) = &self.ship.config_path {
+            let mut doc = std::fs::read_to_string(path)
+                .map_err(|e| e.to_string())?
+                .parse::<toml_edit::DocumentMut>()
+                .map_err(|e| e.to_string())?;
+            doc["click_targets"][name]["x"] = toml_edit::value(pos.x);
+            doc["click_targets"][name]["y"] = toml_edit::value(pos.y);
+            let text = doc.to_string();
+            let updated: Config = toml::from_str(&text).map_err(|e| e.to_string())?;
+            let tmp = path.with_extension("click.tmp");
+            std::fs::write(&tmp, text).map_err(|e| e.to_string())?;
+            std::fs::rename(tmp, path).map_err(|e| e.to_string())?;
+            *config = updated;
+            format!("saved to {}", path.display())
+        } else {
             config
                 .click_targets
                 .insert(name.to_string(), ClickTarget { x: pos.x, y: pos.y });
-            config.clone()
-        };
-        let saved = match &self.ship.config_path {
-            Some(path) => {
-                snapshot.save(path).map_err(err)?;
-                format!("saved to {}", path.display())
-            }
-            None => "not persisted (no config file)".into(),
+            "not persisted (no config file)".into()
         };
         Ok(format!(
             "recorded `{name}` at ({:.3}, {:.3}) of a {}x{} window; {saved}",
@@ -758,12 +1063,42 @@ impl Holtzman {
             .map_err(err)
     }
 
-    /// The keyboard, if no other keypress sequence holds it.
-    fn controls(&self) -> Result<tokio::sync::MutexGuard<'_, ()>, String> {
-        self.ship
+    async fn controlled<T>(
+        &self,
+        tool: &str,
+        operation: impl std::future::Future<Output = Result<T, String>>,
+    ) -> Result<T, String> {
+        let _guard = self
+            .ship
             .controls
             .try_lock()
-            .map_err(|_| "another keypress sequence is already running".to_string())
+            .map_err(|_| "another keypress sequence is already running".to_string())?;
+        let mut action = self.ship.actions.start(tool);
+        self.ship.events.publish(
+            "controls",
+            "action",
+            serde_json::json!({"phase":"started","action":self.ship.actions.status()}),
+        );
+        let result = tokio::select! { biased;
+            _ = action.token.cancelled() => Err("action cancelled; nothing will be replayed".into()),
+            result = operation => result,
+        };
+        if action.token.is_cancelled() && tool.starts_with("nav_target_") {
+            self.ship.nav.lock().unwrap().take();
+        }
+        action.finish(if action.token.is_cancelled() {
+            "cancelled"
+        } else if result.is_ok() {
+            "done"
+        } else {
+            "failed"
+        });
+        self.ship.events.publish(
+            "controls",
+            "action",
+            serde_json::json!({"phase":"finished","action":self.ship.actions.status()}),
+        );
+        result
     }
 
     fn nav<'a>(&'a self, config: &'a Config, bindings: &'a Bindings) -> Nav<'a> {
@@ -966,6 +1301,14 @@ impl ServerHandler for Holtzman {
              screen_changed_pct; near 0 means the press probably didn't land (often the game \
              lost focus), so look and ask rather than retry. plot_route plots to another \
              system; nav_target_start/move/confirm/cancel lock a station in this system.\n\n\
+             SHIP SYSTEMS: ship_action is only for an action named in the Captain's current \
+             message, never conditional or automatic. It checks and verifies status without \
+             screenshots; pressed_unverified means input only, not success. Never retry uncertainty. \
+             cancel_action stops the running input and reports cockpit state; action_status reads it. \
+             events_since reads resumable events; snapshots/reset never constitute new alerts. \
+             captains_log/voyage_report ground past play; log_entry saves verbatim entries or labelled \
+             HOLT accounts. objectives and plan are knowledge writes, never permission to fly; \
+             the Captain chooses a plan and confirms the repeated next destination before plotting.\n\n\
              BINDINGS: list_bindings discovers exact active action names. All configured keyboard actions are available. Do not invent labels such as PanelLeft; use FocusLeftPanel for the left cockpit panel.\n\n\
              GUIDES: read_guide (or resources guide://<name>) holds game concepts and mission \
              profiles. Read the matching profile when the commander starts an activity.\n\n\
@@ -996,6 +1339,119 @@ async fn require_token(State(token): State<Arc<String>>, req: Request, next: Nex
     }
 }
 
+async fn require_host(State(hosts): State<Arc<Vec<String>>>, req: Request, next: Next) -> Response {
+    let host = req
+        .headers()
+        .get(header::HOST)
+        .and_then(|h| h.to_str().ok())
+        .and_then(|s| s.parse::<axum::http::uri::Authority>().ok());
+    if host.is_some_and(|h| {
+        hosts.iter().any(|allowed| {
+            allowed.eq_ignore_ascii_case(h.host()) || allowed.eq_ignore_ascii_case(h.as_str())
+        })
+    }) {
+        next.run(req).await
+    } else {
+        (StatusCode::FORBIDDEN, "host not allowed").into_response()
+    }
+}
+async fn event_stream(State(ship): State<Arc<Ship>>, headers: axum::http::HeaderMap) -> Response {
+    let cursor = match headers.get("last-event-id") {
+        Some(v) => match v.to_str().ok().and_then(|v| v.parse::<u64>().ok()) {
+            Some(c) => Some(c),
+            None => return (StatusCode::BAD_REQUEST, "invalid Last-Event-ID").into_response(),
+        },
+        None => None,
+    };
+    let stream = futures_util::stream::unfold(
+        (
+            ship,
+            cursor,
+            std::collections::VecDeque::<serde_json::Value>::new(),
+            true,
+        ),
+        |(ship, mut cursor, mut pending, mut initial)| async move {
+            let event = loop {
+                if let Some(event) = pending.pop_front() {
+                    break event;
+                }
+                let batch = ship.events.wait(cursor, 10000, &[]).await;
+                cursor = batch["cursor"].as_u64();
+                pending.extend(batch["events"].as_array().unwrap().iter().cloned());
+                if initial {
+                    pending.push_back(serde_json::json!({"seq":batch["cursor"],"source":"server","t":chrono::Utc::now().to_rfc3339(),"type":"snapshot","data":batch["snapshot"]}));
+                    initial = false;
+                }
+            };
+            let item = Ok::<_, std::convert::Infallible>(
+                axum::response::sse::Event::default()
+                    .id(event["seq"].to_string())
+                    .data(event.to_string()),
+            );
+            Some((item, (ship, cursor, pending, initial)))
+        },
+    );
+    axum::response::Sse::new(stream)
+        .keep_alive(
+            axum::response::sse::KeepAlive::new().interval(std::time::Duration::from_secs(10)),
+        )
+        .into_response()
+}
+async fn ptt_state(State(ship): State<Arc<Ship>>) -> Response {
+    axum::Json(ship.ptt.snapshot()).into_response()
+}
+async fn configure_ptt(State(ship): State<Arc<Ship>>, body: axum::body::Bytes) -> Response {
+    let result = async {
+        let args: serde_json::Value = serde_json::from_slice(&body).map_err(|e| e.to_string())?;
+        if args["learn"] == true {
+            ship.ptt.learn();
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+            loop {
+                let snapshot = ship.ptt.snapshot();
+                if let Some(input) = snapshot["learned"].as_str() {
+                    return Ok(serde_json::json!({"input":input}));
+                }
+                if std::time::Instant::now() >= deadline {
+                    return Err("no supported PTT button pressed within 10 seconds".to_string());
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            }
+        }
+        let input = args["input"].as_str().ok_or("input required")?;
+        crate::ptt::validate_input(input)?;
+        let path = ship
+            .config_path
+            .as_ref()
+            .ok_or("configuration file unavailable")?;
+        let _guard = ship.config.write().map_err(|_| "config lock")?;
+        let mut doc = std::fs::read_to_string(path)
+            .map_err(|e| e.to_string())?
+            .parse::<toml_edit::DocumentMut>()
+            .map_err(|e| e.to_string())?;
+        let mut inputs = toml_edit::Array::new();
+        inputs.push(input);
+        doc["ptt"]["inputs"] = toml_edit::value(inputs);
+        let text = doc.to_string();
+        toml::from_str::<Config>(&text)
+            .map_err(|e| e.to_string())?
+            .ptt
+            .validate()?;
+        let tmp = path.with_extension("ptt.tmp");
+        std::fs::write(&tmp, text).map_err(|e| e.to_string())?;
+        std::fs::rename(tmp, path).map_err(|e| e.to_string())?;
+        Ok(serde_json::json!({"input":input,"saved":true}))
+    }
+    .await;
+    match result {
+        Ok(value) => axum::Json(value).into_response(),
+        Err(error) => (
+            StatusCode::BAD_REQUEST,
+            axum::Json(serde_json::json!({"error":error})),
+        )
+            .into_response(),
+    }
+}
+
 fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
     a.len() == b.len() && a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
@@ -1006,6 +1462,8 @@ pub fn app(ship: Arc<Ship>) -> Router {
     let mcp_config =
         StreamableHttpServerConfig::default().with_allowed_hosts(config.allowed_hosts.clone());
     let token = Arc::new(config.token.clone());
+    let event_ship = ship.clone();
+    let hosts = Arc::new(config.allowed_hosts.clone());
     let service: StreamableHttpService<Holtzman, LocalSessionManager> = StreamableHttpService::new(
         move || Ok(Holtzman::new(ship.clone())),
         Default::default(),
@@ -1013,6 +1471,10 @@ pub fn app(ship: Arc<Ship>) -> Router {
     );
     Router::new()
         .nest_service("/mcp", service)
+        .route("/events", axum::routing::get(event_stream))
+        .route("/ptt", axum::routing::post(configure_ptt).get(ptt_state))
+        .with_state(event_ship)
+        .layer(middleware::from_fn_with_state(hosts, require_host))
         .layer(middleware::from_fn_with_state(token, require_token))
 }
 
@@ -1032,10 +1494,14 @@ pub async fn serve(config: Config, config_path: PathBuf) -> Result<()> {
     }
     let listener = tokio::net::TcpListener::bind(&listen).await?;
     tracing::info!("holtzman listening on http://{listen}/mcp");
-    axum::serve(listener, app(ship))
+    crate::ptt::start(ship.ptt.clone());
+    let watcher = tokio::spawn(crate::events::watch(ship.clone()));
+    let result = axum::serve(listener, app(ship))
         .with_graceful_shutdown(async {
             let _ = tokio::signal::ctrl_c().await;
         })
-        .await?;
+        .await;
+    watcher.abort();
+    result?;
     Ok(())
 }

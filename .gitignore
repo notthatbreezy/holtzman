@@ -6,3 +6,7 @@ holtzman.toml
 
 # Runtime agent knowledge lives beside the server config.
 /playbooks/
+
+/.test-deps/
+/.venv-test/
+/captains_log/

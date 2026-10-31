@@ -110,6 +110,9 @@ function init() {
         <option value="holt-local">Local · Qwen · fast</option>
         <option value="holt-local-thinking">Local · Qwen · thinking</option>
       </select><span id="holt-status">Connecting to gateway…</span></div>
+      <div><label>PTT <select id="holt-ptt"><option>off</option><option>hold</option><option>hybrid</option></select></label>
+      <label><input id="holt-reflex" type="checkbox"> Command reflexes</label>
+      <button id="holt-ptt-set" class="menu_button">Set push-to-talk button</button><span id="holt-ptt-state"></span></div>
       <div id="holt-detail"></div><div id="holt-sources"></div>
       <details><summary>HOLT diagnostics</summary>
         <button id="holt-capture" class="menu_button">Capture evaluation prompts (new test chat)</button>
@@ -135,6 +138,8 @@ function init() {
             await context().executeSlashCommandsWithOptions('/api-url api=custom connect=true http://127.0.0.1:8082/v1');
             voiceEnabled = document.querySelector('#holt-voice').checked;
             if (voiceEnabled) await control({ action: 'lease', client, takeover: true });
+            await control({ action: 'settings', ptt_mode: document.querySelector('#holt-ptt').value,
+                fastpath_enabled: document.querySelector('#holt-reflex').checked });
             await control({ action: 'start', listen: voiceEnabled, speak: voiceEnabled });
         } catch (error) { failure(error); }
     };
@@ -145,6 +150,12 @@ function init() {
     };
     document.querySelector('#holt-controls').onchange = async event => {
         try { await control({ action: 'controls', enabled: event.target.checked }); } catch (error) { failure(error); }
+    };
+    document.querySelector('#holt-ptt-set').onclick = async () => {
+        const input = window.prompt('PTT input: Mouse5, Key_F13, Joy:<HID product name>:<button>, or learn (press one button within ten seconds)', 'Mouse5');
+        if (!input) return;
+        try { const result = await control({ action: 'ptt', input }); status(`PTT input saved: ${result.input}`); }
+        catch (error) { failure(error); }
     };
     document.querySelector('#holt-capture').onclick = () => capturePrompts().catch(failure);
     c.eventSource.on(c.eventTypes.GENERATION_STARTED, () => { generationBusy = true; });
@@ -171,6 +182,17 @@ function init() {
     const events = new EventSource(`${gateway}/events?client=${client}`);
     events.onmessage = async message => {
         const event = JSON.parse(message.data);
+        if (event.kind === 'ptt') {
+            document.querySelector('#holt-ptt-state').textContent = event.value.error || `${event.value.input || ''} ${event.value.down ? '(held)' : ''}`;
+            return;
+        }
+        if (event.kind === 'fastpath') {
+            const c = context();
+            const command = { name: 'HOLT command', is_user: false, is_system: true, send_date: Date.now(),
+                mes: `Command: ${event.value.command}\n${event.value.text}` };
+            c.chat.push(command); c.addOneMessage(command); await c.saveChat();
+            return;
+        }
         if (event.kind !== 'transcript' || !voiceEnabled || transcriptBusy) return;
         transcriptBusy = true;
         try { await submitVoice(event.value); }

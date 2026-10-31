@@ -19,14 +19,19 @@ controlled by `HOLT-Chatterbox.cmd` and uses ST's built-in Chatterbox provider.
 Start with the **HOLT Tavern** desktop shortcut or **HOLT-Tavern.cmd** in the repository root. The browser opens after the
 local server becomes ready. Click **Start HOLT**: it selects the HOLT character,
 connects SillyTavern to the gateway, starts the speech services and connects SKIPPY.
-Wait for **Ready — listening** before speaking. No push-to-talk is needed.
+Wait for **Ready — listening** before speaking. PTT is optional; choose off, hold or
+hybrid before Start. Command reflexes are separately opt-in and appear as command
+lines without starting a SillyTavern generation.
 
 **Stop HOLT** stops the ship/audio worker and managed inference services. It leaves
 SillyTavern open for editing lore/chats. `HOLT-Tavern.cmd stop` closes the trial
 servers as well. `HOLT-Tavern.cmd status` shows the worker state. Closing the browser
 releases new microphone input through its event-stream lease; it does not shut down
 the background services. Stop an active command before closing the interface.
-An already-running server recipe can finish even after a client disconnect.
+Stop requests server-side cancellation before closing the worker. If the link is
+lost, cancellation cannot be confirmed; the worker reports that uncertainty. A plain
+disconnect is not itself a cancellation request. Held keys are released when a
+cancelled server operation exits; open panels remain open.
 
 The **Voice on Start** checkbox applies on the next Start and is disabled while
 running; Stop first to change it. It controls local recognition and playback together.

@@ -35,6 +35,7 @@ class App:
         self.state = tk.StringVar(value="Stopped")
         self.ship = tk.StringVar(value="Not connected")
         self.microphone_status = tk.StringVar(value="Microphone stopped")
+        self.ptt_status = tk.StringVar(value="PTT: off")
         style = ttk.Style()
         style.theme_use("vista" if "vista" in style.theme_names() else "clam")
         frame = ttk.Frame(window, padding=18)
@@ -46,6 +47,7 @@ class App:
         ttk.Label(status, textvariable=self.state, font=("Segoe UI", 12, "bold")).pack(anchor="w")
         ttk.Label(status, textvariable=self.ship).pack(anchor="w", pady=(3, 8))
         ttk.Label(status, textvariable=self.microphone_status).pack(anchor="w")
+        ttk.Label(status, textvariable=self.ptt_status).pack(anchor="w")
         buttons = ttk.Frame(status)
         buttons.pack(fill="x")
         self.start_button = ttk.Button(buttons, text="Start HOLT", command=self.start)
@@ -91,6 +93,21 @@ class App:
         ttk.Button(backend_row, text="Set OpenAI key", command=lambda: save_openai_key(self.window)).pack(side="right")
         self.hosted_images = tk.BooleanVar(value=self.settings.get("allow_hosted_images", False))
         ttk.Checkbutton(options, text="Allow game-window images to OpenAI", variable=self.hosted_images).grid(row=6, column=1, sticky="w", pady=(4, 0))
+        command_row = ttk.Frame(options)
+        command_row.grid(row=7, columnspan=2, sticky="ew", pady=(6, 0))
+        self.fastpath = tk.BooleanVar(value=self.settings["fastpath_enabled"])
+        ttk.Checkbutton(command_row, text="Command reflexes (opt-in)", variable=self.fastpath).pack(side="left")
+        ttk.Label(command_row, text="PTT mode").pack(side="left", padx=(12, 4))
+        self.ptt_mode = tk.StringVar(value=self.settings["ptt_mode"])
+        ttk.Combobox(command_row, textvariable=self.ptt_mode, values=["off", "hold", "hybrid"], state="readonly", width=8).pack(side="left")
+        ttk.Button(command_row, text="Set push-to-talk button", command=self.set_ptt).pack(side="right")
+        endpoint_row = ttk.Frame(options)
+        endpoint_row.grid(row=8, columnspan=2, sticky="ew", pady=(5, 0))
+        ttk.Label(endpoint_row, text="Endpointing").pack(side="left")
+        self.endpoint_mode = tk.StringVar(value=self.settings["endpoint_mode"])
+        ttk.Combobox(endpoint_row, textvariable=self.endpoint_mode, values=["fixed", "adaptive"], state="readonly", width=10).pack(side="left", padx=6)
+        self.callouts = tk.BooleanVar(value=self.settings["callouts_enabled"])
+        ttk.Checkbutton(endpoint_row, text="Expanded callouts", variable=self.callouts).pack(side="left")
         notebook = ttk.Notebook(frame, height=220)
         notebook.pack(fill="both", expand=True, pady=(12, 6))
         chat = ttk.Frame(notebook)
@@ -155,6 +172,8 @@ class App:
                              model_provider="openai" if self.backend.get().startswith("OpenAI") else "local",
                              openai_model=self.hosted_choices.get(self.backend.get(), self.settings["openai_model"]),
                              allow_hosted_images=self.hosted_images.get())
+        self.settings.update(fastpath_enabled=self.fastpath.get(), ptt_mode=self.ptt_mode.get(),
+                             endpoint_mode=self.endpoint_mode.get(), callouts_enabled=self.callouts.get())
         save_settings(self.settings)
 
     def toggle_actions(self):
@@ -164,6 +183,23 @@ class App:
             self.engine.settings["allow_actions"] = enabled
         save_settings(self.settings)
         self.report("service", "Game controls enabled" if enabled else "Game controls disabled")
+
+    def set_ptt(self):
+        from tkinter import simpledialog
+        if not self.engine or not self.engine.loop:
+            self.report("error", "Start HOLT before configuring its server-side PTT input.")
+            return
+        value = simpledialog.askstring("Push-to-talk", "Enter Mouse5, Key_F13 or Joy:<HID product name>:<button>. Enter learn to capture one supported press for 10 seconds.", parent=self.window)
+        if not value:
+            return
+        self.report("service", "Press the PTT input within 10 seconds." if value.strip().lower() == "learn" else "Saving PTT input...")
+        future = asyncio.run_coroutine_threadsafe(self.engine.configure_ptt(value.strip()), self.engine.loop)
+        def done(result):
+            try:
+                self.report("service", "PTT input saved: " + result.result()["input"])
+            except Exception as exc:
+                self.report("error", str(exc)[:400])
+        future.add_done_callback(done)
 
     def start(self):
         if self.worker and self.worker.is_alive():
@@ -203,10 +239,11 @@ class App:
     def stop(self):
         self.state.set("Stopping…")
         self.stop_button.configure(state="disabled")
-        self.stopped.set()
         if self.engine:
             self.engine.cancel()
-        elif not self.worker or not self.worker.is_alive():
+        else:
+            self.stopped.set()
+        if not self.engine and (not self.worker or not self.worker.is_alive()):
             # Also stop adopted benchmark services if the panel hasn't started yet.
             self.worker = threading.Thread(target=lambda: (Services(lambda text: self.report("service", text)).stop(), self.report("stopped", "Stopped")), daemon=False)
             self.worker.start()
@@ -246,6 +283,10 @@ class App:
                 break
             if kind == "microphone":
                 self.microphone_status.set(value)
+            elif kind == "ptt":
+                self.ptt_status.set("PTT: " + str(value.get("input") or self.settings["ptt_mode"]) + (" (held)" if value.get("down") else "") + (" - " + value["error"] if value.get("error") else ""))
+            elif kind == "fastpath":
+                self.append(self.chat, "Command: " + value["command"] + "\nHOLT: " + value["text"])
             elif kind == "state":
                 self.state.set(value)
             elif kind == "ship":

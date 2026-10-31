@@ -8,8 +8,16 @@ MCP connection to SKIPPY. Services are loopback-only and run as your user.
 
 **Stop HOLT** ends listening, speech, the client connection and this checkout's
 local inference processes. Closing the panel also stops them. It does not
-stop Elite or the MCP server on SKIPPY. An already-running server-side input
-recipe may finish after the client stops; cancellation is not guaranteed.
+stop Elite or the MCP server on SKIPPY. Stop first requests `cancel_action`, then
+closes the client. A lost ship link cannot confirm cancellation; HOLT reports that
+uncertainty. Cancellation releases held inputs and leaves the current panel in place.
+
+Command reflexes are opt-in. PTT defaults to **off**, endpointing to **fixed**,
+expanded callouts and automatic session reports/briefings to **off**. Select PTT mode
+and command reflexes before Start. **Set push-to-talk button** edits only the server's
+PTT setting, or learns one supported press for ten seconds. Joystick names are HID
+product strings, best obtained through learn mode. See [implementation and validation
+status](../docs/holt-implementation-status.md) before enabling these uncalibrated features.
 
 Command-line equivalents, from the repository root:
 

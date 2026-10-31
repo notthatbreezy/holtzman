@@ -34,6 +34,8 @@ impl Pilot<'_> {
     /// Run a recipe with no paste target, naming the failing step on error.
     pub async fn run_steps(&self, steps: &[Step]) -> Result<()> {
         for (i, step) in steps.iter().enumerate() {
+            self.sender
+                .progress(i + 1, steps.len(), &format!("{step:?}"));
             if let Err(e) = self.run_step(step, "").await {
                 bail!("step {} ({step:?}) failed: {e:#}", i + 1);
             }
@@ -77,7 +79,7 @@ impl Pilot<'_> {
                     if self.journal.gui_focus() == Some(*focus) {
                         break;
                     }
-                    if self.config.dry_run || cfg!(not(windows)) {
+                    if self.config.dry_run {
                         // No game to wait on.
                         break;
                     }
@@ -123,6 +125,11 @@ impl Pilot<'_> {
         self.sender.focus_game()?;
         let mut log = Vec::new();
         for (i, step) in self.config.plot_route.steps.iter().enumerate() {
+            self.sender.progress(
+                i + 1,
+                self.config.plot_route.steps.len(),
+                &format!("{step:?}"),
+            );
             if let Err(e) = self.run_step(step, system).await {
                 bail!(
                     "step {} ({step:?}) failed: {e:#}. Steps done: {log:?}",

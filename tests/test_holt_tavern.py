@@ -86,7 +86,7 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
             engine.speak = AsyncMock(side_effect=AssertionError("No summary speech"))
 
             async def model_post(*args, **kwargs):
-                self.assertNotIn("tools", kwargs["json"])
+                self.assertEqual(kwargs["json"]["tools"], [])
                 self.assertFalse(engine.settings["allow_actions"])
                 engine.stopped.set()
                 return httpx2.Response(200, request=httpx2.Request("POST", "http://127.0.0.1/test"),

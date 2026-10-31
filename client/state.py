@@ -17,6 +17,13 @@ DEFAULTS = {
     "allow_hosted_images": False,
     "voice": "bm_george", "preferences": "Address me as Captain. Use George's normal register, dry humor and dynamic urgency.",
     "voice_effect": "dry",
+    "ptt_mode": "off", "open_mic_fastpath": "toggles_only", "fastpath_enabled": False,
+    "endpoint_mode": "fixed", "min_silence_ms": 200, "recheck_ms": 100,
+    "max_silence_ms": 1500, "turn_threshold": 0.5,
+    "fastpath_flavor": "sometimes", "commentary": "off", "session_reports": False,
+    "callouts_enabled": False, "session_briefings": False,
+    "smart_turn_model": None, "smart_turn_sha256": None,
+
 }
 
 
