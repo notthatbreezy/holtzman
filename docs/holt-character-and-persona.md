@@ -22,7 +22,10 @@ are HOLT.
 - A separate **Commander Brown** persona, titled **HOLT's Captain — Elite Dangerous**,
   associated with `HOLT.png`. It reuses a copy of the existing persona artwork and
   describes the Captain's relationship with HOLT and conversational preferences.
-  It invents no ships, military rank, faction allegiance or personal history.
+  The Captain's user-authored background is a veteran of the Thargoid War now
+  seeking a quiet living through trading, exploration and passenger transport.
+  No military rank, unit, battles, decorations, service dates, injuries or faction
+  allegiance are invented. This background does not establish real gameplay events.
 
 The existing general persona, global persona default, global lore selections and
 unrelated characters are preserved. No model connection, inference service, speech
@@ -31,7 +34,9 @@ provide those capabilities by itself.
 
 ## Use it
 
-Refresh SillyTavern, then reopen **HOLT**. The persona connected to that character
+Close all SillyTavern browser tabs before an API update; an open editor can autosave
+its stale blank card or persona over the update. Reopen SillyTavern after setup,
+then select **HOLT**. The persona connected to that character
 will be selected by SillyTavern when the character/chat loads. If an old chat has a
 different persona explicitly locked to it, select **Commander Brown** with the
 **HOLT's Captain — Elite Dangerous** subtitle in Persona Management and update that
@@ -60,7 +65,7 @@ The original gateway trial card remains separately available as `HOLT.character.
 ```powershell
 cd C:\Users\chris\holtzman
 .\.local\holt\voice-env\Scripts\python.exe scripts\setup-holt-character.py
-.\.local\holt\voice-env\Scripts\python.exe scripts\setup-holt-character.py --install
+.\.local\holt\voice-env\Scripts\python.exe scripts\setup-holt-character.py --install --editor-closed
 ```
 
 Installation requires the existing HOLT character and the Elite Dangerous book.
@@ -68,11 +73,21 @@ It reads and saves through the ordinary cookie/CSRF-protected APIs. It backs up 
 previous character and targeted persona/lore settings under
 `.local/holt/lore-research/st-backups`, excluding provider settings and credentials.
 The character merge endpoint performs ST's card validation. The installer checks
-every authored card field, the entire settings read-back in memory, the avatar's
-existence and unchanged unrelated character records. No hosted model call or game
+every authored card field and the legacy mirrors used by editors, the entire settings
+read-back in memory, the avatar's existence and unchanged unrelated character records.
+It removes competing HOLT associations from older personas, selects the populated
+Captain persona and synchronises ST's active persona fields. The global default
+persona remains unchanged. No hosted model call or game
 action is used for verification. Differing pre-existing personal lore is preserved
 and reported for reconciliation rather than silently replaced.
 
 Rerunning `--install` deliberately reapplies the portable card and HOLT-specific
 persona definition, so export any later UI edits before doing so. A browser holding
-stale settings should be refreshed after an API update.
+stale settings must be closed before an API update and reopened afterward. The
+`--editor-closed` flag makes that requirement explicit on future installations.
+
+The restoration on 2026-10-31 was also checked through a freshly opened ST page:
+HOLT's description and greeting were visibly populated, the selected Captain
+persona visibly contained the war-veteran/civilian background, and an API read-back
+after page load confirmed the character fields, active persona cache, sole HOLT
+persona connection and both lorebooks remained intact.

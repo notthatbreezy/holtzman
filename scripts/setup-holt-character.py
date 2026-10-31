@@ -25,6 +25,8 @@ def read_json(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--install", action="store_true", help="Apply the assets to local SillyTavern")
+    parser.add_argument("--editor-closed", action="store_true",
+                        help="Confirm ST browser tabs are closed so stale autosaves cannot overwrite API writes")
     args = parser.parse_args()
     card = read_json(ASSETS / "HOLT.standalone.character.json")
     persona = read_json(ASSETS / "HOLT-Captain.persona.json")
@@ -35,6 +37,9 @@ def main():
     if not args.install:
         print("Assets valid. Use --install to update the existing HOLT character and add its Captain persona.")
         return
+    if not args.editor_closed:
+        parser.error("Close SillyTavern browser tabs, then use --install --editor-closed. "
+                     "An open editor can overwrite API updates with stale character/persona data.")
 
     with httpx.Client(base_url="http://127.0.0.1:8000", trust_env=False, timeout=30) as client:
         csrf = client.get("/csrf-token")
@@ -106,8 +111,21 @@ def main():
         descriptor = copy.deepcopy(persona["persona_descriptions"][PERSONA])
         descriptor["connections"] = [{"type": "character", "id": avatar}]
         power.setdefault("personas", {})[PERSONA] = persona["personas"][PERSONA]
-        power.setdefault("persona_descriptions", {})[PERSONA] = descriptor
-        # Character association selects this persona when HOLT opens. No global default changes.
+        descriptors = power.setdefault("persona_descriptions", {})
+        # One HOLT-specific Captain should win selection, instead of an older blank
+        # Commander Brown connection taking precedence over the populated persona.
+        for key, other in descriptors.items():
+            if key != PERSONA and "connections" in other:
+                other["connections"] = [connection for connection in other["connections"]
+                                        if not (connection.get("type") == "character"
+                                                and connection.get("id") == avatar)]
+        descriptors[PERSONA] = descriptor
+        # Select the Captain now and keep ST's active persona cache consistent.
+        # Its general default persona is deliberately preserved for unrelated chats.
+        expected["user_avatar"] = PERSONA
+        expected["username"] = persona["personas"][PERSONA]
+        for field in ("description", "position", "depth", "role", "lorebook"):
+            power["persona_description" + ("_" + field if field != "description" else "")] = descriptor[field]
         world = expected.setdefault("world_info_settings", {}).setdefault("world_info", {})
         char_lore = world.setdefault("charLore", [])
         character_key = Path(avatar).stem
@@ -128,6 +146,8 @@ def main():
         for field, value in card["data"].items():
             if field != "extensions":
                 assert actual["data"][field] == value, "Character field mismatch: " + field
+        for field in ("name", "description", "personality", "scenario", "first_mes", "mes_example"):
+            assert actual[field] == card["data"][field], "Character editor mirror mismatch: " + field
         for field, value in card["data"]["extensions"].items():
             assert actual["data"]["extensions"][field] == value, "Character extension mismatch: " + field
         after_characters = post("/api/characters/all", {})
@@ -137,8 +157,9 @@ def main():
         print(json.dumps({"character": actual["name"], "version": actual["data"]["character_version"],
                           "primary_lore": "HOLT canon", "additional_lore": row["extraBooks"],
                           "persona": persona["personas"][PERSONA], "persona_bound_to": avatar,
+                          "persona_selected": actual_settings["user_avatar"] == PERSONA,
                           "character_and_settings_verified": True, "backup": str(backup),
-                          "next_step": "Refresh SillyTavern and reopen HOLT to select its connected persona."}, indent=2))
+                          "next_step": "Reopen SillyTavern and select HOLT. The editor should show the populated card."}, indent=2))
 
 
 if __name__ == "__main__":
