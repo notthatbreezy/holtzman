@@ -1,0 +1,90 @@
+# Focused reference corpus; one MediaWiki page title per line.
+Elite Dangerous
+Galaxy
+Core Systems
+Pilots Federation
+Federation
+Empire
+Alliance
+Independent
+Minor Faction
+Powerplay
+Background Simulation
+GalNet
+Sol
+Achenar
+Alioth
+Lave
+Shinrarta Dezhra
+Jameson Memorial
+Colonia
+Jaques
+Sagittarius A*
+Explorer's Anchorage
+Beagle Point
+Hutton Orbital
+Sirius Corporation
+Faulcon DeLacy
+Core Dynamics
+Gutamaya
+Lakon Spaceways
+Zorgon Peterson
+Saud Kruger
+Brewer Corporation
+Fleet Carrier
+Generation Ship
+Frame Shift Drive
+Frame Shift Drive (SCO)
+Supercruise
+Hyperspace
+Fuel Scoop
+Starport
+Outpost
+Engineers
+Felicity Farseer
+Elvira Martuuk
+Ishmael Palin
+Ram Tah
+Guardian
+Construct
+Ancient Ruins
+Guardian Structure
+Thargoid
+Thargoid Barnacle
+Meta-Alloys
+Thargoid Interceptor
+Thargoid Titan
+First Thargoid War
+Second Thargoid War
+Intergalactic Naval Reserve Arm
+Mycoid
+John Jameson
+Aegis
+Azimuth Biochemicals
+Azimuth Biotech
+Salvation
+Proteus Wave
+Seo Jin-ae
+Raxxla
+The Dark Wheel
+The Zurara
+Formidine Rift
+Project Dynasty
+Marlinism
+Imperial Slavery
+Utopia
+Kumo Crew
+Universal Cartographics
+Vista Genomics
+Remlok
+Holo-Me
+Galactic Cooperative
+Codex
+Knowledge Base
+Combat
+Trading
+Mining
+Exploration
+Exobiologist
+Crime & Punishment
+Interstellar Factors

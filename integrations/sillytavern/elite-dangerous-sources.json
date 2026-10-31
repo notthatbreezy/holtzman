@@ -1,0 +1,1065 @@
+{
+  "reviewed": "2026-10-31",
+  "sources": {
+    "wiki:Elite Dangerous": {
+      "title": "Elite Dangerous",
+      "url": "https://elite-dangerous.fandom.com/wiki/Elite_Dangerous",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174198,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174198",
+      "retrieved_utc": "2026-10-31T15:28:05.537323+00:00",
+      "archive_sha256": "0ece8162c79a571d5b3bd6dc9b8ab7efa6ed8903842ee199807914e5acef4bc7"
+    },
+    "wiki:Galaxy": {
+      "title": "Galaxy",
+      "url": "https://elite-dangerous.fandom.com/wiki/Galaxy",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173017,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173017",
+      "retrieved_utc": "2026-10-31T15:28:07.715966+00:00",
+      "archive_sha256": "506dd5d896e136d50d2d874a3c96c4f492afd3714f5e0c974e12637cf2061dd7"
+    },
+    "wiki:Core Systems": {
+      "title": "Core Systems",
+      "url": "https://elite-dangerous.fandom.com/wiki/Core_Systems",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172656,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172656",
+      "retrieved_utc": "2026-10-31T15:28:08.175284+00:00",
+      "archive_sha256": "86dc096b4cbf4435ef3f48dbee20ce0cee80587082e9e722e5f4c1445d50423e"
+    },
+    "wiki:Pilots Federation": {
+      "title": "Pilots Federation",
+      "url": "https://elite-dangerous.fandom.com/wiki/Pilots_Federation",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174221,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174221",
+      "retrieved_utc": "2026-10-31T15:28:11.703710+00:00",
+      "archive_sha256": "52315b5f1c6531412b79f3bb96b3917e3c6184e46265c311aa5284db987153bb"
+    },
+    "wiki:Engineers": {
+      "title": "Engineers",
+      "url": "https://elite-dangerous.fandom.com/wiki/Engineers",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173288,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173288",
+      "retrieved_utc": "2026-10-31T15:29:34.480044+00:00",
+      "archive_sha256": "0729c3dd346b5ae86ad1484ab15b5da8dc695ecb09fbb547c05fa7bdbebac607"
+    },
+    "wiki:GalNet": {
+      "title": "GalNet",
+      "url": "https://elite-dangerous.fandom.com/wiki/GalNet",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173918,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173918",
+      "retrieved_utc": "2026-10-31T15:28:31.441239+00:00",
+      "archive_sha256": "5aa0468c9287c0b281f37397f9d609c7b1142a26a25fd8be80d60c0bcec0af01"
+    },
+    "wiki:Codex": {
+      "title": "Codex",
+      "url": "https://elite-dangerous.fandom.com/wiki/Codex",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172942,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172942",
+      "retrieved_utc": "2026-10-31T15:30:57.192308+00:00",
+      "archive_sha256": "53c363e817b2250fc4ca300de78de3502f68d74ad0c27c9327e0a3ef049aec97"
+    },
+    "wiki:Federation": {
+      "title": "Federation",
+      "url": "https://elite-dangerous.fandom.com/wiki/Federation",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173492,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173492",
+      "retrieved_utc": "2026-10-31T15:28:14.633220+00:00",
+      "archive_sha256": "187801a26660ac9081bf92c1f31e9e9e5b3b5e9e98892c7fc34b6c6fa6a98abe"
+    },
+    "wiki:Empire": {
+      "title": "Empire",
+      "url": "https://elite-dangerous.fandom.com/wiki/Empire",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173496,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173496",
+      "retrieved_utc": "2026-10-31T15:28:17.872399+00:00",
+      "archive_sha256": "681dcf81bea10faa2f5b41107e6945d5dc2012dfee5b25cbe012284c5dd94cd9"
+    },
+    "wiki:Alliance": {
+      "title": "Alliance",
+      "url": "https://elite-dangerous.fandom.com/wiki/Alliance",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172287,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172287",
+      "retrieved_utc": "2026-10-31T15:28:20.260995+00:00",
+      "archive_sha256": "afaa229937a6dba3268e7c3ee0b58855bcb81e85210729d9d30ff8985946c081"
+    },
+    "wiki:Independent": {
+      "title": "Independent",
+      "url": "https://elite-dangerous.fandom.com/wiki/Independent",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173070,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173070",
+      "retrieved_utc": "2026-10-31T15:28:20.659335+00:00",
+      "archive_sha256": "07b10d75a58ca307b0a424b5fcd8df56925f24123082373f6afb097987747d2b"
+    },
+    "wiki:Minor Faction": {
+      "title": "Minor Faction",
+      "url": "https://elite-dangerous.fandom.com/wiki/Category%3AMinor_Factions",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 143016,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=143016",
+      "retrieved_utc": "2026-10-31T15:28:22.487073+00:00",
+      "archive_sha256": "3e2047a67f067c2f780776464d58604dfa191f63d97a425eaaaa3f4f28708577"
+    },
+    "wiki:Background Simulation": {
+      "title": "Background Simulation",
+      "url": "https://elite-dangerous.fandom.com/wiki/Background_Simulation",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 164770,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=164770",
+      "retrieved_utc": "2026-10-31T15:28:28.635010+00:00",
+      "archive_sha256": "a5039a61c91382fbd5fed00df65f52537d45d803b705e836e3a882ef08022f61"
+    },
+    "wiki:Powerplay": {
+      "title": "Powerplay",
+      "url": "https://elite-dangerous.fandom.com/wiki/Powerplay",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173667,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173667",
+      "retrieved_utc": "2026-10-31T15:28:26.882577+00:00",
+      "archive_sha256": "f87a2fc010d91dc0cb8fb3a988f41d03c053cb011be809db9c80804cfc153a78"
+    },
+    "wiki:Influence": {
+      "title": "Influence",
+      "url": "https://elite-dangerous.fandom.com/wiki/Influence",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "web search index; no archived revision"
+    },
+    "wiki:Imperial Slavery": {
+      "title": "Imperial Slavery",
+      "url": "https://elite-dangerous.fandom.com/wiki/Imperial_Slavery",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 169361,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=169361",
+      "retrieved_utc": "2026-10-31T15:30:41.204332+00:00",
+      "archive_sha256": "0c1ac49647d7670606dc51794ae43d649b0ecc872a6903604afa447aa225ab71"
+    },
+    "wiki:Utopia": {
+      "title": "Utopia",
+      "url": "https://elite-dangerous.fandom.com/wiki/Utopia",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 168979,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=168979",
+      "retrieved_utc": "2026-10-31T15:30:43.383145+00:00",
+      "archive_sha256": "b8b254890ccfb6f5cd4758c5486dbeea1ada1a39ea4c89524940ecce0417a3fc"
+    },
+    "wiki:Kumo Crew": {
+      "title": "Kumo Crew",
+      "url": "https://elite-dangerous.fandom.com/wiki/Kumo_Crew",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 155706,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=155706",
+      "retrieved_utc": "2026-10-31T15:30:45.764497+00:00",
+      "archive_sha256": "9856cde5e7054e2af64bd6b883959ff9a4876aba29772828a6f2fe945a98bdb2"
+    },
+    "wiki:Generation Ship": {
+      "title": "Generation Ship",
+      "url": "https://elite-dangerous.fandom.com/wiki/Generation_Ship",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173400,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173400",
+      "retrieved_utc": "2026-10-31T15:29:17.320526+00:00",
+      "archive_sha256": "32423803b4c39cb1483c5084117ce8f0bb31db7ddded16c87e90297639b66308"
+    },
+    "wiki:Tau Ceti": {
+      "title": "Tau Ceti",
+      "url": "https://elite-dangerous.fandom.com/wiki/Tau_Ceti",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "web search index; no archived revision"
+    },
+    "wiki:Marlin Duval": {
+      "title": "Marlin Duval",
+      "url": "https://elite-dangerous.fandom.com/wiki/Marlin_Duval",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "web search index; no archived revision"
+    },
+    "wiki:Battle of Achenar": {
+      "title": "Battle of Achenar",
+      "url": "https://elite-dangerous.fandom.com/wiki/Battle_of_Achenar",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "web search index; no archived revision"
+    },
+    "wiki:Alioth": {
+      "title": "Alioth",
+      "url": "https://elite-dangerous.fandom.com/wiki/Alioth",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 168489,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=168489",
+      "retrieved_utc": "2026-10-31T15:28:37.291765+00:00",
+      "archive_sha256": "1d1dd8482ce1da941c1ae2f22808ca80cdc954fa3c15783baee1f111efa3b87c"
+    },
+    "wiki:Marlinism": {
+      "title": "Marlinism",
+      "url": "https://elite-dangerous.fandom.com/wiki/Marlin_Duval",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 154838,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=154838",
+      "retrieved_utc": "2026-10-31T15:30:39.457701+00:00",
+      "archive_sha256": "00f38b01700db80f327902e886916a1ec2f7c4116d985731732000170f126a4a"
+    },
+    "wiki:Neo-Marlinist Liberation Army": {
+      "title": "Neo-Marlinist Liberation Army",
+      "url": "https://elite-dangerous.fandom.com/wiki/Neo-Marlinist_Liberation_Army",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "web search index; no archived revision"
+    },
+    "wiki:Marlinist refugee crisis": {
+      "title": "Marlinist refugee crisis",
+      "url": "https://elite-dangerous.fandom.com/wiki/Marlinist_refugee_crisis",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "web search index; no archived revision"
+    },
+    "wiki:Intergalactic Naval Reserve Arm": {
+      "title": "Intergalactic Naval Reserve Arm",
+      "url": "https://elite-dangerous.fandom.com/wiki/Intergalactic_Naval_Reserve_Arm",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 165462,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=165462",
+      "retrieved_utc": "2026-10-31T15:30:11.225452+00:00",
+      "archive_sha256": "d1f8045746b4875d73c8a99a6166778e35690c2e725ff4a5f4d416d2661feb80"
+    },
+    "wiki:Mycoid": {
+      "title": "Mycoid",
+      "url": "https://elite-dangerous.fandom.com/wiki/Mycoid",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 162214,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=162214",
+      "retrieved_utc": "2026-10-31T15:30:12.994722+00:00",
+      "archive_sha256": "16901789a69f8b2e49cd3cfb6ad4a550b44fa6c9e0d0c669c4ef8629a6eb4003"
+    },
+    "wiki:John Jameson": {
+      "title": "John Jameson",
+      "url": "https://elite-dangerous.fandom.com/wiki/John_Jameson",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171617,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171617",
+      "retrieved_utc": "2026-10-31T15:30:15.210319+00:00",
+      "archive_sha256": "f69855443954ba22e14e59c6e7dc8da91b60d18b6599561928cce192861aec61"
+    },
+    "wiki:Aegis": {
+      "title": "Aegis",
+      "url": "https://elite-dangerous.fandom.com/wiki/Aegis",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 161896,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=161896",
+      "retrieved_utc": "2026-10-31T15:30:17.776206+00:00",
+      "archive_sha256": "1cf3a51e32a2d5eb4b1dc28a36cd1210c3fb419db938644a9e9a49e682e00cb4"
+    },
+    "wiki:Alba Tesreau": {
+      "title": "Alba Tesreau",
+      "url": "https://elite-dangerous.fandom.com/wiki/Alba_Tesreau",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "web search index; no archived revision"
+    },
+    "wiki:Salvation": {
+      "title": "Salvation",
+      "url": "https://elite-dangerous.fandom.com/wiki/Salvation",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 169858,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=169858",
+      "retrieved_utc": "2026-10-31T15:30:24.806434+00:00",
+      "archive_sha256": "f6267334277f08576a0e2cbbbfce89c9bfc8bc526059389f7b1560d576ce4965"
+    },
+    "wiki:Azimuth Biochemicals": {
+      "title": "Azimuth Biochemicals",
+      "url": "https://elite-dangerous.fandom.com/wiki/Azimuth_Biochemicals",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 169392,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=169392",
+      "retrieved_utc": "2026-10-31T15:30:20.194725+00:00",
+      "archive_sha256": "7ab337a7bc34e40ebaccf880622200bce67998973db51a976b9b162d23456fcc"
+    },
+    "wiki:Azimuth Biotech": {
+      "title": "Azimuth Biotech",
+      "url": "https://elite-dangerous.fandom.com/wiki/Azimuth_Biotech",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172136,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172136",
+      "retrieved_utc": "2026-10-31T15:30:22.224311+00:00",
+      "archive_sha256": "46de91da873c58bbed2ab70491287d68ea53768e31b0ae080b50e9526ca80446"
+    },
+    "wiki:Proteus Wave": {
+      "title": "Proteus Wave",
+      "url": "https://elite-dangerous.fandom.com/wiki/Anti-xeno_superweapon",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 163351,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=163351",
+      "retrieved_utc": "2026-10-31T15:30:25.541099+00:00",
+      "archive_sha256": "ac6d0988fc88d5203eefbc7473d44fe9d8cbda3558212939fc7854742b42edca"
+    },
+    "https://xenostrikeforce.com/guides/hip-22460/": {
+      "title": "xenostrikeforce.com/guides/hip-22460/",
+      "url": "https://xenostrikeforce.com/guides/hip-22460/",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "wiki:Thargoid Titan": {
+      "title": "Thargoid Titan",
+      "url": "https://elite-dangerous.fandom.com/wiki/Thargoid_Titan",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173586,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173586",
+      "retrieved_utc": "2026-10-31T15:30:03.504417+00:00",
+      "archive_sha256": "6c5ebac1790a87063c4cc676fbd0bcdf40104b619daa138ef020f310ec968fa2"
+    },
+    "https://www.edsm.net/en_GB/timeline/galnet/index/tag/Community%2BGoal/p/7": {
+      "title": "www.edsm.net/en_GB/timeline/galnet/index/tag/Community%2BGoal/p/7",
+      "url": "https://www.edsm.net/en_GB/timeline/galnet/index/tag/Community%2BGoal/p/7",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "wiki:Thargoid": {
+      "title": "Thargoid",
+      "url": "https://elite-dangerous.fandom.com/wiki/Thargoid",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173886,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173886",
+      "retrieved_utc": "2026-10-31T15:29:54.190159+00:00",
+      "archive_sha256": "e1f41235276d5f624cc358c22cba059722f13030fee122187e9f314a1172cadd"
+    },
+    "wiki:Thargoid Interceptor": {
+      "title": "Thargoid Interceptor",
+      "url": "https://elite-dangerous.fandom.com/wiki/Thargoid_Interceptor",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173559,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173559",
+      "retrieved_utc": "2026-10-31T15:30:01.160674+00:00",
+      "archive_sha256": "8bd109feec50bd9706e095441765ecb2aa0906ac6cc0a25df2c15137f96d347c"
+    },
+    "https://wiki.antixenoinitiative.com/en/finding-thargoids": {
+      "title": "wiki.antixenoinitiative.com/en/finding-thargoids",
+      "url": "https://wiki.antixenoinitiative.com/en/finding-thargoids",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "wiki:Thargoid Barnacle": {
+      "title": "Thargoid Barnacle",
+      "url": "https://elite-dangerous.fandom.com/wiki/Thargoid_Barnacle",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 167326,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=167326",
+      "retrieved_utc": "2026-10-31T15:29:56.224708+00:00",
+      "archive_sha256": "3cdf6a658e0ddfd6cefad54da5490cd401e1e6ec71d85c57f30bea780bf09a54"
+    },
+    "wiki:Meta-Alloys": {
+      "title": "Meta-Alloys",
+      "url": "https://elite-dangerous.fandom.com/wiki/Meta-Alloys",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171624,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171624",
+      "retrieved_utc": "2026-10-31T15:29:58.457536+00:00",
+      "archive_sha256": "71064337120f673ad2b021d339f636200ac364ecef9faffdc2586c9603fe23b8"
+    },
+    "wiki:Guardian": {
+      "title": "Guardian",
+      "url": "https://elite-dangerous.fandom.com/wiki/Guardian",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172604,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172604",
+      "retrieved_utc": "2026-10-31T15:29:45.184894+00:00",
+      "archive_sha256": "8a09cced70aebbab1813bffa245b60a8aa3c8f8b3e27da9a6791d03a266f9ace"
+    },
+    "wiki:Construct": {
+      "title": "Construct",
+      "url": "https://elite-dangerous.fandom.com/wiki/Construct",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 142597,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=142597",
+      "retrieved_utc": "2026-10-31T15:29:45.493155+00:00",
+      "archive_sha256": "f9974055f922759e8bd7433831a453be34b7ee98930416696596efe5f51be942"
+    },
+    "wiki:Ancient Ruins": {
+      "title": "Ancient Ruins",
+      "url": "https://elite-dangerous.fandom.com/wiki/Ancient_Ruins",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 156643,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=156643",
+      "retrieved_utc": "2026-10-31T15:29:49.334635+00:00",
+      "archive_sha256": "a8cf3a71d0607b062657d0e9409829258941a992f83c910dbc9b4c954183c666"
+    },
+    "wiki:Guardian Structure": {
+      "title": "Guardian Structure",
+      "url": "https://elite-dangerous.fandom.com/wiki/Guardian_Structure",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 169434,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=169434",
+      "retrieved_utc": "2026-10-31T15:29:51.661528+00:00",
+      "archive_sha256": "ed4cbd828af2710fb64396d20e3f3c7aa477262d6866039fabcff16e512893d4"
+    },
+    "wiki:Guardian Sentinel": {
+      "title": "Guardian Sentinel",
+      "url": "https://elite-dangerous.fandom.com/wiki/Guardian_Sentinel",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "web search index; no archived revision"
+    },
+    "wiki:Ram Tah": {
+      "title": "Ram Tah",
+      "url": "https://elite-dangerous.fandom.com/wiki/Ram_Tah",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171541,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171541",
+      "retrieved_utc": "2026-10-31T15:29:42.830591+00:00",
+      "archive_sha256": "67665170e21cc66a7dd6c502ff8c3cf88df06b2686439683b5f703830ea0d55d"
+    },
+    "wiki:Seo Jin-ae": {
+      "title": "Seo Jin-ae",
+      "url": "https://elite-dangerous.fandom.com/wiki/Seo_Jin-ae",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 163634,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=163634",
+      "retrieved_utc": "2026-10-31T15:30:27.159039+00:00",
+      "archive_sha256": "a7c3f2e2fb5b677cfbffd32a257449171d29279d302170c53bc7b613b78eabd5"
+    },
+    "wiki:Sol": {
+      "title": "Sol",
+      "url": "https://elite-dangerous.fandom.com/wiki/Sol",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 169027,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=169027",
+      "retrieved_utc": "2026-10-31T15:28:33.367644+00:00",
+      "archive_sha256": "c0a0858aa3c93f5e0e5ccdfc5012a9bfea838dded5711fe5393061a0845f8d2d"
+    },
+    "wiki:Achenar": {
+      "title": "Achenar",
+      "url": "https://elite-dangerous.fandom.com/wiki/Achenar",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 167726,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=167726",
+      "retrieved_utc": "2026-10-31T15:28:35.164111+00:00",
+      "archive_sha256": "70690ec3d750fe5153d07b93828da743e53edb7b729c21c971dcf0c816772cbb"
+    },
+    "wiki:Lave": {
+      "title": "Lave",
+      "url": "https://elite-dangerous.fandom.com/wiki/Lave",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171196,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171196",
+      "retrieved_utc": "2026-10-31T15:28:39.285855+00:00",
+      "archive_sha256": "df8653e8a1b32e79de00b62f36556a3dea50bb15541a6c01a0d4d08930a79789"
+    },
+    "wiki:Shinrarta Dezhra": {
+      "title": "Shinrarta Dezhra",
+      "url": "https://elite-dangerous.fandom.com/wiki/Shinrarta_Dezhra",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174166,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174166",
+      "retrieved_utc": "2026-10-31T15:28:41.264339+00:00",
+      "archive_sha256": "0a7e0ffa3437479fcf9bde3659643a2890fe3585b6be03d1df560582e286bd9a"
+    },
+    "wiki:Colonia": {
+      "title": "Colonia",
+      "url": "https://elite-dangerous.fandom.com/wiki/Colonia",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173926,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173926",
+      "retrieved_utc": "2026-10-31T15:28:45.182099+00:00",
+      "archive_sha256": "5bf53b6d687b4544828908f0f5a1892a98f8c2ec9407a66d65a12bcb2f42b24f"
+    },
+    "wiki:Colonia Region": {
+      "title": "Colonia Region",
+      "url": "https://elite-dangerous.fandom.com/wiki/Colonia_Region",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "web search index; no archived revision"
+    },
+    "wiki:Jaques": {
+      "title": "Jaques",
+      "url": "https://elite-dangerous.fandom.com/wiki/Jaques",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171787,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171787",
+      "retrieved_utc": "2026-10-31T15:28:47.278838+00:00",
+      "archive_sha256": "438da300f80f52a072c95bd896923bcfebdfd29932e9261d00baebd16e012b8c"
+    },
+    "wiki:Sagittarius A*": {
+      "title": "Sagittarius A*",
+      "url": "https://elite-dangerous.fandom.com/wiki/Sagittarius_A%2A",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171823,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171823",
+      "retrieved_utc": "2026-10-31T15:28:49.167955+00:00",
+      "archive_sha256": "b55a5e5f86edb46dc0a02afd69c400eae11cd84f786d177f44318ec4efeeaf7e"
+    },
+    "wiki:Explorer's Anchorage": {
+      "title": "Explorer's Anchorage",
+      "url": "https://elite-dangerous.fandom.com/wiki/Explorer%27s_Anchorage",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 135245,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=135245",
+      "retrieved_utc": "2026-10-31T15:28:49.730182+00:00",
+      "archive_sha256": "ab279d930704e1d049594e12a6443d5f7a3ae30e4f9e266e93da76c65edf17e2"
+    },
+    "https://edastro.com/gec/view/33": {
+      "title": "edastro.com/gec/view/33",
+      "url": "https://edastro.com/gec/view/33",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "wiki:Beagle Point": {
+      "title": "Beagle Point",
+      "url": "https://elite-dangerous.fandom.com/wiki/Beagle_Point",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 169060,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=169060",
+      "retrieved_utc": "2026-10-31T15:28:53.169215+00:00",
+      "archive_sha256": "3163e60336dab9df6829868bb46289be01a0489efeed5720233e558715a47632"
+    },
+    "wiki:Hutton Orbital": {
+      "title": "Hutton Orbital",
+      "url": "https://elite-dangerous.fandom.com/wiki/Hutton_Orbital",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 169888,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=169888",
+      "retrieved_utc": "2026-10-31T15:28:55.281278+00:00",
+      "archive_sha256": "43d68f55be0e89add026bc8cbb323eca9c1d682155c1930a8ed81ea9a64b1dfb"
+    },
+    "wiki:Formidine Rift": {
+      "title": "Formidine Rift",
+      "url": "https://elite-dangerous.fandom.com/wiki/Formidine_Rift",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171354,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171354",
+      "retrieved_utc": "2026-10-31T15:30:35.116692+00:00",
+      "archive_sha256": "c5e6ec05767b7c700e300514cbc54746bb8d52f66f47c6bb949d738c99a787c6"
+    },
+    "https://edastro.com/gec/view/35": {
+      "title": "edastro.com/gec/view/35",
+      "url": "https://edastro.com/gec/view/35",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "wiki:Raxxla": {
+      "title": "Raxxla",
+      "url": "https://elite-dangerous.fandom.com/wiki/Raxxla",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174267,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174267",
+      "retrieved_utc": "2026-10-31T15:30:30.546690+00:00",
+      "archive_sha256": "2f971e93bc4b392d0f5cebeac96e5cea464c1eb03d41d63434b81e52847932b1"
+    },
+    "wiki:The Dark Wheel": {
+      "title": "The Dark Wheel",
+      "url": "https://elite-dangerous.fandom.com/wiki/The_Dark_Wheel",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171950,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171950",
+      "retrieved_utc": "2026-10-31T15:30:32.587996+00:00",
+      "archive_sha256": "92935a44e6e7a8cf8bdd75114848b7a06d0c4d5e39909dcc4cff846afb548a5c"
+    },
+    "wiki:Sirius Corporation": {
+      "title": "Sirius Corporation",
+      "url": "https://elite-dangerous.fandom.com/wiki/Sirius_Corporation",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174192,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174192",
+      "retrieved_utc": "2026-10-31T15:28:58.431943+00:00",
+      "archive_sha256": "fa0f8f4abf1ceab9dd61b275a65fa4ea9f965984c87e9e43ccf144a1e9f2668b"
+    },
+    "wiki:Faulcon DeLacy": {
+      "title": "Faulcon DeLacy",
+      "url": "https://elite-dangerous.fandom.com/wiki/Faulcon_DeLacy",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174039,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174039",
+      "retrieved_utc": "2026-10-31T15:28:58.939003+00:00",
+      "archive_sha256": "4fb60cc3970166da9bd38bc073fecbe1c6312e22b9479f79be8e7b49d7fa5aab"
+    },
+    "wiki:Core Dynamics": {
+      "title": "Core Dynamics",
+      "url": "https://elite-dangerous.fandom.com/wiki/Core_Dynamics",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174038,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174038",
+      "retrieved_utc": "2026-10-31T15:29:01.107071+00:00",
+      "archive_sha256": "080d43764955321cca26adae12915c13371a6093f06eead1cc2a2196ee8e3494"
+    },
+    "wiki:Gutamaya": {
+      "title": "Gutamaya",
+      "url": "https://elite-dangerous.fandom.com/wiki/Gutamaya",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174040,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174040",
+      "retrieved_utc": "2026-10-31T15:29:03.136476+00:00",
+      "archive_sha256": "afff2d69d03d2e874b818e2a28779450decd8d4b34dc045903a154b245543f30"
+    },
+    "wiki:Lakon Spaceways": {
+      "title": "Lakon Spaceways",
+      "url": "https://elite-dangerous.fandom.com/wiki/Lakon_Spaceways",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174041,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174041",
+      "retrieved_utc": "2026-10-31T15:29:04.922399+00:00",
+      "archive_sha256": "099409ed1bda7884d4bd03cfedd0e856c63f01d44fc1cd78f5c45ead2854a3e9"
+    },
+    "wiki:Zorgon Peterson": {
+      "title": "Zorgon Peterson",
+      "url": "https://elite-dangerous.fandom.com/wiki/Zorgon_Peterson",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174043,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174043",
+      "retrieved_utc": "2026-10-31T15:29:07.181442+00:00",
+      "archive_sha256": "1a033c67ed63433534a2186e7965effe7ca9054bad9a60a4f36a5487600562da"
+    },
+    "wiki:Saud Kruger": {
+      "title": "Saud Kruger",
+      "url": "https://elite-dangerous.fandom.com/wiki/Saud_Kruger",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174042,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174042",
+      "retrieved_utc": "2026-10-31T15:29:08.827211+00:00",
+      "archive_sha256": "2c100ce6e79be1d6d990ba57d0be93117d1794883448b89c40ec471d0bfb4378"
+    },
+    "wiki:Brewer Corporation": {
+      "title": "Brewer Corporation",
+      "url": "https://elite-dangerous.fandom.com/wiki/Brewer_Corporation",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174037,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174037",
+      "retrieved_utc": "2026-10-31T15:29:11.275948+00:00",
+      "archive_sha256": "223a04221312497bcd426c3930bab5aea0c3cdecc284a0dbdd8ba039a7d1c74f"
+    },
+    "wiki:Frame Shift Drive": {
+      "title": "Frame Shift Drive",
+      "url": "https://elite-dangerous.fandom.com/wiki/Frame_Shift_Drive",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 169277,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=169277",
+      "retrieved_utc": "2026-10-31T15:29:17.537024+00:00",
+      "archive_sha256": "254b74ef6154d77d839c87f4b6e56b9a008ec2e85f2110a759bdc56a0ef2d3f4"
+    },
+    "wiki:Supercruise": {
+      "title": "Supercruise",
+      "url": "https://elite-dangerous.fandom.com/wiki/Supercruise",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171515,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171515",
+      "retrieved_utc": "2026-10-31T15:29:22.031288+00:00",
+      "archive_sha256": "f41b9f1af86501f34f02f07bc468d273d36d47a77bb00dc4286da08ccaeea4a7"
+    },
+    "wiki:Hyperspace": {
+      "title": "Hyperspace",
+      "url": "https://elite-dangerous.fandom.com/wiki/Hyperspace",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173252,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173252",
+      "retrieved_utc": "2026-10-31T15:29:25.548401+00:00",
+      "archive_sha256": "9a6030ba43231b6998a89e7217a61f7d5ed41d12f5b8dec0a464e7ebcf35ba2a"
+    },
+    "wiki:Frame Shift Drive (SCO)": {
+      "title": "Frame Shift Drive (SCO)",
+      "url": "https://elite-dangerous.fandom.com/wiki/Frame_Shift_Drive_%28SCO%29",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173897,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173897",
+      "retrieved_utc": "2026-10-31T15:29:21.740714+00:00",
+      "archive_sha256": "6bd0ebff378516666057627d1973843c75d375e863b3043e1e2b64017084d557"
+    },
+    "https://elite-dangerous.fandom.com/wiki/GalNet/3310/April": {
+      "title": "elite-dangerous.fandom.com/wiki/GalNet/3310/April",
+      "url": "https://elite-dangerous.fandom.com/wiki/GalNet/3310/April",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "wiki:Fuel Scoop": {
+      "title": "Fuel Scoop",
+      "url": "https://elite-dangerous.fandom.com/wiki/Fuel_Scoop",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 169820,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=169820",
+      "retrieved_utc": "2026-10-31T15:29:27.649572+00:00",
+      "archive_sha256": "67df4a72b79608b8ef55a8b1e7a0442bbc8646c434256ccbdf5e25490ca39467"
+    },
+    "wiki:Starport": {
+      "title": "Starport",
+      "url": "https://elite-dangerous.fandom.com/wiki/Starport",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171782,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171782",
+      "retrieved_utc": "2026-10-31T15:29:28.253858+00:00",
+      "archive_sha256": "36f4805f062147b93bada33a1efc52b53bfa3d70e3a543acb2545bdff4b0a1d8"
+    },
+    "wiki:Outpost": {
+      "title": "Outpost",
+      "url": "https://elite-dangerous.fandom.com/wiki/Outpost",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172452,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172452",
+      "retrieved_utc": "2026-10-31T15:29:31.605514+00:00",
+      "archive_sha256": "ff7e7f0edfb59992f33283cf637f0ac8528bf719b4b889c75089e050c7109e29"
+    },
+    "wiki:Fleet Carrier": {
+      "title": "Fleet Carrier",
+      "url": "https://elite-dangerous.fandom.com/wiki/Drake-Class_Carrier",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 171694,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=171694",
+      "retrieved_utc": "2026-10-31T15:29:14.702486+00:00",
+      "archive_sha256": "fa134cfe0b4f773979d05cb5f5e42f45ce0f28dd416dcf017d62aefca4e8c7d2"
+    },
+    "wiki:Felicity Farseer": {
+      "title": "Felicity Farseer",
+      "url": "https://elite-dangerous.fandom.com/wiki/Felicity_Farseer",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 168441,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=168441",
+      "retrieved_utc": "2026-10-31T15:29:36.222842+00:00",
+      "archive_sha256": "6c015001765708bf97ae358bd79e9ee8fbddf7309c26c7204f0616a256f1a8a5"
+    },
+    "wiki:Elvira Martuuk": {
+      "title": "Elvira Martuuk",
+      "url": "https://elite-dangerous.fandom.com/wiki/Elvira_Martuuk",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 154493,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=154493",
+      "retrieved_utc": "2026-10-31T15:29:38.295522+00:00",
+      "archive_sha256": "6c41570c175c98248302e7a3abdd2751905079a74bb3ade8237c37e1bf55cc50"
+    },
+    "wiki:Ishmael Palin": {
+      "title": "Ishmael Palin",
+      "url": "https://elite-dangerous.fandom.com/wiki/Ishmael_Palin",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 166287,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=166287",
+      "retrieved_utc": "2026-10-31T15:29:40.825722+00:00",
+      "archive_sha256": "ce9082fbe472f7afbb12c5ecbd7757612f0a6bf7e11b397e2df26318139d3bd4"
+    },
+    "wiki:Universal Cartographics": {
+      "title": "Universal Cartographics",
+      "url": "https://elite-dangerous.fandom.com/wiki/Universal_Cartographics",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174182,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174182",
+      "retrieved_utc": "2026-10-31T15:30:48.866711+00:00",
+      "archive_sha256": "88c199a45ebe01d035a1318823d69c42bf0dde6f6ee557a49600726c8bf94fd8"
+    },
+    "wiki:Exploration": {
+      "title": "Exploration",
+      "url": "https://elite-dangerous.fandom.com/wiki/Explorer",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172743,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172743",
+      "retrieved_utc": "2026-10-31T15:31:09.515350+00:00",
+      "archive_sha256": "6509018640eb5e7f574c581a84481592a2e8d14da8a11651ce4a09429eaa0d01"
+    },
+    "wiki:Vista Genomics": {
+      "title": "Vista Genomics",
+      "url": "https://elite-dangerous.fandom.com/wiki/Vista_Genomics",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 161878,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=161878",
+      "retrieved_utc": "2026-10-31T15:30:50.832473+00:00",
+      "archive_sha256": "053338511b1e7a0a02149cf6970e38c9c9be8ac0123c3eb1032e97fb0a9ff06d"
+    },
+    "wiki:Exobiologist": {
+      "title": "Exobiologist",
+      "url": "https://elite-dangerous.fandom.com/wiki/Exobiologist",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172588,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172588",
+      "retrieved_utc": "2026-10-31T15:31:11.492867+00:00",
+      "archive_sha256": "3fb810fbcf9300f530be1f1e449d4425a568beddee63e073e4fb58d4a937df04"
+    },
+    "wiki:Trading": {
+      "title": "Trading",
+      "url": "https://elite-dangerous.fandom.com/wiki/Trader",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172608,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172608",
+      "retrieved_utc": "2026-10-31T15:31:05.093989+00:00",
+      "archive_sha256": "ca3c88997c8b6db3852cbb15462320be03f8baf1263494e0ce0b0630861fadde"
+    },
+    "wiki:Mining": {
+      "title": "Mining",
+      "url": "https://elite-dangerous.fandom.com/wiki/Miner",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 174119,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=174119",
+      "retrieved_utc": "2026-10-31T15:31:07.293811+00:00",
+      "archive_sha256": "8cd0db16b88a48e39eb4c5e953c26f44b2dcb115f9e9c827083cceb3857138d7"
+    },
+    "wiki:Combat": {
+      "title": "Combat",
+      "url": "https://elite-dangerous.fandom.com/wiki/Combat",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173379,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173379",
+      "retrieved_utc": "2026-10-31T15:31:02.927194+00:00",
+      "archive_sha256": "d783fd67777e63f33c2ec392d9d408fb11064d06fa3c1d9e1a1e8701b720343c"
+    },
+    "wiki:Crime & Punishment": {
+      "title": "Crime & Punishment",
+      "url": "https://elite-dangerous.fandom.com/wiki/Crime_%26_Punishment",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 172797,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=172797",
+      "retrieved_utc": "2026-10-31T15:31:11.845922+00:00",
+      "archive_sha256": "3617268ca166ca1fe24216eea722205acdc2fdf11ce6eb31f6a380174f434829"
+    },
+    "wiki:Interstellar Factors": {
+      "title": "Interstellar Factors",
+      "url": "https://elite-dangerous.fandom.com/wiki/Interstellar_Factor",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 173655,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=173655",
+      "retrieved_utc": "2026-10-31T15:31:13.894162+00:00",
+      "archive_sha256": "f0147298b2ec0f096a7f1ee420bfed9f120cad15991792d01f766864f9d69278"
+    },
+    "wiki:Holo-Me": {
+      "title": "Holo-Me",
+      "url": "https://elite-dangerous.fandom.com/wiki/Holo-Me",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 170317,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=170317",
+      "retrieved_utc": "2026-10-31T15:30:54.675224+00:00",
+      "archive_sha256": "bc3041e1e732a053ceb931823fb519a4a2e8de4b091f293ef1923863893ebd6c"
+    },
+    "wiki:Remlok": {
+      "title": "Remlok",
+      "url": "https://elite-dangerous.fandom.com/wiki/Remlok",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 167606,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=167606",
+      "retrieved_utc": "2026-10-31T15:30:51.556311+00:00",
+      "archive_sha256": "f95df2c3ad72077a4301af15ea09dcd02640b40a458df94a55f6380783931da9"
+    },
+    "wiki:Galactic Cooperative": {
+      "title": "Galactic Cooperative",
+      "url": "https://elite-dangerous.fandom.com/wiki/Galactic_Cooperative",
+      "publisher": "Elite Dangerous Wiki contributors",
+      "reviewed": "2026-10-31",
+      "access": "archived MediaWiki article",
+      "revision_id": 162392,
+      "revision_url": "https://elite-dangerous.fandom.com/index.php?oldid=162392",
+      "retrieved_utc": "2026-10-31T15:30:55.293626+00:00",
+      "archive_sha256": "d4e00ef7c68e6b1f47499ea3469cdf7b1981eb7de0acb90cb1372baf39419248"
+    },
+    "https://fuelrats.com/": {
+      "title": "fuelrats.com/",
+      "url": "https://fuelrats.com/",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "https://github.com/fuelrats": {
+      "title": "github.com/fuelrats",
+      "url": "https://github.com/fuelrats",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "https://hullseals.space/": {
+      "title": "hullseals.space/",
+      "url": "https://hullseals.space/",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "https://www.operationida.com/about": {
+      "title": "www.operationida.com/about",
+      "url": "https://www.operationida.com/about",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "https://elite-dangerous.fandom.com/wiki/System_Colonisation": {
+      "title": "elite-dangerous.fandom.com/wiki/System_Colonisation",
+      "url": "https://elite-dangerous.fandom.com/wiki/System_Colonisation",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    },
+    "https://svbkresearchinstitute.com/colonization": {
+      "title": "svbkresearchinstitute.com/colonization",
+      "url": "https://svbkresearchinstitute.com/colonization",
+      "reviewed": "2026-10-31",
+      "access": "web page or indexed excerpt",
+      "note": "See research notes for source scope; not an archived MediaWiki revision."
+    }
+  }
+}

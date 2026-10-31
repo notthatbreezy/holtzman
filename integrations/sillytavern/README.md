@@ -1,5 +1,9 @@
 # HOLT in SillyTavern
 
+For the independent, researched **Elite Dangerous** universe lorebook, see
+[installation and sources](../../docs/elite-dangerous-lorebook.md). It works with
+standalone SillyTavern and is separate from HOLT's personal fictional canon.
+
 Start with the **HOLT Tavern** desktop shortcut or **HOLT-Tavern.cmd** in the repository root. The browser opens after the
 local server becomes ready. Click **Start HOLT**: it selects the HOLT character,
 connects SillyTavern to the gateway, starts the speech services and connects SKIPPY.
