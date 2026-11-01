@@ -127,6 +127,8 @@ class Bridge:
         self.token = None
         self.state = 'Stopped'
         self.error = None
+        self.microphone_state = 'Not listening'
+        self.activity = {'ptt_presses': 0, 'captures': 0, 'transcriptions': 0, 'last': 'Not started'}
         self.transcribing = False
         self.services = Services(root=ROOT / 'st-voice')
         self.server = None
@@ -134,6 +136,13 @@ class Bridge:
     def report(self, kind, value):
         if kind == 'error':
             self.error = str(value)[:400]
+        elif kind == 'microphone':
+            self.microphone_state = str(value)[:300]
+            if str(value).startswith('Listening:') and (self.error or '').startswith('Microphone:'):
+                self.error = None
+        elif kind == 'capture':
+            self.activity['captures'] += 1
+            self.activity['last'] = f"Captured {value['duration_ms']} ms of speech"
 
     def disconnected(self):
         self.ptt.disconnect()
@@ -159,6 +168,9 @@ class Bridge:
                     self.state = ('PTT link connected; press Start listening' if ptt.get('input') == PTT_INPUT
                                   else 'Configure Numpad Enter on SKIPPY')
             elif kind == 'ptt':
+                if data.get('down') and not self.ptt.frame()['down']:
+                    self.activity['ptt_presses'] += 1
+                    self.activity['last'] = 'PTT pressed'
                 self.ptt.update(data)
             elif kind == 'heartbeat':
                 # A transport heartbeat proves liveness, not a new button edge.
@@ -204,6 +216,7 @@ class Bridge:
         self.inbox.clear()
         self.capture_stop.set()
         self.state = 'Stopped'
+        self.microphone_state = 'Not listening'
 
     async def transcribe(self):
         async with httpx2.AsyncClient(trust_env=False, timeout=90) as http:
@@ -217,6 +230,7 @@ class Bridge:
                     continue
                 state = self.gate.frame()
                 if not accepting or not packet['held'] or not state['connected'] or packet['generation'] != state['generation']:
+                    self.activity['last'] = 'Capture discarded: chat busy, inactive, or ship connection changed'
                     continue
                 if time.monotonic() - packet['captured_at'] > 5:
                     continue
@@ -231,8 +245,12 @@ class Bridge:
                               'prompt': 'Elite Dangerous. HOLT. AD Leonis. Ross 248. Homer Platform.'})
                     r.raise_for_status()
                     text = r.json().get('text', '').strip()
+                    self.activity['transcriptions'] += 1
                     if text and len(text) <= 4000 and not non_speech(text):
-                        self.inbox.offer(text, packet['trace_id'], epoch, packet['captured_at'])
+                        offered = self.inbox.offer(text, packet['trace_id'], epoch, packet['captured_at'])
+                        self.activity['last'] = 'Transcript ready for SillyTavern' if offered else 'Transcript discarded: chat no longer accepting input'
+                    else:
+                        self.activity['last'] = 'Whisper returned no usable speech'
                 except Exception as exc:
                     self.error = f'Transcription failed ({type(exc).__name__}); no chat message sent'
                 finally:
@@ -241,7 +259,8 @@ class Bridge:
 
     def snapshot(self, client=None):
         return {'service': 'holt-st-voice', 'state': self.state, 'error': self.error, 'ptt': self.ptt.frame(),
-                'enabled': self.inbox.live(), 'owner': self.inbox.owner,
+                'enabled': self.inbox.live(), 'owner': self.inbox.owner, 'microphone_state': self.microphone_state,
+                'activity': dict(self.activity),
                 'microphone': self.settings['microphone'] or 'Windows default', 'pending': self.inbox.read(client)}
 
 

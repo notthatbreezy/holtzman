@@ -68,6 +68,18 @@ class GateTests(unittest.TestCase):
 
 
 class BridgeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_capture_recovery_clears_only_microphone_errors(self):
+        bridge = Bridge()
+        bridge.report('error', 'Microphone: Input stream stopped')
+        bridge.report('microphone', 'Listening: Windows default microphone')
+        self.assertIsNone(bridge.error)
+        bridge.report('error', 'Transcription failed')
+        bridge.report('microphone', 'Listening: Windows default microphone')
+        self.assertEqual(bridge.error, 'Transcription failed')
+        bridge.report('capture', {'duration_ms': 2400})
+        self.assertEqual(bridge.snapshot()['activity']['captures'], 1)
+        self.assertNotIn('text', bridge.snapshot()['activity'])
+
     async def test_shutdown_closes_sse_before_graceful_server_exit(self):
         bridge = Bridge()
         bridge.server = SimpleNamespace(should_exit=False)

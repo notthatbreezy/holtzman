@@ -138,6 +138,11 @@ The local service binds to `127.0.0.1:8083`; control requests are limited to the
 two configured ST origins on port 8000. The Holtzman bearer token is read from
 Windows Credential Manager and used by the native SSE/configuration client only.
 The local log is `.local/holt/results/st-voice.log`; keep it private.
+`HOLT-ST-Voice.cmd status` also reports the actual microphone stream state and
+counts of received PTT presses, captured speech segments and Whisper responses.
+These diagnostics omit speech text. If no transcript appears, the first counter
+that does not advance identifies the stage to check. A recovered microphone
+stream clears its earlier microphone error rather than leaving a stale warning.
 
 ## Validation record
 

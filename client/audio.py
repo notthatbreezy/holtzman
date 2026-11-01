@@ -226,6 +226,7 @@ class Microphone:
                             self.utterances.put_nowait(("audio", {"pcm": audio, "held": segmenter.last_held,
                             "generation": generation, "captured_at": __import__("time").monotonic(),
                             "trace_id": __import__("uuid").uuid4().hex}))
+                            self.report("capture", {"duration_ms": len(audio) // 32})
                         except queue.Full:
                             self.report("error", "Audio queue full; utterance dropped without replay.")
         except Exception as exc:
