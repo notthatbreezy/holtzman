@@ -1,0 +1,8 @@
+{
+  "display_name": "HOLT tool schema compatibility",
+  "author": "Holtzman",
+  "version": "1.0.0",
+  "loading_order": 120,
+  "js": "index.js",
+  "homePage": "https://github.com/notthatbreezy/holtzman"
+}

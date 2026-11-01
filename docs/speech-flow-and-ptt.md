@@ -150,6 +150,21 @@ Generation gating reads ST's exported `isGenerating()` on each poll. Do not latc
 `GENERATION_STARTED`: prompt-preview dry runs emit it without necessarily emitting
 an end event, which previously left input permanently paused despite a working mic.
 
+### Local-model tool schema compatibility
+
+Install `integrations/sillytavern/tool-schema-compat` as the standalone ST extension
+`public/scripts/extensions/third-party/holt-tool-schema-compat`, then refresh ST.
+It also works with typed chat and does not require microphone capture. At request
+preparation it rewrites boolean property schemas into equivalent object schemas:
+`true` becomes `{}`, and `false` becomes `{"not": {}}`. It preserves boolean data
+in defaults/enums, closed-object constraints, tool names and the complete catalogue.
+
+Ollama's OpenAI-compatible tool decoder rejected Holtzman's legal unconstrained
+`objectives.measure: true` schema with HTTP 400 (`cannot unmarshal bool ...
+parameters.properties ... api.ToolProperty`). A direct test with the actual local
+`qwen3-coder-next:q8_0` model and all 33 tools reproduced that 400, then returned
+HTTP 200 with `measure: {}`. No game tools were executed during validation.
+
 ## Validation record
 
 - Python regression suite: 107 tests passed, including eight input-bridge tests.

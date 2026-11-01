@@ -131,3 +131,9 @@ or ship calls occur in capture mode. It is a developer test, not normal conversa
 See [the design](../../docs/sillytavern-design.md),
 [the high-level comparison](../../docs/sillytavern-summary.md), and
 [the detailed report](../../docs/sillytavern-report.md).
+
+For standalone ST with its own MCP extension and Ollama, install
+`tool-schema-compat` into ST's `public/scripts/extensions/third-party/holt-tool-schema-compat`
+and refresh. It converts legal boolean property schemas into object form for model
+APIs that reject them, without disabling tools. See
+[standalone speech and compatibility notes](../../docs/speech-flow-and-ptt.md).
