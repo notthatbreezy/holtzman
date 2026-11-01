@@ -154,6 +154,9 @@ class Bridge:
                 if ptt.get('error'):
                     self.ptt.disconnect()
                     self.error = 'SKIPPY PTT: ' + str(ptt['error'])[:300]
+                else:
+                    self.state = ('PTT link connected; press Start listening' if ptt.get('input') == PTT_INPUT
+                                  else 'Configure Numpad Enter on SKIPPY')
             elif kind == 'ptt':
                 self.ptt.update(data)
             elif kind == 'heartbeat':

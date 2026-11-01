@@ -42,19 +42,34 @@ fn fallback_and_scripted_edges_do_not_capture_devices() {
 fn keypad_enter_is_distinct_on_press_and_release() {
     assert!(validate_input("Key_NumpadEnter").is_ok());
     assert!(validate_input("Key_Enter").is_err());
-    assert_eq!(keyboard_input(0x0d, 0x02).as_deref(), Some("Key_NumpadEnter"));
-    assert_eq!(keyboard_input(0x0d, 0x03).as_deref(), Some("Key_NumpadEnter"));
+    assert_eq!(
+        keyboard_input(0x0d, 0x02).as_deref(),
+        Some("Key_NumpadEnter")
+    );
+    assert_eq!(
+        keyboard_input(0x0d, 0x03).as_deref(),
+        Some("Key_NumpadEnter")
+    );
     for flags in [0, 1, 4, 5, 6, 7] {
         assert_eq!(keyboard_input(0x0d, flags), None);
     }
     assert_eq!(keyboard_input(0x7c, 0).as_deref(), Some("Key_F13"));
     let bus = Arc::new(Bus::default());
-    let reader = Reader::new(Config { inputs: vec!["Key_NumpadEnter".into()], ..Default::default() }, bus.clone());
+    let reader = Reader::new(
+        Config {
+            inputs: vec!["Key_NumpadEnter".into()],
+            ..Default::default()
+        },
+        bus.clone(),
+    );
     reader.select(&["Key_NumpadEnter".into()]);
     for flags in [2, 3] {
         let name = keyboard_input(0x0d, flags).unwrap();
         reader.edge(&name, flags & 1 == 0);
         assert_eq!(reader.snapshot()["down"], flags == 2);
     }
-    assert_eq!(bus.since(Some(1), &[])["events"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        bus.since(Some(1), &[])["events"].as_array().unwrap().len(),
+        2
+    );
 }
