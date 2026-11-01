@@ -180,6 +180,14 @@ ST's installed `node-fetch` client did. Native MCP initialization, `status` and
 All 33 tools remain enabled. Update the connection URL if SKIPPY's Ethernet IP
 changes. The voice bridge's separate PTT/SSE connection remains independently managed.
 
+### Ollama model residency
+
+ARCHIE's Windows user environment sets `OLLAMA_KEEP_ALIVE=4h`, applied by restarting
+Ollama. Each inference request renews this idle timeout; it is not a four-hour
+limit on a play session. Explicit unloading, quitting/restarting Ollama or model
+eviction can still release it. This controls model residency separately from prompt
+cache reuse. To change it, update that user environment variable and restart Ollama.
+
 ## Validation record
 
 - Python regression suite: 107 tests passed, including eight input-bridge tests.
