@@ -165,6 +165,21 @@ parameters.properties ... api.ToolProperty`). A direct test with the actual loca
 `qwen3-coder-next:q8_0` model and all 33 tools reproduced that 400, then returned
 HTTP 200 with `measure: {}`. No game tools were executed during validation.
 
+### ST MCP connection on this LAN
+
+ARCHIE intermittently fails to resolve `skippy`, producing `mcp-remote: fetch
+failed` during otherwise valid tool calls. Standalone ST now uses its MCP plugin's
+native `streamableHttp` connector to `http://192.168.50.41:7777/mcp`, with
+`Host: skippy:7777` and the existing bearer credential in its private configuration.
+This preserves the server's Host validation while avoiding hostname resolution and
+the stdio relay. Do not commit the credential-bearing ST configuration.
+
+The Windows built-in Node `fetch` did not preserve the Host override in a probe;
+ST's installed `node-fetch` client did. Native MCP initialization, `status` and
+`trade_commodities(query="tritium")` all passed through ST after the change.
+All 33 tools remain enabled. Update the connection URL if SKIPPY's Ethernet IP
+changes. The voice bridge's separate PTT/SSE connection remains independently managed.
+
 ## Validation record
 
 - Python regression suite: 107 tests passed, including eight input-bridge tests.
