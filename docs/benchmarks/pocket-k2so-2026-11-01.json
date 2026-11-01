@@ -1,0 +1,300 @@
+{
+  "date": "2026-11-01",
+  "status": "completed_cloning_authorized",
+  "hardware": "Ryzen AI Max+ 395, CPU only",
+  "profiles": {
+    "two_threads": {
+      "metadata": {
+        "pocket_tts": "4.0.1",
+        "torch": "2.15.0+cpu",
+        "language": "english_2026-10",
+        "threads": 2,
+        "seed": 42,
+        "imports_seconds": 3.4808,
+        "device": "cpu",
+        "note": "Direct streaming engine; first chunk is not measured speaker latency. No filter or speed adjustment.",
+        "model_load_seconds": 0.4242,
+        "sample_rate": 24000,
+        "parameters": 109501826,
+        "has_voice_cloning": true
+      },
+      "references": [
+        {
+          "label": "benchmark",
+          "conditioning_seconds": 0.6501,
+          "filename": "HOLT-K2SO.wav",
+          "sha256": "c62582b9ca819157b99429624c16d1d527d6af63c82d5188b18799ec1516d2ca",
+          "audio_seconds": 10.9142
+        },
+        {
+          "label": "current-short",
+          "conditioning_seconds": 0.2205,
+          "filename": "HOLT-K2SO-single.wav",
+          "sha256": "d81b6cba5e357af910d141310c26df486889b5a537075fec72b344db662fb141",
+          "audio_seconds": 4.1446
+        }
+      ],
+      "results": [
+        {
+          "label": "docking-0",
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "cold_first_generation": true,
+          "first_chunk_seconds": 0.0897,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0897,
+          "synthesis_seconds": 1.5985,
+          "audio_seconds": 6.48,
+          "realtime_factor": 0.2467,
+          "chunks": 81,
+          "peak": 0.882,
+          "export_gain": 1.0,
+          "audio_file": "docking-0.wav"
+        },
+        {
+          "label": "docking-1",
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0868,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0868,
+          "synthesis_seconds": 1.5771,
+          "audio_seconds": 6.48,
+          "realtime_factor": 0.2434,
+          "chunks": 81,
+          "peak": 0.882,
+          "export_gain": 1.0,
+          "audio_file": "docking-1.wav"
+        },
+        {
+          "label": "docking-2",
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0832,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0832,
+          "synthesis_seconds": 1.5524,
+          "audio_seconds": 6.48,
+          "realtime_factor": 0.2396,
+          "chunks": 81,
+          "peak": 0.882,
+          "export_gain": 1.0,
+          "audio_file": "docking-2.wav"
+        },
+        {
+          "label": "greeting",
+          "text": "Systems online, Captain. Ready when you are.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0756,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0756,
+          "synthesis_seconds": 0.934,
+          "audio_seconds": 3.76,
+          "realtime_factor": 0.2484,
+          "chunks": 47,
+          "peak": 0.903,
+          "export_gain": 1.0,
+          "audio_file": "greeting.wav"
+        },
+        {
+          "label": "fuel",
+          "text": "Your fuel is at sixty percent. We have enough for the next jump.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0728,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0728,
+          "synthesis_seconds": 1.3304,
+          "audio_seconds": 5.44,
+          "realtime_factor": 0.2446,
+          "chunks": 68,
+          "peak": 0.8837,
+          "export_gain": 1.0,
+          "audio_file": "fuel.wav"
+        },
+        {
+          "label": "urgent",
+          "text": "Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0834,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0834,
+          "synthesis_seconds": 1.3453,
+          "audio_seconds": 5.6,
+          "realtime_factor": 0.2402,
+          "chunks": 70,
+          "peak": 1.0287,
+          "export_gain": 0.952676,
+          "audio_file": "urgent.wav"
+        },
+        {
+          "label": "briefing",
+          "text": "Captain, the route is ready. We have enough fuel for the next three jumps, and the destination station accepts our landing pad size. Finish the current scan before we depart. Once we arrive, I suggest refueling, repairing the hull, and checking the passenger lounge for a return contract. We are trying to earn a quiet living, after all. Shooting the docking clamps would make that considerably less quiet. I have marked the station in our navigation plan and will keep an eye on fuel consumption along the way.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0865,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0865,
+          "synthesis_seconds": 7.4263,
+          "audio_seconds": 30.8,
+          "realtime_factor": 0.2411,
+          "chunks": 385,
+          "peak": 0.9765,
+          "export_gain": 1.0,
+          "audio_file": "briefing.wav"
+        },
+        {
+          "label": "short-reference-docking",
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0823,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0823,
+          "synthesis_seconds": 1.5827,
+          "audio_seconds": 6.64,
+          "realtime_factor": 0.2384,
+          "chunks": 83,
+          "peak": 1.0499,
+          "export_gain": 0.933408,
+          "audio_file": "short-reference-docking.wav"
+        },
+        {
+          "label": "short-reference-urgent",
+          "text": "Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0798,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0798,
+          "synthesis_seconds": 1.3314,
+          "audio_seconds": 5.52,
+          "realtime_factor": 0.2412,
+          "chunks": 69,
+          "peak": 0.9672,
+          "export_gain": 1.0,
+          "audio_file": "short-reference-urgent.wav"
+        }
+      ],
+      "transcriptions": [
+        {
+          "sample": "docking-1",
+          "transcription": " Captain, docking clearance is confirmed.\n Try to arrive with the same number of hull panels we left with.\n",
+          "seconds": 1.078
+        },
+        {
+          "sample": "greeting",
+          "transcription": " Systems online, Captain.\n Ready when you are.\n",
+          "seconds": 0.984
+        },
+        {
+          "sample": "fuel",
+          "transcription": " Your fuel is at 60%.\n We have enough for the next jump.\n",
+          "seconds": 1.047
+        },
+        {
+          "sample": "urgent",
+          "transcription": " Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.\n",
+          "seconds": 1.063
+        },
+        {
+          "sample": "briefing",
+          "transcription": " Captain, the route is ready.\n We have enough fuel for the next three jumps, and the destination station accepts our landing\n pad size.\n Finish the current scan before we depart.\n Once we arrive, I suggest refueling, repairing the hull, and checking the passenger lounge\n for a return contract.\n We are trying to earn a quiet living, after all.\n Shooting the docking clamps would make that considerably less quiet.\n I have marked the station in our navigation plan, and will keep an eye on fuel consumption\n along the way.\n",
+          "seconds": 2.75
+        },
+        {
+          "sample": "short-reference-docking",
+          "transcription": " Captain, docking clearance is confirmed.\n Try to arrive with the same number of hull panels we left with.\n",
+          "seconds": 1.094
+        },
+        {
+          "sample": "short-reference-urgent",
+          "transcription": " Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.\n",
+          "seconds": 1.062
+        }
+      ]
+    },
+    "four_threads": {
+      "metadata": {
+        "pocket_tts": "4.0.1",
+        "torch": "2.15.0+cpu",
+        "language": "english_2026-10",
+        "threads": 4,
+        "seed": 42,
+        "imports_seconds": 3.5172,
+        "device": "cpu",
+        "note": "Direct streaming engine; first chunk is not measured speaker latency. No filter or speed adjustment.",
+        "model_load_seconds": 0.4105,
+        "sample_rate": 24000,
+        "parameters": 109501826,
+        "has_voice_cloning": true
+      },
+      "references": [
+        {
+          "label": "benchmark",
+          "conditioning_seconds": 0.4363,
+          "filename": "HOLT-K2SO.wav",
+          "sha256": "c62582b9ca819157b99429624c16d1d527d6af63c82d5188b18799ec1516d2ca",
+          "audio_seconds": 10.9142
+        }
+      ],
+      "results": [
+        {
+          "label": "docking-0",
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "cold_first_generation": true,
+          "first_chunk_seconds": 0.0802,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0802,
+          "synthesis_seconds": 1.5109,
+          "audio_seconds": 6.48,
+          "realtime_factor": 0.2332,
+          "chunks": 81,
+          "peak": 0.882,
+          "export_gain": 1.0,
+          "audio_file": "docking-0.wav"
+        },
+        {
+          "label": "docking-1",
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0778,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0778,
+          "synthesis_seconds": 1.5236,
+          "audio_seconds": 6.48,
+          "realtime_factor": 0.2351,
+          "chunks": 81,
+          "peak": 0.882,
+          "export_gain": 1.0,
+          "audio_file": "docking-1.wav"
+        },
+        {
+          "label": "docking-2",
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.076,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.076,
+          "synthesis_seconds": 1.5095,
+          "audio_seconds": 6.48,
+          "realtime_factor": 0.233,
+          "chunks": 81,
+          "peak": 0.882,
+          "export_gain": 1.0,
+          "audio_file": "docking-2.wav"
+        },
+        {
+          "label": "urgent",
+          "text": "Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.",
+          "cold_first_generation": false,
+          "first_chunk_seconds": 0.0753,
+          "first_chunk_audio_seconds": 0.08,
+          "continuous_start_seconds": 0.0753,
+          "synthesis_seconds": 1.3127,
+          "audio_seconds": 5.6,
+          "realtime_factor": 0.2344,
+          "chunks": 70,
+          "peak": 1.0287,
+          "export_gain": 0.952676,
+          "audio_file": "urgent.wav"
+        }
+      ]
+    }
+  }
+}

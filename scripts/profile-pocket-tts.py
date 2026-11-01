@@ -116,7 +116,11 @@ def main():
             raise RuntimeError("Pocket TTS returned non-finite audio")
         duration = audio.size / model.sample_rate
         filename = label + ".wav"
-        sf.write(args.output / filename, audio, model.sample_rate, subtype="PCM_16")
+        peak = float(np.max(np.abs(audio)))
+        # Some clone outputs slightly exceed full scale. Preserve their waveform
+        # with gain-only normalization instead of clipping the PCM export.
+        export_gain = min(1.0, 0.98 / peak) if peak else 1.0
+        sf.write(args.output / filename, audio * export_gain, model.sample_rate, subtype="PCM_16")
         # Minimal ideal initial buffer to avoid any underrun, based on actual
         # chunk arrival times. Playback/backend/device buffering is additional.
         previous_end = 0
@@ -130,7 +134,7 @@ def main():
                   "continuous_start_seconds": round(continuous_start, 4),
                   "synthesis_seconds": round(elapsed, 4), "audio_seconds": round(duration, 4),
                   "realtime_factor": round(elapsed / duration, 4), "chunks": len(chunks),
-                  "peak": round(float(np.max(np.abs(audio))), 4), "audio_file": filename,
+                  "peak": round(peak, 4), "export_gain": round(export_gain, 6), "audio_file": filename,
                   "arrivals": arrivals}
         results.append(result)
         save()

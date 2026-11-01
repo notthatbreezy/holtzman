@@ -7,15 +7,84 @@ working ROCm environment. No persistent Pocket server was started, and ST's voic
 provider, K-2SO mapping, microphone settings and Chatterbox installation were not
 changed.
 
-**The requested K-2SO clone comparison is pending Hugging Face access.** The
-official cloning weights are gated. An unauthenticated load downloaded the
-stock-only model, whose `has_voice_cloning` flag was false. It explicitly rejected
-`HOLT-K2SO.wav`. No K-2SO Pocket output or clone latency has been measured.
+**The K-2SO clone comparison is complete.** After the user accepted the official
+model's access conditions and authenticated locally, Pocket loaded with
+`has_voice_cloning: true`. Both K-2SO references worked. Conditioning and synthesis
+ran locally on CPU; the reference recordings were not uploaded. The initial
+unauthenticated attempt had loaded a stock-only fallback and rejected cloning;
+the stock baseline below is kept separate from the completed clone results.
 
-The user must review the conditions at the
-[official model page](https://huggingface.co/kyutai/pocket-tts) and authenticate
-locally. The gate was not bypassed, and the reference recording was not uploaded.
-Once access is granted, conditioning and synthesis will run locally.
+## Completed K-2SO results
+
+Same Pocket version, language model, CPU settings and benchmark sentences as the
+stock baseline below. The primary voice used the original **10.91-second**
+`HOLT-K2SO.wav`, matching the earlier Chatterbox test reference. Two warm docking
+repeats followed the first generation; other sentences were measured once.
+
+| Input / reference | First chunk | Complete synthesis | Generated audio |
+| --- | ---: | ---: | ---: |
+| Docking, first generation | 0.090 s | 1.599 s | 6.48 s |
+| Docking, warm repeat 1 | 0.087 s | 1.577 s | 6.48 s |
+| Docking, warm repeat 2 | 0.083 s | 1.552 s | 6.48 s |
+| Greeting | 0.076 s | 0.934 s | 3.76 s |
+| Fuel | 0.073 s | 1.330 s | 5.44 s |
+| Urgent hull warning | 0.083 s | 1.345 s | 5.60 s |
+| Long briefing | 0.087 s | 7.426 s | 30.80 s |
+| Docking, current 4.14-second reference | 0.082 s | 1.583 s | 6.64 s |
+| Hull warning, current short reference | 0.080 s | 1.331 s | 5.52 s |
+
+Warm docking averages: **85 ms first chunk**, **1.565 s complete synthesis**,
+**6.48 s audio**, approximately **4.1 times real time**. At every measured chunk
+arrival, enough audio had accumulated for the first-chunk start to avoid an
+idealized underrun. Physical playback and ST integration are still untested.
+
+A sequential four-thread check averaged **77 ms first chunk** and **1.517 s full
+synthesis** for the same docking output: about 3% faster to finish, for twice the
+configured intra-op threads. Two threads remain a sensible starting point; this
+small test does not establish an optimal thread count under every workload.
+
+The original reference took **0.650 s** to condition, and the shorter reference
+**0.221 s**. Each state was then reused across requests and exported to a private
+safetensors file. A fresh process with cached weights took **3.481 s imports**
+plus **0.424 s model load**, separately from conditioning and generation. The
+earlier first download/load took about 20 s and is not warm conversational latency.
+
+### Comparison with Chatterbox Nano
+
+| Same docking text | First audio available | Full engine synthesis | Output audio |
+| --- | ---: | ---: | ---: |
+| Pocket, K-2SO, CPU, two threads | 0.085 s | 1.565 s | 6.48 s |
+| Nano, K-2SO, GPU, prior warm mean | Not measured as a stream | 1.08 s | 5.64 s |
+
+Nano still finishes this entire utterance faster, including after normalizing for
+its shorter generated audio. Pocket's advantage is **native incremental output**:
+an appropriately integrated player could start well before synthesis finishes.
+Our current Chatterbox/ST route waits for a returned WAV. These engine timings do
+not prove an end-to-end ST speedup and do not include reasoning or tool latency.
+
+### Audio checks and auditions
+
+All seven local Whisper checks matched the requested words after ignoring
+punctuation, whitespace and numeric formatting: docking, greeting, fuel, warning,
+long briefing and the two short-reference samples. This is an intelligibility
+check, not a subjective listening test or actor-similarity measurement.
+
+Some generated peaks slightly exceeded full scale (maximum 1.050). The profiler
+now applies **gain-only normalization** when needed before PCM export instead of
+clipping. It records the original peak and export gain; generation timings precede
+this postprocessing. No robot effect, pitch change or playback-speed adjustment
+was added. The final files are under:
+
+```text
+.local/holt/results/pocket-k2so-audition-2026-11-01/docking-1.wav
+.local/holt/results/pocket-k2so-audition-2026-11-01/urgent.wav
+.local/holt/results/pocket-k2so-audition-2026-11-01/short-reference-docking.wav
+.local/holt/results/pocket-k2so-audition-2026-11-01/short-reference-urgent.wav
+```
+
+The first unnormalized clone run is retained separately. Raw chunk arrivals,
+transcripts and reusable voice states stay private; the committed benchmark
+summary contains measurements and synthetic text only. ST remains on Chatterbox.
 
 ## Completed CPU baseline — stock voice only
 
@@ -59,7 +128,7 @@ error or voice quality. No actor-similarity assessment is possible from the stoc
 baseline. WAVs, voice states, chunk arrivals and transcripts remain private under
 `.local/holt/results/pocket-stock-2026-11-01/`.
 
-## Enable and run the K-2SO trial
+## Reproduce the K-2SO trial
 
 After reviewing/accepting the model access conditions, run from the repo root:
 
