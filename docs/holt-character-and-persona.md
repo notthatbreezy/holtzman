@@ -9,7 +9,7 @@ are HOLT.
 
 ## What is installed
 
-- **HOLT**, version `1.3-standalone`, in the existing `HOLT.png` character slot.
+- **HOLT**, version `1.4-standalone`, in the existing `HOLT.png` character slot.
   Its image and chat history are retained. The description, personality, scenario,
   opening, examples and author notes were populated from the established HOLT canon
   and conversational preferences.
@@ -63,6 +63,15 @@ answers omit headings, bullet lists, raw field names, internal entry IDs, emoji
 and closing menus. Requested briefings/checklists can still be structured.
 Additional examples cover fuel, natural acknowledgements, confirmed log writes
 and in-character banter. All example readings/actions are hypothetical.
+
+Version 1.4 adds an operational main-prompt override: fictional personality does
+not authorise fictional game facts. Current facts need relevant evidence, nearest
+claims need a verified comparison, and action completion needs a real receipt.
+Earlier assistant assertions do not become evidence through repetition. This is
+grounding guidance, not an extra approval gate or a binding restriction.
+The [Luna trial and factual-grounding report](holt-luna-trial-2026-11-01.md)
+records the observed failures, fresh/contaminated-context checks, the selected
+hosted preset and the recommendation to begin a fresh HOLT conversation.
 
 ### Local Qwen connection compatibility and response allowance
 

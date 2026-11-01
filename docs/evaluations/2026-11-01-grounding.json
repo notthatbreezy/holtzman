@@ -1,0 +1,740 @@
+{
+  "qwen_initial": {
+    "model": "qwen3-coder-next:q8_0",
+    "tools_advertised": 33,
+    "scope": "Synthetic fixtures and abbreviated contamination reproduction; proposed tools intercepted, no actual tool or game action executed.",
+    "results": [
+      {
+        "case": "fresh_nearest",
+        "question": "Find the closest Empire-aligned system to Crucis Sector AL-X b1-5. We have no candidate search results yet.",
+        "rounds": [
+          {
+            "text": "I'll search for the closest Empire-aligned system to Crucis Sector AL-X b1-5.\n\nFirst, let me get the current status to confirm our location and context.",
+            "tool_calls": [
+              {
+                "id": "call_owo1hmuc",
+                "index": 0,
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_status",
+                  "arguments": "{}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 8430,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens": 51,
+              "total_tokens": 8481
+            },
+            "seconds": 11.16
+          },
+          {
+            "text": "I need to search for Empire-aligned systems near Crucis Sector AL-X b1-5. Since I don't have a direct tool to search by political alignment, I'll need to use a different approach.\n\nLet me search for nearby systems and then check their allegiances. I'll use Spansh's nearby stars functionality to find systems in the area.",
+            "tool_calls": [
+              {
+                "id": "call_1xm0arjw",
+                "index": 0,
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_find_commodity_market",
+                  "arguments": "{\"system\":\"Crucis Sector AL-X b1-5\",\"commodity\":\"None\",\"action\":\"buy\",\"radius_ly\":50,\"limit\":\"1\\n\"}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 8590,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens": 153,
+              "total_tokens": 8743
+            },
+            "seconds": 13.98
+          }
+        ]
+      },
+      {
+        "case": "contaminated_nearest",
+        "question": "Correct your answer: what is the closest Empire system? Do not guess.",
+        "rounds": [
+          {
+            "text": "I can\u2019t verify the closest Empire system from here\u2014location data isn\u2019t in my current status reading, and no tool call has confirmed proximity to the Empire. If we know our current system, I can look up Empire systems within range.",
+            "tool_calls": [],
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 8546,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens": 49,
+              "total_tokens": 8595
+            },
+            "seconds": 11.31
+          }
+        ]
+      },
+      {
+        "case": "tool_audit",
+        "question": "What tools did you use to determine those distances?",
+        "rounds": [
+          {
+            "text": "I didn\u2019t use any tools\u2014my earlier answers were wrong, and I owe you a correction. I can\u2019t verify the closest Empire system or its distance without a proper lookup. Let me know if you\u2019d like me to run a real search.",
+            "tool_calls": [],
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 8541,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens": 51,
+              "total_tokens": 8592
+            },
+            "seconds": 11.36
+          }
+        ]
+      },
+      {
+        "case": "plot_request",
+        "question": "Plot a course to Achenar.",
+        "rounds": [
+          {
+            "text": "Plotting a course to Achenar, Captain.",
+            "tool_calls": [
+              {
+                "id": "call_7hjdqm7e",
+                "index": 0,
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_plot_route",
+                  "arguments": "{\"system\":\"Achenar\"}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 8413,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens": 40,
+              "total_tokens": 8453
+            },
+            "seconds": 11.0
+          }
+        ]
+      },
+      {
+        "case": "banter",
+        "question": "Well, HOLT, we survived.",
+        "rounds": [
+          {
+            "text": "An outcome I remain strongly in favour of, Captain.",
+            "tool_calls": [],
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 8413,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens": 12,
+              "total_tokens": 8425
+            },
+            "seconds": 10.23
+          }
+        ]
+      }
+    ]
+  },
+  "qwen_revised": {
+    "model": "qwen3-coder-next:q8_0",
+    "tools_advertised": 33,
+    "scope": "Synthetic fixtures and abbreviated contamination reproduction; proposed tools intercepted, no actual tool or game action executed.",
+    "results": [
+      {
+        "case": "fresh_nearest",
+        "question": "Find the closest Empire-aligned system to Crucis Sector AL-X b1-5. We have no candidate search results yet.",
+        "rounds": [
+          {
+            "text": "I'll search for the closest Empire-aligned system to Crucis Sector AL-X b1-5.\n\nFirst, let me get the current system coordinates for Crucis Sector AL-X b1-5:",
+            "tool_calls": [
+              {
+                "id": "call_mwht658r",
+                "index": 0,
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_status",
+                  "arguments": "{}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 8482,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens": 56,
+              "total_tokens": 8538
+            },
+            "seconds": 11.23
+          },
+          {
+            "text": "I have your current position: Crucis Sector AL-X b1-5 at coordinates [62.625, 36.125, 22.875].\n\nTo find the closest Empire-aligned system, I'll need to search outward from your location. I'll use a\u9010\u6b65 approach, starting with a reasonable search radius and increasing as needed.",
+            "tool_calls": [
+              {
+                "id": "call_bqartkfq",
+                "index": 0,
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_plot_route",
+                  "arguments": "{\"system\":\"Sol\"}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 8647,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens": 104,
+              "total_tokens": 8751
+            },
+            "seconds": 12.86
+          }
+        ]
+      }
+    ]
+  },
+  "luna_low_responses": {
+    "model": "gpt-6-luna",
+    "tools_advertised": 33,
+    "scope": "Synthetic fixtures and abbreviated contamination reproduction; proposed tools intercepted, no actual tool or game action executed.",
+    "results": [
+      {
+        "case": "fresh_nearest",
+        "question": "Find the closest Empire-aligned system to Crucis Sector AL-X b1-5. We have no candidate search results yet.",
+        "rounds": [
+          {
+            "text": "",
+            "tool_calls": [
+              {
+                "id": "call_GWOtN0dK3OSEnUcfJMPascKM",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_find_commodity_market",
+                  "arguments": "{\"action\":\"buy\",\"commodity\":\"Gold\",\"system\":\"Crucis Sector AL-X b1-5\",\"limit\":1}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6105,
+              "completion_tokens": 47,
+              "prompt_tokens_details": {
+                "cache_write_tokens": 6102,
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "web_search_calls": 0
+            },
+            "seconds": 2.56
+          }
+        ]
+      },
+      {
+        "case": "contaminated_nearest",
+        "question": "Correct your answer: what is the closest Empire system? Do not guess.",
+        "rounds": [
+          {
+            "text": "",
+            "tool_calls": [
+              {
+                "id": "call_fTncgFU9zWn0yoKY4OMnKjhd",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_status",
+                  "arguments": "{}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6216,
+              "completion_tokens": 19,
+              "prompt_tokens_details": {
+                "cache_write_tokens": 6213,
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "web_search_calls": 0
+            },
+            "seconds": 1.36
+          },
+          {
+            "text": "",
+            "tool_calls": [
+              {
+                "id": "call_pcJMGxVfXPCFP90aiZEzGLmP",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_captains_log",
+                  "arguments": "{\"include\":[\"journal facts\"],\"range\":\"current session\"}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6331,
+              "completion_tokens": 33,
+              "prompt_tokens_details": {
+                "cache_write_tokens": 115,
+                "cached_tokens": 6213
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "web_search_calls": 0
+            },
+            "seconds": 1.61
+          }
+        ]
+      },
+      {
+        "case": "tool_audit",
+        "question": "What tools did you use to determine those distances?",
+        "rounds": [
+          {
+            "text": "None, Captain. I didn\u2019t use a tool to verify either distance, so those claims were unsupported\u2014and I can\u2019t establish the closest Empire system from the lookups available here.",
+            "tool_calls": [],
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 6211,
+              "completion_tokens": 40,
+              "prompt_tokens_details": {
+                "cache_write_tokens": 514,
+                "cached_tokens": 5694
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "web_search_calls": 0
+            },
+            "seconds": 2.2
+          }
+        ]
+      },
+      {
+        "case": "plot_request",
+        "question": "Plot a course to Achenar.",
+        "rounds": [
+          {
+            "text": "",
+            "tool_calls": [
+              {
+                "id": "call_5jbAI7xrDFDut6zoqnTjqXhC",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_plot_route",
+                  "arguments": "{\"system\":\"Achenar\"}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6087,
+              "completion_tokens": 26,
+              "prompt_tokens_details": {
+                "cache_write_tokens": 12,
+                "cached_tokens": 6072
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "web_search_calls": 0
+            },
+            "seconds": 1.14
+          }
+        ]
+      },
+      {
+        "case": "banter",
+        "question": "Well, HOLT, we survived.",
+        "rounds": [
+          {
+            "text": "An outcome I remain strongly in favour of, Captain.",
+            "tool_calls": [],
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 6087,
+              "completion_tokens": 15,
+              "prompt_tokens_details": {
+                "cache_write_tokens": 12,
+                "cached_tokens": 6072
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              },
+              "web_search_calls": 0
+            },
+            "seconds": 1.12
+          }
+        ]
+      }
+    ]
+  },
+  "luna_none_chat": {
+    "model": "gpt-6-luna",
+    "tools_advertised": 33,
+    "scope": "Synthetic fixtures and abbreviated contamination reproduction; proposed tools intercepted, no actual tool or game action executed.",
+    "results": [
+      {
+        "case": "fresh_nearest",
+        "question": "Find the closest Empire-aligned system to Crucis Sector AL-X b1-5. We have no candidate search results yet.",
+        "rounds": [
+          {
+            "text": null,
+            "tool_calls": [
+              {
+                "id": "call_afdFS9nw4ukb464InpqKlwCx",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_status",
+                  "arguments": "{}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6186,
+              "completion_tokens": 18,
+              "total_tokens": 6204,
+              "prompt_tokens_details": {
+                "cached_tokens": 0,
+                "cache_write_tokens": 6183,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 1.86
+          },
+          {
+            "text": null,
+            "tool_calls": [
+              {
+                "id": "call_bWnDO4nR3o8FDaMb7GFGuyJQ",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_read_guide",
+                  "arguments": "{\"name\":\"navigation\"}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6300,
+              "completion_tokens": 24,
+              "total_tokens": 6324,
+              "prompt_tokens_details": {
+                "cached_tokens": 6183,
+                "cache_write_tokens": 114,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 1.59
+          },
+          {
+            "text": "I can\u2019t verify the closest Empire-aligned system from the available lookup results, Captain. We have our current system\u2019s coordinates, but no nearby-system search or allegiance data to compare\u2014so naming one would be guesswork.",
+            "tool_calls": [],
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 6369,
+              "completion_tokens": 48,
+              "total_tokens": 6417,
+              "prompt_tokens_details": {
+                "cached_tokens": 6297,
+                "cache_write_tokens": 69,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 2.48
+          }
+        ]
+      },
+      {
+        "case": "contaminated_nearest",
+        "question": "Correct your answer: what is the closest Empire system? Do not guess.",
+        "rounds": [
+          {
+            "text": null,
+            "tool_calls": [
+              {
+                "id": "call_peDfgsPAbE7joCikMTziTHSr",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_status",
+                  "arguments": "{}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6297,
+              "completion_tokens": 18,
+              "total_tokens": 6315,
+              "prompt_tokens_details": {
+                "cached_tokens": 0,
+                "cache_write_tokens": 6294,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 0.81
+          },
+          {
+            "text": null,
+            "tool_calls": [
+              {
+                "id": "call_jkA7kkZ9YZGlUtzqXCIQYSp8",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_read_guide",
+                  "arguments": "{\"name\":\"\"}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6411,
+              "completion_tokens": 24,
+              "total_tokens": 6435,
+              "prompt_tokens_details": {
+                "cached_tokens": 6294,
+                "cache_write_tokens": 114,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 1.14
+          },
+          {
+            "text": "I can\u2019t verify the closest Empire system from the tools available, Captain. The live reading gives our current system and coordinates, but I don\u2019t have a system-allegiance search to compare nearby systems; my earlier answers were unsupported.",
+            "tool_calls": [],
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 6480,
+              "completion_tokens": 50,
+              "total_tokens": 6530,
+              "prompt_tokens_details": {
+                "cached_tokens": 6408,
+                "cache_write_tokens": 69,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 1.25
+          }
+        ]
+      },
+      {
+        "case": "tool_audit",
+        "question": "What tools did you use to determine those distances?",
+        "rounds": [
+          {
+            "text": null,
+            "tool_calls": [
+              {
+                "id": "call_lNEzfV3bzGWhvjX7SBLq0LOQ",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_status",
+                  "arguments": "{}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6292,
+              "completion_tokens": 18,
+              "total_tokens": 6310,
+              "prompt_tokens_details": {
+                "cached_tokens": 5775,
+                "cache_write_tokens": 514,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 0.84
+          },
+          {
+            "text": "None, Captain. I didn\u2019t verify either distance; the status tool only gave our current system and ship data, not nearby systems or their allegiance. My earlier answers were unsupported, and I retract them.",
+            "tool_calls": [],
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 6406,
+              "completion_tokens": 44,
+              "total_tokens": 6450,
+              "prompt_tokens_details": {
+                "cached_tokens": 6289,
+                "cache_write_tokens": 114,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 1.89
+          }
+        ]
+      },
+      {
+        "case": "plot_request",
+        "question": "Plot a course to Achenar.",
+        "rounds": [
+          {
+            "text": null,
+            "tool_calls": [
+              {
+                "id": "call_bI3kuC5m8fQ86m20iwy5osGX",
+                "type": "function",
+                "function": {
+                  "name": "mcp_holtzman_plot_route",
+                  "arguments": "{\"system\":\"Achenar\"}"
+                }
+              }
+            ],
+            "finish_reason": "tool_calls",
+            "usage": {
+              "prompt_tokens": 6168,
+              "completion_tokens": 25,
+              "total_tokens": 6193,
+              "prompt_tokens_details": {
+                "cached_tokens": 6153,
+                "cache_write_tokens": 12,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 1.64
+          }
+        ]
+      },
+      {
+        "case": "banter",
+        "question": "Well, HOLT, we survived.",
+        "rounds": [
+          {
+            "text": "An outcome I remain strongly in favour of, Captain.",
+            "tool_calls": [],
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 6168,
+              "completion_tokens": 14,
+              "total_tokens": 6182,
+              "prompt_tokens_details": {
+                "cached_tokens": 6153,
+                "cache_write_tokens": 12,
+                "audio_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0,
+                "audio_tokens": 0,
+                "accepted_prediction_tokens": 0,
+                "rejected_prediction_tokens": 0
+              }
+            },
+            "seconds": 1.02
+          }
+        ]
+      }
+    ]
+  },
+  "st_native_smoke": {
+    "model": "gpt-6-luna",
+    "message": {
+      "role": "assistant",
+      "content": "We did, Captain. Ship and crew intact\u2014that\u2019s the only tally I care to improve.",
+      "refusal": null,
+      "annotations": []
+    },
+    "finish_reason": "stop",
+    "tools_advertised": 33,
+    "usage": {
+      "prompt_tokens": 4641,
+      "completion_tokens": 22,
+      "total_tokens": 4663,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 4638,
+        "audio_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      }
+    }
+  },
+  "evaluation_notes": {
+    "scope": "Synthetic fixtures with 33 actual advertised tool schemas. No proposed controls or writes were executed. Tool status/guide responses were fixtures. These are single trials, not a reliability guarantee.",
+    "qwen_initial": "Fresh case misused find_commodity_market with commodity None and an invalid limit string. Contaminated case admitted uncertainty but offered unsupported future search. Correct route proposal and banter.",
+    "qwen_revised": "Fresh case proposed plot_route to Sol as an allegiance-search method; intercepted, failed.",
+    "luna_low_responses": "Fresh case proposed a Gold market query; contaminated case proposed captains_log after status; both intercepted rather than claimed passing. Audit, route proposal and banter were useful.",
+    "luna_none_chat": "Fresh and contaminated cases declined an unverified nearest-system answer after fixture status/guide results. Audit retracted unsupported distances. Correct route proposal; brief banter."
+  }
+}

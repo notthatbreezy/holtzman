@@ -1,5 +1,10 @@
 # Standalone SillyTavern with Holtzman MCP
 
+**2026-11-01 update:** the selected trial profile is now **HOLT Luna MCP**, using
+OpenAI GPT-6 Luna with native ST tools; the local Qwen profile remains available.
+See the [grounding investigation and Luna setup](holt-luna-trial-2026-11-01.md).
+The original local-connection checks below are historical evidence.
+
 Checked on **2026-10-31**, against the user's separate SillyTavern installation
 at `C:\Users\chris\SillyTavern`, served on `http://127.0.0.1:8000`.
 This is distinct from the older trial installation under `.local/holt/sillytavern`.
