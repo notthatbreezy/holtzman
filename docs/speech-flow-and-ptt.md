@@ -12,7 +12,7 @@ flowchart TB
         Input --> Ship
     end
     subgraph ARCHIE[ARCHIE — speech and chat PC]
-        Mic[Selected microphone] --> Gate[Held-button capture gate]
+        Mic[Windows default microphone] --> Gate[Held-button capture gate]
         Gate -->|PCM audio; release tail| Whisper[Local Whisper :8081]
         Whisper --> Bridge[Voice input bridge :8083]
         Bridge -->|Transcript| ST[SillyTavern HOLT chat :8000]
@@ -104,7 +104,7 @@ GPU environment. No provider credentials are copied into the browser extension.
 
 In ST, select the HOLT chat and open **Extensions → HOLT voice input**. Configure
 Numpad Enter after the server update, then select **Start listening**. Hold the
-key on SKIPPY while speaking into ARCHIE's selected microphone; release it to
+key on SKIPPY while speaking into ARCHIE's Windows default microphone; release it to
 finish. A 150 ms tail preserves the end of the utterance. There is also a bounded
 maximum hold. **Stop listening** closes microphone capture; the command-line
 `stop` closes the input bridge and a Whisper process it started itself.
@@ -112,9 +112,10 @@ maximum hold. **Stop listening** closes microphone capture; the command-line
 Whisper starts on demand using the installed CPU small-English runtime/model.
 An already healthy transcription server is reused and not stopped by this bridge.
 Ollama, Chatterbox, ST and the old HOLT reasoning gateway are not stopped. The
-bridge uses the saved HOLT microphone selection from `.local/holt/settings.json`;
-stop/restart the bridge after changing that selection. The inspected selection was
-Bose Open Earbuds Ultra via Windows DirectSound. No Windows defaults are changed.
+bridge uses ARCHIE's Windows default recording device, ignoring the older desktop
+client's saved microphone selection. After changing the Windows input device,
+select Stop listening, then Start listening to refresh and reopen capture.
+Playback uses the browser's Windows audio routing. No Windows defaults are changed.
 
 The browser must remain open. SSE ticks keep the voice-panel heartbeat operating
 while the game has focus; fully suspending or closing the page expires the lease

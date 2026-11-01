@@ -68,7 +68,7 @@ ARCHIE already has the standalone ST **HOLT voice input** panel and its input-on
 bridge on `127.0.0.1:8083`. Microphone capture is off pending your update. Once
 SKIPPY is ready, the Captain can select HOLT, open **Extensions → HOLT voice input**,
 then **Start listening**, and hold Numpad Enter on SKIPPY while speaking into the
-selected ARCHIE microphone. Chatterbox continues handling output through ST's TTS
+Windows default ARCHIE microphone. Chatterbox continues handling output through ST's TTS
 provider. See `docs/speech-flow-and-ptt.md` for the full block diagram and lifecycle.
 
 ---

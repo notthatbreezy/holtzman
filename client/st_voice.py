@@ -114,7 +114,8 @@ class CaptureGate:
 
 class Bridge:
     def __init__(self):
-        self.settings = load_settings() | {'ptt_mode': 'hold', 'endpoint_mode': 'fixed'}
+        # Standalone ST follows Windows, rather than the desktop client's saved device.
+        self.settings = load_settings() | {'microphone': None, 'ptt_mode': 'hold', 'endpoint_mode': 'fixed'}
         self.ptt = PushToTalk()
         self.gate = CaptureGate(self.ptt)
         self.inbox = Inbox()
@@ -241,7 +242,7 @@ class Bridge:
     def snapshot(self, client=None):
         return {'service': 'holt-st-voice', 'state': self.state, 'error': self.error, 'ptt': self.ptt.frame(),
                 'enabled': self.inbox.live(), 'owner': self.inbox.owner,
-                'microphone': self.settings['microphone'], 'pending': self.inbox.read(client)}
+                'microphone': self.settings['microphone'] or 'Windows default', 'pending': self.inbox.read(client)}
 
 
 def application(bridge):
