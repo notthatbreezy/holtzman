@@ -116,6 +116,38 @@ including server-configured joystick activation, learning/save of exact device
 identity, timeout without save, lease/audio invalidation and the Learn UI action.
 Physical Joy 5 press/release remains the user's final hardware check.
 
+### Held-button learning fix (2026-11-01)
+
+The X-56 continuously reported stick button 15 down. The original server learned
+any supported down level, so that button won immediately on every attempt, before
+the intended button was pressed. The server fix now tracks press transitions and
+requires a joystick button to be observed **released during the current learn
+session**, then pressed. Initial held HID reports and repeated keyboard down
+events cannot win; another learn session does not reuse an earlier release.
+If an otherwise silent joystick sends its first report only when pressed, release
+and press the intended button again within the learning window.
+
+This fix must be built/restarted **on SKIPPY**. Updating only ARCHIE's bridge does
+not change the server's HID reader. On SKIPPY:
+
+```powershell
+cd C:\Users\chris\holtzman
+git pull --ff-only
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/update-holtzman-server.ps1
+```
+
+As an immediate workaround, the user's requested input was saved explicitly as
+`Joy:Saitek Pro Flight X-56 Rhino Stick:5` through authenticated `/ptt`, replacing
+the incorrect button 15. No game control or Elite binding edit was sent. This
+assignment works independently of the learn-mode fix; the game Flight Assist
+binding must still be removed by the user if it shares the button.
+
+PTT configuration connections now allow one retry during connection establishment
+only. A dispatched request is not replayed. Network failures identify SKIPPY in
+the UI instead of the generic `Voice service unavailable (ConnectError)`, with
+private diagnostic logging. Connection/timeout handling and transport checks
+passed locally (26 Python checks); server transition regressions are in `tests/ptt.rs`.
+
 Portable extension source: `integrations/sillytavern/voice-input`. Install it into
 the **standalone** ST installation while ST is stopped, then reopen/reload ST:
 

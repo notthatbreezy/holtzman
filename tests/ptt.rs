@@ -3,6 +3,44 @@ use holtzman::{
     ptt::{Config, Reader, keyboard_input, validate_input},
 };
 use std::sync::Arc;
+
+#[test]
+fn joystick_learning_ignores_held_levels_and_requires_release_then_press() {
+    let reader = Reader::new(Config::default(), Arc::new(Bus::default()));
+    let held = "Joy:Saitek Pro Flight X-56 Rhino Stick:15";
+    let wanted = "Joy:Saitek Pro Flight X-56 Rhino Stick:5";
+    reader.learn();
+    // The first report appears after learn mode registers the HID class.
+    for _ in 0..3 {
+        reader.edge(held, true);
+        reader.edge(wanted, false);
+    }
+    assert!(reader.snapshot()["learned"].is_null());
+    reader.edge(wanted, true);
+    assert_eq!(reader.snapshot()["learned"], wanted);
+    // Starting learn again while controls remain down cannot reuse old releases.
+    reader.learn();
+    reader.edge(held, true);
+    reader.edge(wanted, true);
+    assert!(reader.snapshot()["learned"].is_null());
+    reader.edge(wanted, false);
+    reader.edge(wanted, true);
+    assert_eq!(reader.snapshot()["learned"], wanted);
+}
+
+#[test]
+fn a_first_held_hid_report_and_keyboard_repeat_are_not_learning_presses() {
+    let reader = Reader::new(Config::default(), Arc::new(Bus::default()));
+    reader.edge("Key_F13", true);
+    reader.learn();
+    reader.edge("Key_F13", true);
+    reader.edge("Joy:New device:5", true);
+    assert!(reader.snapshot()["learned"].is_null());
+    reader.edge("Key_F13", false);
+    reader.edge("Key_F13", true);
+    assert_eq!(reader.snapshot()["learned"], "Key_F13");
+}
+
 #[test]
 fn fallback_and_scripted_edges_do_not_capture_devices() {
     let bus = Arc::new(Bus::default());

@@ -26,6 +26,9 @@ class ContextRepresentationTests(unittest.TestCase):
             transport.reset_mock()
             ship_transport("http://[::1]:7777/mcp")
             transport.assert_called_once_with(trust_env=False)
+            transport.reset_mock()
+            ship_transport("http://skippy:7777/mcp", connect_retries=1)
+            transport.assert_called_once_with(trust_env=False, local_address="0.0.0.0", retries=1)
 
     def test_connection_errors_unwrap_task_groups_without_exposing_exception_payloads(self):
         from client.diagnostics import exception_detail

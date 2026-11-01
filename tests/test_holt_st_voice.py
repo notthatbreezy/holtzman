@@ -2,7 +2,7 @@ import asyncio
 import time
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx2
 
@@ -68,6 +68,20 @@ class GateTests(unittest.TestCase):
 
 
 class BridgeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_remote_connection_failures_identify_skippy_and_do_not_expose_exception_details(self):
+        bridge = Bridge()
+        async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=application(bridge)),
+                                     base_url='http://127.0.0.1:8083') as http:
+            for error, status in [(httpx2.ConnectError('private detail'), 503),
+                                  (httpx2.ReadTimeout('private detail'), 504)]:
+                with patch.object(bridge, 'configure', AsyncMock(side_effect=error)):
+                    with self.assertLogs('client.st_voice', level='WARNING'):
+                        response = await http.post('/control', json={'action': 'learn'},
+                                                   headers={'Origin': ORIGINS[0]})
+                self.assertEqual(response.status_code, status)
+                self.assertIn('SKIPPY', response.json()['error'])
+                self.assertNotIn('private detail', response.text)
+
     async def test_server_configured_joystick_is_accepted_without_forcing_a_keyboard_input(self):
         bridge = Bridge()
         bridge.ptt.update({'input': 'Joy:Example HOTAS:5', 'down': False})

@@ -2,6 +2,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
+    collections::HashSet,
     sync::{Arc, Mutex},
     time::{Duration, Instant, SystemTime},
 };
@@ -92,6 +93,8 @@ struct State {
     capture_error: Option<String>,
     learn: Option<Instant>,
     learned: Option<String>,
+    observed_down: HashSet<String>,
+    learn_released: HashSet<String>,
     blocked: bool,
 }
 pub struct Reader {
@@ -113,6 +116,8 @@ impl Reader {
             capture_error: None,
             learn: None,
             learned: None,
+            observed_down: HashSet::new(),
+            learn_released: HashSet::new(),
             blocked: false,
         };
         events.snapshot(json!({"ptt":Self::snapshot_of(&state)}));
@@ -164,10 +169,29 @@ impl Reader {
     }
     pub fn edge(&self, input: &str, down: bool) {
         let mut s = self.state.lock().unwrap();
+        if validate_input(input).is_err() {
+            return;
+        }
+        let fresh_press = if down {
+            s.observed_down.insert(input.into())
+        } else {
+            s.observed_down.remove(input);
+            false
+        };
+        let learning = s
+            .learn
+            .is_some_and(|t| t.elapsed() < Duration::from_secs(10));
+        if learning && !down {
+            s.learn_released.insert(input.into());
+        }
+        // HID reports contain full button levels, including latching switches.
+        // Require an up sample during this learn session before accepting a
+        // joystick press. The first report after registering a device must not
+        // turn an already-held button into a learned edge.
         if down
-            && s.learn
-                .is_some_and(|t| t.elapsed() < Duration::from_secs(10))
-            && validate_input(input).is_ok()
+            && fresh_press
+            && learning
+            && (!input.starts_with("Joy:") || s.learn_released.contains(input))
         {
             s.learned = Some(input.into());
             s.learn = None;
@@ -190,6 +214,7 @@ impl Reader {
         let mut s = self.state.lock().unwrap();
         s.learn = Some(Instant::now());
         s.learned = None;
+        s.learn_released.clear();
     }
     pub fn learning(&self) -> bool {
         self.state

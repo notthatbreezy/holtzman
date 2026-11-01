@@ -6,6 +6,7 @@ import argparse
 import asyncio
 from contextlib import asynccontextmanager
 import json
+import logging
 import queue
 import subprocess
 import sys
@@ -31,6 +32,7 @@ from client.state import ROOT, load_settings
 ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']
 URL = 'http://127.0.0.1:8083'
 PTT_INPUT = 'Key_NumpadEnter'
+log = logging.getLogger(__name__)
 
 
 def ptt_label(value):
@@ -190,7 +192,8 @@ class Bridge:
     async def configure(self, learn=False):
         # Learning must not capture a stray phrase or submit a chat/game command.
         self.stop_capture()
-        async with httpx2.AsyncClient(transport=ship_transport(self.settings['mcp_url']), trust_env=False, timeout=12) as http:
+        async with httpx2.AsyncClient(transport=ship_transport(self.settings['mcp_url'], connect_retries=1),
+                                     trust_env=False, timeout=12) as http:
             selected = PTT_INPUT
             if learn:
                 r = await http.post(endpoint(self.settings['mcp_url'], '/ptt'),
@@ -327,6 +330,14 @@ def application(bridge):
             else:
                 raise ValueError('Unknown voice action')
             return JSONResponse(bridge.snapshot(client))
+        except httpx2.ConnectError:
+            log.warning('SKIPPY PTT control connection failed', exc_info=True)
+            return JSONResponse({'error': "HOLT could not connect to SKIPPY's PTT service. Check SKIPPY's MCP server/network, then retry."},
+                                status_code=503)
+        except httpx2.TimeoutException:
+            log.warning('SKIPPY PTT control request timed out', exc_info=True)
+            return JSONResponse({'error': 'SKIPPY did not finish the PTT request in time. Check the connection, then retry learning.'},
+                                status_code=504)
         except Exception as exc:
             message = str(exc) if isinstance(exc, ValueError) else f'Voice service unavailable ({type(exc).__name__})'
             return JSONResponse({'error': message[:400]}, status_code=400)
