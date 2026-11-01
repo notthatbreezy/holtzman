@@ -16,6 +16,9 @@ for this integration.
 4. HOLT's replies automatically play through the browser's Windows-default audio
    output. If the browser suspends audio, use **Extensions → TTS → Enable audio**.
 
+To replace Numpad Enter with a joystick button, use the new **Learn PTT button**
+in the voice-input panel. See the [joystick setup steps](speech-flow-and-ptt.md#changing-ptt-to-a-joystick-button-2026-11-01).
+
 The current chat has already been reopened, Pocket selected, HOLT mapped to
 **HOLT K-2SO**, and PTT listening armed. No new chat is required for this change.
 

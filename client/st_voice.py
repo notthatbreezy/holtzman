@@ -33,6 +33,15 @@ URL = 'http://127.0.0.1:8083'
 PTT_INPUT = 'Key_NumpadEnter'
 
 
+def ptt_label(value):
+    if value == PTT_INPUT:
+        return 'Numpad Enter'
+    if isinstance(value, str) and value.startswith('Joy:'):
+        device, _, button = value[4:].rpartition(':')
+        return f'joystick button {button} ({device})'
+    return str(value or 'configured PTT button').removeprefix('Key_')
+
+
 class Inbox:
     """One leased chat, one pending transcript, no replay across chat/link changes."""
     def __init__(self, clock=time.monotonic):
@@ -166,8 +175,8 @@ class Bridge:
                     self.ptt.disconnect()
                     self.error = 'SKIPPY PTT: ' + str(ptt['error'])[:300]
                 else:
-                    self.state = ('PTT link connected; press Start listening' if ptt.get('input') == PTT_INPUT
-                                  else 'Configure Numpad Enter on SKIPPY')
+                    self.state = ('PTT link connected; press Start listening' if ptt.get('input')
+                                  else 'Configure a PTT button on SKIPPY')
             elif kind == 'ptt':
                 if data.get('down') and not self.ptt.frame()['down']:
                     self.activity['ptt_presses'] += 1
@@ -178,19 +187,31 @@ class Bridge:
                 with self.ptt.lock:
                     self.ptt.last_seen = time.monotonic()
 
-    async def configure(self):
+    async def configure(self, learn=False):
+        # Learning must not capture a stray phrase or submit a chat/game command.
+        self.stop_capture()
         async with httpx2.AsyncClient(transport=ship_transport(self.settings['mcp_url']), trust_env=False, timeout=12) as http:
+            selected = PTT_INPUT
+            if learn:
+                r = await http.post(endpoint(self.settings['mcp_url'], '/ptt'),
+                                    headers={'Authorization': 'Bearer ' + self.token}, json={'learn': True})
+                if r.status_code != 200:
+                    raise ValueError('No supported button learned. Press the desired button on SKIPPY within 10 seconds, then retry.')
+                selected = r.json().get('input')
+                if not isinstance(selected, str) or not selected:
+                    raise ValueError('SKIPPY returned no learned PTT button; configuration was not changed')
             r = await http.post(endpoint(self.settings['mcp_url'], '/ptt'),
-                                headers={'Authorization': 'Bearer ' + self.token}, json={'input': PTT_INPUT})
+                                headers={'Authorization': 'Bearer ' + self.token}, json={'input': selected})
             if r.status_code != 200:
-                raise ValueError('SKIPPY rejected Numpad Enter. Update/restart Holtzman with Key_NumpadEnter support first.')
+                raise ValueError('SKIPPY rejected the PTT configuration. Check/update the Holtzman server.')
+        self.state = f'Saved {ptt_label(selected)} on SKIPPY; release it, then press Start listening'
 
     async def activate(self, client, chat):
         state = self.ptt.frame()
         if not state['connected']:
             raise ValueError('No live ship event connection. Check SKIPPY, then retry Start listening.')
-        if state['input'] != PTT_INPUT:
-            raise ValueError('Numpad Enter is not active on SKIPPY. Configure it after updating the server.')
+        if not state['input']:
+            raise ValueError('No PTT button is active on SKIPPY. Learn a button or configure Numpad Enter first.')
         # Confirm Whisper without starting a second model or changing ST's API.
         if not await asyncio.to_thread(healthy, self.settings['transcription_url'] + '/'):
             if self.settings['transcription_url'] != 'http://127.0.0.1:8081':
@@ -211,7 +232,7 @@ class Bridge:
             self.thread = threading.Thread(target=mic.run, daemon=True, name='st-microphone')
             self.thread.start()
         self.error = None
-        self.state = 'Hold Numpad Enter on SKIPPY to speak'
+        self.state = f"Hold {ptt_label(state['input'])} on SKIPPY to speak"
 
     def stop_capture(self):
         self.gate.allow(False)
@@ -257,7 +278,7 @@ class Bridge:
                     self.error = f'Transcription failed ({type(exc).__name__}); no chat message sent'
                 finally:
                     self.transcribing = False
-                    self.state = 'Hold Numpad Enter on SKIPPY to speak'
+                    self.state = f"Hold {ptt_label(self.ptt.frame()['input'])} on SKIPPY to speak"
 
     def snapshot(self, client=None):
         ready = self.gate.frame()
@@ -290,8 +311,8 @@ def application(bridge):
                 bridge.stopped.set()  # Close SSE before Uvicorn waits for active requests.
                 if bridge.server:
                     bridge.server.should_exit = True
-            elif action == 'configure':
-                await bridge.configure()
+            elif action in ('configure', 'learn'):
+                await bridge.configure(learn=action == 'learn')
             elif action == 'start':
                 await bridge.activate(client, body.get('chat'))
             elif action in ('poll', 'ack', 'stop'):

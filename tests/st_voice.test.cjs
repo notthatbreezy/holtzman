@@ -58,6 +58,20 @@ test('a transcript from another chat cannot be acknowledged or submitted', async
     assert.equal(x.c.chat.length, 0);
 });
 
+test('learn button requests joystick learning without starting capture or chat generation', async () => {
+    const x = setup();
+    x.c.eventTypes = { CHAT_CHANGED: 'chat' };
+    x.c.eventSource = { on() {} };
+    const elements = {};
+    x.sandbox.document = { getElementById: id => elements[id] ||= { append() {}, textContent: '' },
+        createElement: () => ({}) };
+    vm.runInContext('init()', x.sandbox);
+    await elements['holt-input-learn'].onclick();
+    assert.deepEqual(x.calls, ['learn']);
+    assert.equal(elements['holt-input-learn'].disabled, false);
+    assert.equal(x.c.chat.length, 0);
+});
+
 test('prompt previews and aborted turns cannot leave voice input stuck busy', async () => {
     const x = setup();
     const handlers = {};

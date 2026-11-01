@@ -7,7 +7,7 @@ from unittest.mock import patch
 import httpx2
 
 from client.events import PushToTalk
-from client.st_voice import Bridge, CaptureGate, Inbox, ORIGINS, application
+from client.st_voice import Bridge, CaptureGate, Inbox, ORIGINS, application, ptt_label
 
 
 class InboxTests(unittest.TestCase):
@@ -68,6 +68,52 @@ class GateTests(unittest.TestCase):
 
 
 class BridgeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_server_configured_joystick_is_accepted_without_forcing_a_keyboard_input(self):
+        bridge = Bridge()
+        bridge.ptt.update({'input': 'Joy:Example HOTAS:5', 'down': False})
+        bridge.thread = SimpleNamespace(is_alive=lambda: True)
+        with patch('client.st_voice.healthy', return_value=True):
+            await bridge.activate('tab', 'chat')
+        self.assertEqual(bridge.inbox.owner, 'tab')
+        self.assertIn('joystick button 5', bridge.state)
+        self.assertEqual(ptt_label('Key_NumpadEnter'), 'Numpad Enter')
+
+    async def test_learn_saves_exact_server_identity_and_invalidates_pending_audio(self):
+        bridge = Bridge()
+        bridge.token = 'test'
+        bridge.inbox.renew('tab', 'chat')
+        bridge.inbox.offer('do not send', 'old', bridge.inbox.epoch, time.monotonic())
+        calls = []
+        class Http:
+            async def __aenter__(self): return self
+            async def __aexit__(self, *args): pass
+            async def post(self, url, **kwargs):
+                self.assert_url = url
+                calls.append(kwargs['json'])
+                return SimpleNamespace(status_code=200, json=lambda: {'input': 'Joy:Example HOTAS:5'})
+        with patch('client.st_voice.httpx2.AsyncClient', return_value=Http()):
+            await bridge.configure(learn=True)
+        self.assertEqual(calls, [{'learn': True}, {'input': 'Joy:Example HOTAS:5'}])
+        self.assertIsNone(bridge.inbox.pending)
+        self.assertFalse(bridge.inbox.live())
+        self.assertTrue(bridge.capture_stop.is_set())
+        self.assertIn('joystick button 5', bridge.state)
+
+    async def test_learn_timeout_does_not_save_an_input(self):
+        bridge = Bridge()
+        bridge.token = 'test'
+        calls = []
+        class Http:
+            async def __aenter__(self): return self
+            async def __aexit__(self, *args): pass
+            async def post(self, url, **kwargs):
+                calls.append(kwargs['json'])
+                return SimpleNamespace(status_code=400)
+        with patch('client.st_voice.httpx2.AsyncClient', return_value=Http()):
+            with self.assertRaisesRegex(ValueError, '10 seconds'):
+                await bridge.configure(learn=True)
+        self.assertEqual(calls, [{'learn': True}])
+
     async def test_capture_recovery_clears_only_microphone_errors(self):
         bridge = Bridge()
         bridge.report('error', 'Microphone: Input stream stopped')

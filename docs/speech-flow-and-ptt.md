@@ -82,6 +82,40 @@ keypad support and physical keypresses were not live-validated at that point.
 
 ## ARCHIE installation and operation
 
+### Changing PTT to a joystick button (2026-11-01)
+
+The ST input bridge now follows the active PTT input reported by Holtzman instead
+of requiring Numpad Enter. The existing assignment is unchanged until configured.
+
+1. On **SKIPPY**, remove **Joy 5** from Elite's **Flight Assist** control binding
+   and apply the controls. Holtzman observes input without consuming it, so leaving
+   the game binding in place would trigger both actions. This UI does not edit
+   Elite bindings for you.
+2. In ST on **ARCHIE**, open your HOLT chat, then **Extensions → HOLT voice input**.
+3. Click **Learn PTT button**. Within **10 seconds**, press and release the desired
+   joystick button **on SKIPPY**. Keep Elite paused/in its menu for this step.
+4. The panel reports the saved device name and button number. Check that it is
+   the intended device/button, then click **Start listening**.
+5. Hold that button while speaking, and release to transcribe/send the utterance.
+
+Learning pauses capture and invalidates pending audio. It calls authenticated
+`POST /ptt {"learn":true}`, then saves the returned exact input with
+`POST /ptt {"input":"Joy:<HID product name>:<1-based button>"}`. Do not assume
+Elite's “Joy 5” label uniquely identifies the device; learn mode resolves it.
+A timeout saves nothing. The server reloads its configuration automatically;
+there is no MCP server restart for a button change. Its existing `tail_ms` and
+`max_hold_s` values are preserved.
+
+**Use Numpad Enter** restores the previous key if desired; click **Start listening**
+afterward. The selected button persists in SKIPPY's `holtzman.toml`, so no new ST
+chat is required. This update requires only the local input bridge and ST extension
+restart/refresh; it uses the server's existing learn endpoint.
+
+Verification: 12 Python voice-bridge checks and 11 Node voice/Pocket checks passed,
+including server-configured joystick activation, learning/save of exact device
+identity, timeout without save, lease/audio invalidation and the Learn UI action.
+Physical Joy 5 press/release remains the user's final hardware check.
+
 Portable extension source: `integrations/sillytavern/voice-input`. Install it into
 the **standalone** ST installation while ST is stopped, then reopen/reload ST:
 

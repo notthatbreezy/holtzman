@@ -78,18 +78,27 @@ function init() {
     panel.innerHTML = `<div class="inline-drawer-toggle inline-drawer-header">
       <b>HOLT voice input</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div>
       <div class="inline-drawer-content">
-        <p>Hold Numpad Enter on SKIPPY; speak into the selected microphone on ARCHIE.</p>
+        <p>Hold the configured PTT button on SKIPPY; speak into the selected microphone on ARCHIE.
+        To change it, learn a button while the game is paused. Learning stops listening.</p>
         <div class="flex-container">
-          <button id="holt-input-configure" class="menu_button">Configure Numpad Enter</button>
+          <button id="holt-input-learn" class="menu_button">Learn PTT button</button>
+          <button id="holt-input-configure" class="menu_button">Use Numpad Enter</button>
           <button id="holt-input-start" class="menu_button">Start listening</button>
           <button id="holt-input-stop" class="menu_button">Stop listening</button>
-        </div><p id="holt-input-status">Start HOLT-ST-Voice.cmd, then configure PTT and start listening.</p>
+        </div><p id="holt-input-status">Start HOLT-ST-Voice.cmd, then start listening. Learn a button to change PTT.</p>
       </div>`;
     holder.append(panel);
-    document.getElementById('holt-input-configure').onclick = async () => {
-        try { await control('configure'); status('Numpad Enter configuration saved on SKIPPY'); }
-        catch (error) { status(error.message); }
-    };
+    for (const [id, action] of [['holt-input-configure', 'configure'], ['holt-input-learn', 'learn']]) {
+        const button = document.getElementById(id);
+        button.onclick = async () => {
+            enabled = false; events?.close(); events = null;
+            button.disabled = true;
+            status(action === 'learn' ? 'Press the desired PTT button on SKIPPY within 10 seconds…' : 'Saving Numpad Enter…');
+            try { const data = await control(action); status(data.state); }
+            catch (error) { status(error.message); }
+            finally { button.disabled = false; }
+        };
+    }
     document.getElementById('holt-input-start').onclick = async () => {
         try {
             const data = await control('start', { chat: chatId() });
