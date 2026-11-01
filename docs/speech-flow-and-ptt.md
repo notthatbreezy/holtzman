@@ -143,6 +143,9 @@ counts of received PTT presses, captured speech segments and Whisper responses.
 These diagnostics omit speech text. If no transcript appears, the first counter
 that does not advance identifies the stage to check. A recovered microphone
 stream clears its earlier microphone error rather than leaving a stale warning.
+The status response includes `capture_status` for chat/playback pauses and
+`input_level` with frame counts and RMS levels (no audio or transcript content).
+Refresh ST after updating the extension to show pause reasons in its voice panel.
 
 ## Validation record
 

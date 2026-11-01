@@ -123,6 +123,7 @@ class Bridge:
         self.paused.set()
         self.audio = queue.Queue(maxsize=2)
         self.thread = None
+        self.microphone = None
         self.tasks = []
         self.token = None
         self.state = 'Stopped'
@@ -206,6 +207,7 @@ class Bridge:
             refresh_devices()
             self.capture_stop.clear()
             mic = Microphone(self.settings, self.audio, self.paused, self.capture_stop, self.report, ptt=self.gate)
+            self.microphone = mic
             self.thread = threading.Thread(target=mic.run, daemon=True, name='st-microphone')
             self.thread.start()
         self.error = None
@@ -258,9 +260,18 @@ class Bridge:
                     self.state = 'Hold Numpad Enter on SKIPPY to speak'
 
     def snapshot(self, client=None):
+        ready = self.gate.frame()
+        reason = ('Stopped' if not self.inbox.live() else
+                  'SillyTavern is generating' if self.inbox.busy else
+                  'Speech playback or generation is active' if self.inbox.speaking else
+                  'Transcribing' if self.transcribing else
+                  'Waiting for transcript delivery' if self.inbox.pending else
+                  'Ship event link disconnected' if not ready['connected'] and not self.ptt.frame()['connected'] else
+                  'Release PTT before speaking again' if not ready['connected'] else 'Ready')
         return {'service': 'holt-st-voice', 'state': self.state, 'error': self.error, 'ptt': self.ptt.frame(),
                 'enabled': self.inbox.live(), 'owner': self.inbox.owner, 'microphone_state': self.microphone_state,
-                'activity': dict(self.activity),
+                'activity': dict(self.activity), 'capture_status': reason,
+                'input_level': dict(self.microphone.meter) if self.microphone else None,
                 'microphone': self.settings['microphone'] or 'Windows default', 'pending': self.inbox.read(client)}
 
 

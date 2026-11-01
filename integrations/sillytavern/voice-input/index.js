@@ -51,6 +51,7 @@ async function poll() {
     try {
         const data = await control('poll', { chat: chatId(), busy: busy || submitting, speaking: speaking() });
         status(data.error || (!data.ptt.connected ? 'Ship event link disconnected' :
+            data.capture_status && data.capture_status !== 'Ready' ? data.capture_status :
             data.ptt.down ? 'PTT held' : data.state));
         if (data.pending && !busy && !submitting && !speaking()) {
             submitting = true;

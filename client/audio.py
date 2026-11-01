@@ -3,6 +3,7 @@ import collections
 import io
 import queue
 import threading
+import time
 import wave
 from contextlib import contextmanager
 
@@ -155,6 +156,7 @@ class Microphone:
         self.paused, self.stopped, self.report = paused, stopped, report
         self.frames = queue.Queue(maxsize=100)
         self.ptt = ptt
+        self.meter = {'frames': 0, 'held_frames': 0, 'peak_rms': 0.0}
 
     def run(self):
         while not self.stopped.is_set():
@@ -180,6 +182,7 @@ class Microphone:
                     max_hold_s=state.get("max_hold_s", 30), settings=self.settings, turn_worker=turn_worker)
             segmenter = new_segmenter()
             generation = self.ptt.frame()["generation"] if self.ptt else 0
+            self.meter = {'frames': 0, 'held_frames': 0, 'peak_rms': 0.0}
 
             def callback(data, frames, timing, status):
                 state = self.ptt.frame() if self.ptt else {"connected": True, "down": False, "generation": 0}
@@ -210,6 +213,12 @@ class Microphone:
                         continue
                     try:
                         frame, state = self.frames.get(timeout=0.1)
+                        samples = np.frombuffer(frame, dtype=np.int16).astype(np.float32)
+                        rms = float(np.sqrt(np.mean(samples * samples)))
+                        self.meter = {'frames': self.meter['frames'] + 1,
+                                      'held_frames': self.meter['held_frames'] + int(state['down']),
+                                      'peak_rms': max(self.meter['peak_rms'], round(rms, 1)),
+                                      'rms': round(rms, 1), 'updated': time.monotonic()}
                         if state["generation"] != generation:
                             segmenter = new_segmenter()
                             generation = state["generation"]
