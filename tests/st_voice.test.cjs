@@ -5,20 +5,23 @@ const vm = require('node:vm');
 
 function setup(failGeneration = false) {
     const calls = [];
+    const requests = [];
+    const generation = { active: false };
     const c = { characterId: 0, characters: [{ name: 'HOLT' }], chatId: 'one', name1: 'Captain', chat: [],
         addOneMessage() { calls.push('render'); },
         async saveChat() { calls.push('save'); },
         async generate() { calls.push('generate'); if (failGeneration) throw Error('backend failed'); } };
-    const sandbox = { crypto: { randomUUID: () => 'tab' },
+    const sandbox = { crypto: { randomUUID: () => 'tab' }, isGenerating: () => generation.active,
         SillyTavern: { getContext: () => c }, document: { getElementById: () => null },
         fetch: async (_url, options) => {
-            const body = JSON.parse(options.body); calls.push(body.action);
-            return { ok: true, json: async () => ({}) };
+            const body = JSON.parse(options.body); calls.push(body.action); requests.push(body);
+            return { ok: true, json: async () => ({ ptt: { connected: true } }) };
         } };
     vm.createContext(sandbox);
     const source = fs.readFileSync('integrations/sillytavern/voice-input/index.js', 'utf8');
-    vm.runInContext(source + '\nthis.testSubmit = submit;', sandbox);
-    return { c, calls, submit: sandbox.testSubmit };
+    const executable = source.replace("import { isGenerating } from '/script.js';", '');
+    vm.runInContext(executable + '\nthis.testSubmit = submit; this.testPoll = async () => { enabled = true; await poll(); };', sandbox);
+    return { c, calls, requests, generation, sandbox, submit: sandbox.testSubmit, poll: sandbox.testPoll };
 }
 
 test('voice text enters ordinary chat; slash text is not executed as STscript', async () => {
@@ -42,4 +45,29 @@ test('a transcript from another chat cannot be acknowledged or submitted', async
     await assert.rejects(x.submit({ id: 'receipt', chat: 'old', text: 'request docking' }), /Chat changed/);
     assert.equal(x.calls.length, 0);
     assert.equal(x.c.chat.length, 0);
+});
+
+test('prompt previews and aborted turns cannot leave voice input stuck busy', async () => {
+    const x = setup();
+    const handlers = {};
+    x.c.eventTypes = { GENERATION_STARTED: 'start', GENERATION_ENDED: 'end',
+        GENERATION_STOPPED: 'stop', CHAT_CHANGED: 'chat' };
+    x.c.eventSource = { on: (name, handler) => { handlers[name] = handler; } };
+    const elements = {};
+    x.sandbox.document = { getElementById: id => {
+        if (id === 'tts_audio' || id === 'chatterbox-status') return null;
+        return elements[id] ||= { append() {}, textContent: '' };
+    }, createElement: () => ({}) };
+    vm.runInContext('init()', x.sandbox);
+    // ST emits this for a dry-run preview without a matching end event.
+    await handlers.start?.('normal', {}, true);
+    await x.poll();
+    assert.equal(x.requests.at(-1).busy, false);
+    // A real generation pauses capture, then clears even without an end event.
+    x.generation.active = true;
+    await x.poll();
+    assert.equal(x.requests.at(-1).busy, true);
+    x.generation.active = false;
+    await x.poll();
+    assert.equal(x.requests.at(-1).busy, false);
 });

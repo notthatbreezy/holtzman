@@ -146,6 +146,9 @@ stream clears its earlier microphone error rather than leaving a stale warning.
 The status response includes `capture_status` for chat/playback pauses and
 `input_level` with frame counts and RMS levels (no audio or transcript content).
 Refresh ST after updating the extension to show pause reasons in its voice panel.
+Generation gating reads ST's exported `isGenerating()` on each poll. Do not latch
+`GENERATION_STARTED`: prompt-preview dry runs emit it without necessarily emitting
+an end event, which previously left input permanently paused despite a working mic.
 
 ## Validation record
 

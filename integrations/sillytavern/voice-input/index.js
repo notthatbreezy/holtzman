@@ -1,7 +1,9 @@
 /* Input only: keep ST's active model, MCP extension and Chatterbox unchanged. */
+import { isGenerating } from '/script.js';
+
 const endpoint = 'http://127.0.0.1:8083';
 const client = crypto.randomUUID();
-let enabled = false, busy = false, submitting = false, polling = false, events = null;
+let enabled = false, submitting = false, polling = false, events = null;
 const context = () => SillyTavern.getContext();
 
 function chatId() {
@@ -49,11 +51,13 @@ async function poll() {
     if (!enabled || polling) return;
     polling = true;
     try {
-        const data = await control('poll', { chat: chatId(), busy: busy || submitting, speaking: speaking() });
+        // GENERATION_STARTED also fires for dry-run prompt previews, which may
+        // never emit GENERATION_ENDED. Read ST's current state on every poll.
+        const data = await control('poll', { chat: chatId(), busy: isGenerating() || submitting, speaking: speaking() });
         status(data.error || (!data.ptt.connected ? 'Ship event link disconnected' :
             data.capture_status && data.capture_status !== 'Ready' ? data.capture_status :
             data.ptt.down ? 'PTT held' : data.state));
-        if (data.pending && !busy && !submitting && !speaking()) {
+        if (data.pending && !isGenerating() && !submitting && !speaking()) {
             submitting = true;
             try { await submit(data.pending); }
             finally { submitting = false; }
@@ -104,9 +108,6 @@ function init() {
         catch (error) { status(error.message); }
     };
     const c = context();
-    c.eventSource.on(c.eventTypes.GENERATION_STARTED, () => { busy = true; });
-    c.eventSource.on(c.eventTypes.GENERATION_ENDED, () => { busy = false; });
-    c.eventSource.on(c.eventTypes.GENERATION_STOPPED, () => { busy = false; });
     c.eventSource.on(c.eventTypes.CHAT_CHANGED, async () => {
         if (!enabled) return;
         enabled = false; events?.close(); events = null;
