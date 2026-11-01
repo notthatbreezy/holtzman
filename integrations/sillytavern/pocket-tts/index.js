@@ -6,7 +6,8 @@ const providerName = 'HOLT Pocket';
 
 class PocketTtsProvider {
     constructor() {
-        this.settings = { provider_endpoint: 'http://127.0.0.1:8005', prebuffer_ms: 100, voiceMap: {} };
+        this.settings = { provider_endpoint: 'http://127.0.0.1:8005', prebuffer_ms: 100,
+            effect: 'radio', volume: 0.85, robot_amount: 0.10, voiceMap: {} };
         this.ready = false;
         this.separator = ' ';
         this.player = new PocketPlayer({
@@ -30,6 +31,17 @@ class PocketTtsProvider {
           <input id="holt-pocket-endpoint" type="text" class="text_pole" />
           <label for="holt-pocket-buffer">Starting audio buffer (milliseconds)</label>
           <input id="holt-pocket-buffer" type="number" min="40" max="500" step="20" class="text_pole" />
+          <label for="holt-pocket-tone">Voice tone</label>
+          <select id="holt-pocket-tone" class="text_pole">
+            <option value="original">Original (no tone filter)</option>
+            <option value="warm">Warm (softer treble)</option>
+            <option value="droid">Warm droid (softer treble + metallic)</option>
+            <option value="radio">Radio droid (comms tone + light metallic)</option>
+          </select>
+          <label for="holt-pocket-volume">Output level (10–100%)</label>
+          <input id="holt-pocket-volume" type="number" min="10" max="100" step="5" class="text_pole" />
+          <label for="holt-pocket-robot">Metallic effect (0–50%, droid modes only)</label>
+          <input id="holt-pocket-robot" type="number" min="0" max="50" step="2" class="text_pole" />
           <div class="flex-container"><button id="holt-pocket-enable" class="menu_button">Enable audio</button>
           <button id="holt-pocket-preview" class="menu_button">Test K-2SO</button>
           <button id="holt-pocket-stop" class="menu_button">Stop audio</button></div>
@@ -56,6 +68,19 @@ class PocketTtsProvider {
             buffer.value = this.settings.prebuffer_ms;
             saveTtsProviderSettings();
         };
+        const tone = document.getElementById('holt-pocket-tone');
+        tone.value = this.settings.effect;
+        tone.onchange = () => { this.settings.effect = tone.value; saveTtsProviderSettings(); };
+        for (const [id, key, low, high] of [['volume', 'volume', 10, 100], ['robot', 'robot_amount', 0, 50]]) {
+            const input = document.getElementById(`holt-pocket-${id}`);
+            input.value = Math.round(this.settings[key] * 100);
+            input.onchange = () => {
+                const value = Number(input.value);
+                if (Number.isFinite(value)) this.settings[key] = Math.min(high, Math.max(low, value)) / 100;
+                input.value = Math.round(this.settings[key] * 100);
+                saveTtsProviderSettings();
+            };
+        }
         document.getElementById('holt-pocket-enable').onclick = () => this.player.unlock()
             .then(() => { document.getElementById('holt-pocket-status').textContent = 'Audio enabled'; })
             .catch(error => this.showError(error));
@@ -110,14 +135,19 @@ class PocketTtsProvider {
         await this.player.unlock();
         return this.player.play(this.settings.provider_endpoint,
             'Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.',
-            voiceId, this.settings.prebuffer_ms);
+            voiceId, this.settings.prebuffer_ms, this.effects());
+    }
+
+    effects() {
+        return { effect: this.settings.effect, volume: this.settings.volume, robot_amount: this.settings.robot_amount };
     }
 
     // ST natively consumes async-generator providers. This one performs PCM
     // playback itself and yields no blobs, so ST never adds tiny clips/silence
     // to its polled HTML audio queue. The TTS job stays active through playback.
     async* generateTts(text, voiceId) {
-        if (text.trim()) await this.player.play(this.settings.provider_endpoint, text, voiceId, this.settings.prebuffer_ms);
+        if (text.trim()) await this.player.play(this.settings.provider_endpoint, text, voiceId,
+            this.settings.prebuffer_ms, this.effects());
     }
 
     dispose() { this.player.stop(); }

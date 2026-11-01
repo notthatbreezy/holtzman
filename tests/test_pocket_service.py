@@ -7,6 +7,34 @@ import httpx2
 import numpy as np
 
 from client.pocket_service import PocketService, create_app
+from client.pocket_effects import PocketEffects
+
+
+class EffectsTests(unittest.TestCase):
+    def test_chunk_boundaries_do_not_change_filter_or_robot_output(self):
+        audio = np.random.default_rng(42).normal(0, 0.1, 48000)
+        for effect in ('droid', 'radio'):
+            whole = PocketEffects(24000, effect).process(audio)
+            stream = PocketEffects(24000, effect)
+            pieces = [stream.process(audio[i:i + 1920]) for i in range(0, len(audio), 1920)]
+            np.testing.assert_allclose(np.concatenate(pieces), whole, atol=1e-12)
+            self.assertTrue(np.isfinite(whole).all())
+            self.assertLessEqual(np.max(np.abs(whole)), 1)
+
+    def test_treble_is_reduced_while_low_voice_fundamentals_remain(self):
+        rate = 24000
+        time = np.arange(rate) / rate
+        rms = lambda audio: np.sqrt(np.mean(audio[rate // 4:]**2))
+        low = 0.1 * np.sin(2 * np.pi * 200 * time)
+        high = 0.1 * np.sin(2 * np.pi * 6500 * time)
+        self.assertGreater(rms(PocketEffects(rate, 'warm', 1).process(low)) / rms(low), 0.95)
+        self.assertLess(rms(PocketEffects(rate, 'warm', 1).process(high)) / rms(high), 0.08)
+
+    def test_quiet_noise_is_attenuated_and_original_mode_is_a_bypass(self):
+        audio = np.random.default_rng(7).normal(0, 0.0001, 24000)
+        filtered = PocketEffects(24000, 'warm', 1).process(audio)
+        self.assertLess(np.std(filtered[6000:]), np.std(audio[6000:]) * 0.4)
+        np.testing.assert_allclose(PocketEffects(24000, 'original', 0.9).process(audio), audio * 0.9)
 
 
 class Audio:
@@ -53,6 +81,8 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.post('/stream', json={'text': 'x', 'voice': 'missing'})).status_code, 400)
         self.assertEqual((await self.client.post('/stream', json={'text': ' '})).status_code, 422)
         self.assertEqual((await self.client.post('/stream', json={'text': 'x' * 6001})).status_code, 422)
+        for options in ({'effect': 'invalid'}, {'volume': 2}, {'robot_amount': -0.1}):
+            self.assertEqual((await self.client.post('/stream', json={'text': 'x', **options})).status_code, 422)
         self.service.lock.acquire()
         try:
             self.assertEqual((await self.client.post('/stream', json={'text': 'x'})).status_code, 409)

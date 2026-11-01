@@ -20,7 +20,7 @@ export class PocketPlayer {
         for (const source of this.sources) { try { source.stop(); } catch { /* Already ended. */ } }
     }
 
-    async play(endpoint, text, voice, prebufferMs = 100) {
+    async play(endpoint, text, voice, prebufferMs = 100, effects = {}) {
         if (this.busy) throw Error('Pocket speech is already playing');
         this.busy = true;
         this.onState(true, 'Generating');
@@ -32,7 +32,7 @@ export class PocketPlayer {
             const started = this.now();
             const response = await this.fetcher(endpoint + '/stream', { method: 'POST',
                 headers: { 'Content-Type': 'application/json' }, signal: this.controller.signal,
-                body: JSON.stringify({ text, voice }) });
+                body: JSON.stringify({ ...effects, text, voice }) });
             if (!response.ok) {
                 let reason = `HTTP ${response.status}`;
                 try { reason = (await response.json()).detail || reason; } catch { /* Non-JSON error. */ }

@@ -79,6 +79,22 @@ test('one player refuses overlapping speech requests', async () => {
     await assert.rejects(player.play('http://localhost:8005', 'Test', 'k2so'), /already playing/);
 });
 
+test('tone controls reach the service without overriding the spoken text or voice', async () => {
+    const { PocketPlayer } = await loaded;
+    const { context, sources } = fakeContext();
+    let body;
+    const player = new PocketPlayer({ contextFactory: () => context, fetcher: async (_url, request) => {
+        body = JSON.parse(request.body);
+        return response([start, frame(0), end(1)]);
+    } });
+    const playing = player.play('http://localhost:8005', 'Captain', 'k2so', 100,
+        { effect: 'droid', volume: 0.85, robot_amount: 0.28, text: 'wrong', voice: 'wrong' });
+    await new Promise(setImmediate);
+    assert.deepEqual(body, { effect: 'droid', volume: 0.85, robot_amount: 0.28, text: 'Captain', voice: 'k2so' });
+    sources[0].onended();
+    await playing;
+});
+
 test('saved provider registers before ST initializes without attempting an early DOM load', () => {
     const extension_settings = { tts: { currentProvider: 'HOLT Pocket', voiceMap: { HOLT: 'Existing' } } };
     let registered = false;

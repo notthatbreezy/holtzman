@@ -78,10 +78,29 @@ cancellation behavior was explicitly deferred; native ST's global stop is not
 claimed to cancel every Pocket playback path. Stopping the backend does not
 necessarily silence audio already buffered in the browser.
 
-The service applies a consistent 0.9 gain and clips only residual out-of-range
-samples before PCM conversion. No extra robot filter, pitch shift or speaking-rate
-adjustment is applied. ST's generic Audio Playback Speed slider controls its HTML
-audio player and does not change this provider's Web Audio speed.
+### Voice tone
+
+Under **Extensions → TTS → HOLT Pocket**, the voice now defaults to **Radio droid**:
+
+- **Original** bypasses coloration, retaining the selected output level.
+- **Warm** softens treble with a 3.8 kHz low-pass filter, retains low voice
+  fundamentals with a 65 Hz high-pass filter, and gently attenuates quiet noise.
+- **Warm droid** adds continuous 70 Hz amplitude modulation for a metallic tone.
+- **Radio droid** uses a 140–3200 Hz passband, mild soft saturation, the quiet-noise
+  attenuation and the same light metallic modulation. It adds no static, crackle
+  or squelch effects. The default metallic amount is **10%**, adjustable from 0–50%.
+- **Output level** defaults to **85%**, adjustable from 10–100%. It is a fixed
+  gain, not an automatic loudness boost. The former unfiltered service used 90%.
+
+These controls apply to the next speech request; use **Test K-2SO** to audition.
+They save with the provider and do not require a new chat, model reload or voice
+reconditioning. No generated hiss is added. Gentle expansion reduces quiet noise
+but does not promise complete removal of noise within spoken words.
+
+Filters, envelope and carrier phase retain state through the stream, avoiding
+per-chunk resets, peak normalization and extra buffering. No pitch shift or
+speaking-rate adjustment is applied. ST's generic Audio Playback Speed slider
+controls its HTML audio player and does not change this provider's Web Audio speed.
 
 ## Installation and files
 
@@ -146,3 +165,49 @@ are not committed.
 No game controls were sent during these tests. Physical audibility, subjective
 voice quality and preferred volume remain the user's listening check. Browser
 proof is retained privately under `.local/holt/results/`.
+
+### Tone revision — 2026-11-01
+
+The user described excess treble/hiss and a lack of body, rather than a lack of
+emotional delivery. The first Warm droid audition at 28% metallic modulation was
+too strong; the user requested a lighter robot effect combined with a radio tone.
+The selected revision is Radio droid at 10%. This changes the sound after synthesis; model
+sampling, speech timing and HOLT's character prompt are unchanged.
+
+On the same archived 6.48-second docking sentence, Warm droid processing took
+**6.4 ms total** across 81 chunks in one offline run (about 0.08 ms/chunk).
+Energy above 5 kHz relative to 100–1000 Hz fell from **−19.5 dB to −40.3 dB**.
+This is a spectral measurement, not a subjective quality score or acoustic
+headphone measurement. The metallic version also has lower average loudness;
+there is no makeup gain or per-sentence normalization.
+
+Private comparison files are under `.local/holt/results/pocket-tone-2026-11-01/`:
+`before.wav`, `warm.wav`, `warm-droid.wav`, and `before-then-warm-droid.wav`.
+The combined file plays the former tone first, a one-second pause, then the new
+tone, using exactly the same generated speech so phrasing cannot confound the
+comparison. The former output uses 90% gain; the new output uses 85% plus the
+selected effect. **7 Python and 22 Node checks** passed, including chunk-equivalent
+DSP, treble attenuation, preservation of low fundamentals, noise attenuation,
+API bounds, and forwarding of tone controls through the streaming player.
+
+The final light-radio filter processed the same 6.48-second sentence in **7.4 ms**
+in one offline run. `warm-light-droid.wav`, `radio-light-droid.wav` and the combined
+`warm-then-radio-light-droid.wav` provide the revised auditions; both use 10%
+metallic modulation and 85% output. The combined file plays Warm droid first,
+then Radio droid after a one-second pause. Original, Warm and Warm droid remain
+available for comparison. Subjective tone preference remains a listening check.
+
+The user preferred the radio version. It is selected and persisted in ST at 85%
+output, 10% metallic amount, with the original HOLT K-2SO reference. A live radio
+check through ST's normal `/speak` command completed at **249 ms first scheduled
+audio**, **0 gaps**, then cleared speaking state. The backend receipt confirmed
+`effect: radio`, `volume: 0.85`, `robot_amount: 0.1`. PTT was rearmed afterward.
+
+The user also disliked the opening delivery of “Captain” in the archived audition.
+Both A/B variants used the same generated performance, so that observation cannot
+be attributed to the effect alone. Fresh samples `radio-fresh-captain-first.wav`
+and `radio-captain-later.wav` compare another render with a version that moves
+the address later in the sentence. These are auditions, not an automatic rewrite
+of normal replies or a demonstrated prosody fix. Local recognition recovered the
+sentences, with “hull” transcribed as “whole” in the fresh renders; that check does
+not establish naturalness. The voice reference and model sampling remain unchanged.

@@ -13,6 +13,7 @@ import queue
 import threading
 import time
 import uuid
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +21,8 @@ from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.responses import StreamingResponse
+
+from client.pocket_effects import PocketEffects
 
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGE = "english_2026-10"
@@ -31,6 +34,9 @@ log = logging.getLogger("holt.pocket")
 class SpeechRequest(BaseModel):
     text: str = Field(min_length=1, max_length=6000)
     voice: str = "k2so"
+    effect: Literal["original", "warm", "droid", "radio"] = "radio"
+    volume: float = Field(default=0.85, ge=0.1, le=1)
+    robot_amount: float = Field(default=0.10, ge=0, le=0.5)
 
 
 class PocketService:
@@ -72,7 +78,7 @@ class PocketService:
                 "device": "cpu", "threads": self.threads, "language": LANGUAGE,
                 "busy": self.lock.locked(), "error": self.error, "last_metrics": self.last_metrics}
 
-    def start_job(self, text, voice):
+    def start_job(self, text, voice, effect="radio", volume=0.85, robot_amount=0.10):
         if voice not in self.states:
             raise HTTPException(400, "Unknown Pocket voice")
         if not text.strip():
@@ -99,6 +105,7 @@ class PocketService:
             first = None
             samples = chunks = 0
             try:
+                effects = PocketEffects(rate, effect, volume, robot_amount)
                 for chunk in self.model.generate_audio_stream(self.states[voice], text,
                                                               copy_state=True, stop=stopped):
                     if stopped.is_set():
@@ -114,9 +121,7 @@ class PocketService:
                     chunks += 1
                     if samples > rate * 180:
                         raise ValueError("Speech duration limit exceeded")
-                    # Consistent gain across chunks, avoiding the slight peaks
-                    # above full scale observed in the K-2SO audition.
-                    pcm = (np.clip(audio * 0.9, -1, 1) * 32767).astype("<i2").tobytes()
+                    pcm = (effects.process(audio) * 32767).astype("<i2").tobytes()
                     if not put({"type": "audio", "index": chunks - 1, "samples": int(audio.size),
                                 "data": base64.b64encode(pcm).decode("ascii")}):
                         break
@@ -124,7 +129,8 @@ class PocketService:
                     raise ValueError("No audio generated")
                 metrics = {"request_id": request_id, "first_chunk_ms": round((first or 0) * 1000, 1),
                            "generation_ms": round((time.perf_counter() - started) * 1000, 1),
-                           "audio_seconds": round(samples / rate, 3), "chunks": chunks}
+                           "audio_seconds": round(samples / rate, 3), "chunks": chunks,
+                           "effect": effect, "volume": volume, "robot_amount": robot_amount}
                 self.last_metrics = metrics
                 put({"type": "end", **metrics})
                 log.info("Speech completed: %s", metrics)
@@ -180,7 +186,7 @@ def create_app(service):
     def speech(body: SpeechRequest):
         if not service.health()["ready"]:
             raise HTTPException(503, "Pocket is not ready; check the local service status")
-        stream, stopped = service.start_job(body.text, body.voice)
+        stream, stopped = service.start_job(body.text, body.voice, body.effect, body.volume, body.robot_amount)
         return StreamingResponse(stream, media_type="application/x-ndjson",
                                  headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
                                  background=BackgroundTask(stopped.set))
