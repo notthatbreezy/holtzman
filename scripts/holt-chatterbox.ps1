@@ -58,7 +58,8 @@ if ($running) {
     try {
         $data = Invoke-RestMethod 'http://127.0.0.1:8004/api/ui/initial-data' -TimeoutSec 3
         if ($data.model_info.loaded) {
-            Write-Output "Model loaded on $($data.model_info.device). Use the SillyTavern voice preview to verify playback."
+            $variant = if ($data.model_info.variant) { $data.model_info.variant } else { $data.model_info.type }
+            Write-Output "Model loaded: $variant on $($data.model_info.device). Use the SillyTavern voice preview to verify playback."
         } else { Write-Output 'API responding, but speech model failed to load. Check chatterbox-stderr.log.' }
     } catch { Write-Output 'API not responding: it may be starting or busy synthesizing. See .local/holt/results/chatterbox-stderr.log.' }
 } else { Write-Output 'Chatterbox is stopped.' }

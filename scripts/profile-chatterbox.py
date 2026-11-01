@@ -23,9 +23,10 @@ def main():
     parser.add_argument('--repeats', type=int, default=3)
     parser.add_argument('--text', default='Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.')
     parser.add_argument('--precision', choices=['fp32', 'bf16', 'both'], default='both')
-    parser.add_argument('--model', choices=['original', 'turbo'], default='original')
+    parser.add_argument('--model', choices=['original', 'turbo', 'nano'], default='original')
     parser.add_argument('--checkpoint', type=Path, help='Optional cached Turbo checkpoint directory')
     parser.add_argument('--varied', action='store_true', help='Also measure previously unseen conversational sentences')
+    parser.add_argument('--long', action='store_true', help='Also measure a longer synthetic briefing')
     args = parser.parse_args()
     with socket.socket() as sock:
         sock.settimeout(1)
@@ -36,6 +37,7 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     os.environ['HF_HOME'] = str(server / 'hf-cache')
+    os.environ.setdefault('HF_HUB_DISABLE_XET', '1')
     os.environ['OMP_NUM_THREADS'] = '8'
     os.environ['MKL_NUM_THREADS'] = '8'
     os.environ['TTS_BF16'] = 'off'
@@ -48,7 +50,13 @@ def main():
     assert torch.cuda.is_available(), 'This comparison requires the installed GPU backend'
     assert args.repeats >= 2
     torch.set_num_threads(8)
-    if args.model == 'turbo':
+    if args.model == 'nano':
+        from chatterbox_runtime import nano_class
+        cls = nano_class()
+        if checkpoint:
+            cls.from_pretrained = classmethod(lambda cls, device: cls.from_local(checkpoint, device, nano=True))
+        engine._get_model_class = lambda _selector: (cls, 'turbo')
+    elif args.model == 'turbo':
         assert engine.TURBO_AVAILABLE, 'Installed package has no Turbo implementation'
         if checkpoint:
             engine.ChatterboxTurboTTS.from_pretrained = classmethod(
@@ -60,7 +68,7 @@ def main():
     started = time.perf_counter()
     assert engine.load_model(), 'Model failed to load'
     model = engine.chatterbox_model
-    assert engine.loaded_model_type == args.model
+    assert engine.loaded_model_type == ('turbo' if args.model == 'nano' else args.model)
     builtin = model.conds
     stages = {}
 
@@ -78,7 +86,7 @@ def main():
         return wrapper
 
     model.prepare_conditionals = timed('conditioning', model.prepare_conditionals)
-    token_method = 'inference_turbo' if args.model == 'turbo' else 'inference'
+    token_method = 'inference_turbo' if args.model in ('turbo', 'nano') else 'inference'
     setattr(model.t3, token_method, timed('tokens', getattr(model.t3, token_method)))
     model.s3gen.inference = timed('waveform', model.s3gen.inference)
     model.watermarker.apply_watermark = timed('watermark', model.watermarker.apply_watermark)
@@ -131,14 +139,23 @@ def main():
             assert path.is_file(), f'Missing reference: {path}'
     print(json.dumps(metadata), flush=True)
     def varied(precision):
-        if not args.varied:
+        if not args.varied and not args.long:
             return
         original_text = args.text
-        for index, text in enumerate([
+        texts = [
             'Systems online, Captain. Ready when you are.',
             'Your fuel is at sixty percent. We have enough for the next jump.',
             'Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.',
-        ]):
+        ] if args.varied else []
+        if args.long:
+            texts.append('Captain, the route is ready. We have enough fuel for the next three jumps, '
+                         'and the destination station accepts our landing pad size. Finish the current '
+                         'scan before we depart. Once we arrive, I suggest refueling, repairing the hull, '
+                         'and checking the passenger lounge for a return contract. We are trying to earn '
+                         'a quiet living, after all. Shooting the docking clamps would make that considerably '
+                         'less quiet. I have marked the station in our navigation plan and will keep an eye '
+                         'on fuel consumption along the way.')
+        for index, text in enumerate(texts):
             args.text = text
             run(precision, f'clone-varied-{index}', paths[0][1], repeats=1)
         args.text = original_text

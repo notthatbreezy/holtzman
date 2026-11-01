@@ -1,0 +1,400 @@
+{
+  "date": "2026-11-01",
+  "device": "AMD Radeon 8060S",
+  "settings": "BF16, MIOPEN_FIND_MODE=FAST, seed 42, K2SO reference, temperature .7; Qwen remained resident",
+  "nano_backport_commit": "5de7a54aa4e5e2baadb0182dde554908b48b85c2",
+  "nano_weights": "71ccd1d0081b430592cea481f4307e764e07bc64",
+  "profiles": {
+    "nano": {
+      "metadata": {
+        "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+        "model": "nano",
+        "chatterbox": "0.1.6",
+        "torch": "2.9.1+rocm7.2.1",
+        "hip": "7.2.53211-158bd99533",
+        "device": "AMD Radeon(TM) 8060S Graphics",
+        "bf16_supported": true,
+        "model_load_seconds": 4.877,
+        "sample_rate": 24000,
+        "postprocess_speed_factor": 1.0,
+        "miopen_find_mode": "FAST",
+        "cudnn_benchmark": false,
+        "note": "Direct engine timings; first run per case excluded from warm comparisons."
+      },
+      "results": [
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 0,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": false,
+          "seconds": 8.3585,
+          "stages": {
+            "conditioning": 4.4608,
+            "tokens": 1.9945,
+            "speech_token_count": 138,
+            "waveform": 1.6181,
+            "watermark": 0.0229
+          },
+          "audio_seconds": 5.64,
+          "realtime_factor": 1.482,
+          "peak": 0.5205,
+          "audio_file": "bf16-clone-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 1,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": true,
+          "seconds": 1.0825,
+          "stages": {
+            "tokens": 0.7835,
+            "speech_token_count": 138,
+            "waveform": 0.279,
+            "watermark": 0.0167
+          },
+          "audio_seconds": 5.64,
+          "realtime_factor": 0.1919,
+          "peak": 0.5205,
+          "audio_file": "bf16-clone-1.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 2,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": true,
+          "seconds": 1.0779,
+          "stages": {
+            "tokens": 0.782,
+            "speech_token_count": 138,
+            "waveform": 0.2776,
+            "watermark": 0.0153
+          },
+          "audio_seconds": 5.64,
+          "realtime_factor": 0.1911,
+          "peak": 0.5205,
+          "audio_file": "bf16-clone-2.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-0",
+          "repeat": 0,
+          "text": "Systems online, Captain. Ready when you are.",
+          "warm": false,
+          "seconds": 0.8171,
+          "stages": {
+            "tokens": 0.4089,
+            "speech_token_count": 72,
+            "waveform": 0.3922,
+            "watermark": 0.0132
+          },
+          "audio_seconds": 3.0,
+          "realtime_factor": 0.2724,
+          "peak": 0.503,
+          "audio_file": "bf16-clone-varied-0-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-1",
+          "repeat": 0,
+          "text": "Your fuel is at sixty percent. We have enough for the next jump.",
+          "warm": false,
+          "seconds": 0.971,
+          "stages": {
+            "tokens": 0.5269,
+            "speech_token_count": 93,
+            "waveform": 0.4273,
+            "watermark": 0.0134
+          },
+          "audio_seconds": 3.84,
+          "realtime_factor": 0.2529,
+          "peak": 0.4201,
+          "audio_file": "bf16-clone-varied-1-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-2",
+          "repeat": 0,
+          "text": "Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.",
+          "warm": false,
+          "seconds": 1.2305,
+          "stages": {
+            "tokens": 0.7286,
+            "speech_token_count": 128,
+            "waveform": 0.4809,
+            "watermark": 0.0175
+          },
+          "audio_seconds": 5.24,
+          "realtime_factor": 0.2348,
+          "peak": 0.3695,
+          "audio_file": "bf16-clone-varied-2-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-3",
+          "repeat": 0,
+          "text": "Captain, the route is ready. We have enough fuel for the next three jumps, and the destination station accepts our landing pad size. Finish the current scan before we depart. Once we arrive, I suggest refueling, repairing the hull, and checking the passenger lounge for a return contract. We are trying to earn a quiet living, after all. Shooting the docking clamps would make that considerably less quiet. I have marked the station in our navigation plan and will keep an eye on fuel consumption along the way.",
+          "warm": false,
+          "seconds": 5.4504,
+          "stages": {
+            "tokens": 3.6598,
+            "speech_token_count": 657,
+            "waveform": 1.6961,
+            "watermark": 0.0901
+          },
+          "audio_seconds": 26.4,
+          "realtime_factor": 0.2065,
+          "peak": 0.4941,
+          "audio_file": "bf16-clone-varied-3-0.wav"
+        }
+      ],
+      "asr": [
+        {
+          "configuration": "chatterbox-nano-profile-2026-11-01",
+          "file": "bf16-clone-1.wav",
+          "text": "Captain docking clearance is confirmed. Try to arrive at the same number of whole panels we left with."
+        },
+        {
+          "configuration": "chatterbox-nano-profile-2026-11-01",
+          "file": "bf16-clone-varied-0-0.wav",
+          "text": "Systems online, Captain. Ready when you are."
+        },
+        {
+          "configuration": "chatterbox-nano-profile-2026-11-01",
+          "file": "bf16-clone-varied-1-0.wav",
+          "text": "Your fuel is at 60%. We have enough for the next jump."
+        },
+        {
+          "configuration": "chatterbox-nano-profile-2026-11-01",
+          "file": "bf16-clone-varied-2-0.wav",
+          "text": "\"Holl integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.\""
+        },
+        {
+          "configuration": "chatterbox-nano-profile-2026-11-01",
+          "file": "bf16-clone-varied-3-0.wav",
+          "text": "Captain, the route is ready. We have enough fuel for the next three jumps, and the destination station accepts our landing pad size. Finish the current scan before we depart. Once we arrive, I suggest refueling, repairing the hull, and checking the passenger lounge for a turn contract. We are trying to earn a quiet living after all. Shooting the docking clamps would make that considerable linger on Syndra along the way. I have marked the station in our navigation plan and will keep an eye on fuel consumption along the way."
+        }
+      ]
+    },
+    "turbo": {
+      "metadata": {
+        "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+        "model": "turbo",
+        "chatterbox": "0.1.6",
+        "torch": "2.9.1+rocm7.2.1",
+        "hip": "7.2.53211-158bd99533",
+        "device": "AMD Radeon(TM) 8060S Graphics",
+        "bf16_supported": true,
+        "model_load_seconds": 8.739,
+        "sample_rate": 24000,
+        "postprocess_speed_factor": 1.0,
+        "miopen_find_mode": "FAST",
+        "cudnn_benchmark": false,
+        "note": "Direct engine timings; first run per case excluded from warm comparisons."
+      },
+      "results": [
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 0,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": false,
+          "seconds": 8.7607,
+          "stages": {
+            "conditioning": 3.9781,
+            "tokens": 3.0293,
+            "speech_token_count": 175,
+            "waveform": 1.4789,
+            "watermark": 0.0251
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 1.2304,
+          "peak": 0.4702,
+          "audio_file": "bf16-clone-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 1,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": true,
+          "seconds": 2.1887,
+          "stages": {
+            "tokens": 1.8219,
+            "speech_token_count": 175,
+            "waveform": 0.3442,
+            "watermark": 0.0191
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 0.3074,
+          "peak": 0.4702,
+          "audio_file": "bf16-clone-1.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 2,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": true,
+          "seconds": 2.2035,
+          "stages": {
+            "tokens": 1.833,
+            "speech_token_count": 175,
+            "waveform": 0.3454,
+            "watermark": 0.0218
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 0.3095,
+          "peak": 0.4702,
+          "audio_file": "bf16-clone-2.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-0",
+          "repeat": 0,
+          "text": "Systems online, Captain. Ready when you are.",
+          "warm": false,
+          "seconds": 1.1554,
+          "stages": {
+            "tokens": 0.7816,
+            "speech_token_count": 73,
+            "waveform": 0.3573,
+            "watermark": 0.0129
+          },
+          "audio_seconds": 3.04,
+          "realtime_factor": 0.3801,
+          "peak": 0.4225,
+          "audio_file": "bf16-clone-varied-0-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-1",
+          "repeat": 0,
+          "text": "Your fuel is at sixty percent. We have enough for the next jump.",
+          "warm": false,
+          "seconds": 1.3134,
+          "stages": {
+            "tokens": 0.938,
+            "speech_token_count": 88,
+            "waveform": 0.3603,
+            "watermark": 0.0119
+          },
+          "audio_seconds": 3.64,
+          "realtime_factor": 0.3608,
+          "peak": 0.5635,
+          "audio_file": "bf16-clone-varied-1-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-2",
+          "repeat": 0,
+          "text": "Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.",
+          "warm": false,
+          "seconds": 1.7156,
+          "stages": {
+            "tokens": 1.2882,
+            "speech_token_count": 121,
+            "waveform": 0.4085,
+            "watermark": 0.0157
+          },
+          "audio_seconds": 4.96,
+          "realtime_factor": 0.3459,
+          "peak": 0.3946,
+          "audio_file": "bf16-clone-varied-2-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-3",
+          "repeat": 0,
+          "text": "Captain, the route is ready. We have enough fuel for the next three jumps, and the destination station accepts our landing pad size. Finish the current scan before we depart. Once we arrive, I suggest refueling, repairing the hull, and checking the passenger lounge for a return contract. We are trying to earn a quiet living, after all. Shooting the docking clamps would make that considerably less quiet. I have marked the station in our navigation plan and will keep an eye on fuel consumption along the way.",
+          "warm": false,
+          "seconds": 10.3216,
+          "stages": {
+            "tokens": 8.3981,
+            "speech_token_count": 684,
+            "waveform": 1.8312,
+            "watermark": 0.0885
+          },
+          "audio_seconds": 27.48,
+          "realtime_factor": 0.3756,
+          "peak": 0.5048,
+          "audio_file": "bf16-clone-varied-3-0.wav"
+        }
+      ],
+      "asr": [
+        {
+          "configuration": "chatterbox-turbo-comparison-2026-11-01",
+          "file": "bf16-clone-1.wav",
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with."
+        },
+        {
+          "configuration": "chatterbox-turbo-comparison-2026-11-01",
+          "file": "bf16-clone-varied-0-0.wav",
+          "text": "Systems online, Captain. Ready when you are."
+        },
+        {
+          "configuration": "chatterbox-turbo-comparison-2026-11-01",
+          "file": "bf16-clone-varied-1-0.wav",
+          "text": "Your fuel is at 60%. We have enough for the next jump."
+        },
+        {
+          "configuration": "chatterbox-turbo-comparison-2026-11-01",
+          "file": "bf16-clone-varied-2-0.wav",
+          "text": "\"Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.\""
+        },
+        {
+          "configuration": "chatterbox-turbo-comparison-2026-11-01",
+          "file": "bf16-clone-varied-3-0.wav",
+          "text": "Captain, the route is ready. We have enough fuel for the next three jumps, and the destination station accepts our landing pad size. Finish the current scan before we depart. Once we arrive, I suggest refueling, repairing the hull, and checking the passenger lounge for a return contract. We are trying to earn a quiet living, after all shooting the docking clams would make that considerably less quiet. I have marked the station in our navigation plan and will keep an eye on fuel consumption along the way."
+        }
+      ]
+    }
+  },
+  "http": [
+    {
+      "voice": "HOLT-K2SO.wav",
+      "voice_mode": "clone",
+      "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+      "split_text": false,
+      "elapsed_seconds": 8.859,
+      "audio_seconds": 5.127,
+      "sample_rate": 24000,
+      "realtime_factor": 1.728,
+      "output": "chatterbox-nano-http-cold.wav"
+    },
+    {
+      "voice": "HOLT-K2SO.wav",
+      "voice_mode": "clone",
+      "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+      "split_text": false,
+      "elapsed_seconds": 1.562,
+      "audio_seconds": 5.127,
+      "sample_rate": 24000,
+      "realtime_factor": 0.305,
+      "output": "chatterbox-nano-http-warm.wav"
+    },
+    {
+      "voice": "HOLT-K2SO.wav",
+      "voice_mode": "clone",
+      "text": "Captain, the route is ready. We have enough fuel for the next three jumps, and the destination station accepts our landing pad size. Finish the current scan before we depart. Once we arrive, I suggest refueling, repairing the hull, and checking the passenger lounge for a return contract. We are trying to earn a quiet living, after all. Shooting the docking clamps would make that considerably less quiet. I have marked the station in our navigation plan and will keep an eye on fuel consumption along the way.",
+      "split_text": true,
+      "elapsed_seconds": 9.266,
+      "audio_seconds": 26.273,
+      "sample_rate": 24000,
+      "realtime_factor": 0.353,
+      "output": "chatterbox-nano-http-briefing.wav"
+    }
+  ],
+  "http_asr": [
+    {
+      "file": "chatterbox-nano-http-warm.wav",
+      "text": "Captain, docking clearance is confirmed. Try to arrive at the same number of hull panels we left with."
+    },
+    {
+      "file": "chatterbox-nano-http-briefing.wav",
+      "text": "Captain, the route is ready. We have enough fuel for the next three jumps, and the destination station accepts our landing pad size. Finish the current scan before we depart. Once we arrive, I suggest refueling, repairing the hull, and shaking the passenger lounge for a return contract. We're trying to earn a quiet living after all. Shooting the docking plants would make that considerably less quiet. I have marked the station in our navigation plan and will keep an eye on fuel consumption along the way."
+    }
+  ]
+}

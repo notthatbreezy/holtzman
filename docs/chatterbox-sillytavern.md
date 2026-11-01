@@ -4,11 +4,13 @@ Setup on Archie, 2026-10-31. This serves speech locally at
 `http://127.0.0.1:8004`; SillyTavern remains at `http://127.0.0.1:8000`.
 It is independent of the old HOLT desktop/gateway speech service.
 
-Updated 2026-11-01: the active engine is **Turbo + BF16 + MIOpen FAST**, keeping
-the K-2SO reference. Warm short replies measured **1.88–2.39 seconds**; the first
-request after startup took **8.63 seconds**. See the
-[performance investigation](chatterbox-performance-2026-11-01.md) for comparisons
-and raw measurements. The installation instructions below describe this setup;
+Updated 2026-11-01: the active engine is **Nano + BF16 + MIOpen FAST**, keeping
+the K-2SO reference. The warm HTTP docking line measured **1.56 seconds**; the
+first request took **8.86 seconds**. A longer split briefing took **9.27 seconds**.
+See the [Nano comparison](chatterbox-nano-2026-11-01.md) for speed, intelligibility
+tradeoffs and switching back to Turbo. The earlier
+[Turbo investigation](chatterbox-performance-2026-11-01.md) is retained.
+The installation instructions below describe the current setup;
 the testing record retains the earlier original-model results for history.
 
 ## Everyday start and stop
@@ -45,10 +47,10 @@ keep them private. Launcher output logs are replaced on each start.
 | Component | Location / version |
 | --- | --- |
 | Server | `.local/holt/chatterbox-server`, devnen/Chatterbox-TTS-Server commit `915ae289340e10c6047f27f47e22eae9bf350c32` |
-| Engine | Published `chatterbox-tts==0.1.6`; original devnen source retained under `.local/holt/chatterbox-engine` for rollback |
+| Engine | Published `chatterbox-tts==0.1.6` plus pinned official Nano compatibility source; original devnen source retained for rollback |
 | Python | Private Python 3.12.15; server's single `venv` |
-| Model | English Chatterbox Turbo, `ResembleAI/chatterbox-turbo` |
-| Weight revision | `749d1c1a46eb10492095d68fbcf55691ccf137cd` (original weights retained in cache) |
+| Model | English Chatterbox Nano, `ResembleAI/chatterbox-nano` |
+| Weight revision | `71ccd1d0081b430592cea481f4307e764e07bc64` (Turbo and original weights retained in cache) |
 | Execution | Radeon 8060S via native Windows ROCm 7.2.1 / PyTorch 2.9.1; 8 OpenMP/MKL threads for CPU work |
 | Model cache | `.local/holt/chatterbox-server/hf-cache` |
 | Voice references | `.local/holt/chatterbox-server/reference_audio` |
@@ -56,7 +58,9 @@ keep them private. Launcher output logs are replaced on each start.
 The original engine fork was replaced in the same environment with the published
 0.1.6 package to supply Turbo. `scripts/run-chatterbox.py` loads the pinned public
 checkpoint and avoids that release's unnecessary HF token requirement and unused
-decoder download. The launcher uses automatic BF16 precision and MIOpen FAST;
+decoder download. Repository-owned runtime code also loads the
+[official Nano backport](../integrations/sillytavern/chatterbox-nano-compat/README.md)
+without replacing the working dependencies. The launcher uses automatic BF16 precision and MIOpen FAST;
 these process settings apply only to Chatterbox. The server's own Strix Halo instructions
 describe Linux/Docker ROCm. This installation instead uses AMD's documented native
 Windows PyTorch packages, which list the Ryzen AI Max+ 395 as supported. The
@@ -115,7 +119,7 @@ server:
   host: 127.0.0.1
   port: 8004
 model:
-  repo_id: chatterbox-turbo
+  repo_id: chatterbox-nano
 tts_engine:
   device: cuda
   default_voice_id: Thomas.wav
@@ -130,7 +134,7 @@ generation_defaults:
 Merge those values into the existing sections; retain the other upstream paths
 and audio settings. Then run `HOLT-Chatterbox.cmd start`. First startup downloads
 the model weights from Hugging Face. Later starts reuse the cache. The download
-needs no API key. Turbo's required files total about 3 GB. If startup waits on
+needs no API key. Nano's runtime files total about 1.94 GB (Turbo about 3 GB). If startup waits on
 downloads, inspect the logs and cache; do not start multiple servers against the
 same cache. The wrapper defaults to plain HTTP downloads rather than Xet, which
 failed during the Turbo download on this network.
@@ -181,7 +185,7 @@ they are not committed to the repository. No external voice-cloning service is
 used. Background effects in a reference may carry into the generated voice.
 
 For a different reference, use clear speech, little background music/effects and
-one speaker. Turbo requires more than five seconds of reference speech: use the
+one speaker. Nano and Turbo require more than five seconds of reference speech: use the
 10.91-second composite, not the 4.14-second single clip. The original model used the beginning of the clip for conditioning
 (first 6 seconds for encoder tokens and up to 10 seconds for decoder conditioning
 in the pinned engine). A long compilation is not automatically better.
@@ -211,7 +215,7 @@ In **Extensions → TTS**:
    and user-message narration off if only HOLT should speak.
 4. Enable TTS and Auto Generation for automatic playback of future replies.
 5. Start with temperature 0.7, exaggeration 0.4, CFG 0.5, speed 1.1 and WAV output.
-   Turbo ignores exaggeration and CFG. These controls remain useful for the
+   Nano and Turbo ignore exaggeration and CFG. These controls remain useful for the
    original model. Enable both **Narrate by paragraphs** options to start playing
    portions of longer replies sooner.
 
