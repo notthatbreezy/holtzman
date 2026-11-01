@@ -1,0 +1,8 @@
+{
+  "display_name": "HOLT Pocket TTS",
+  "author": "Holtzman",
+  "version": "1.0.1",
+  "loading_order": 5,
+  "js": "index.js",
+  "homePage": "https://github.com/notthatbreezy/holtzman"
+}

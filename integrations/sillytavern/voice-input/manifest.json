@@ -1,7 +1,7 @@
 {
   "display_name": "HOLT standalone voice input",
   "author": "Holtzman",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "loading_order": 100,
   "js": "index.js",
   "homePage": "https://github.com/notthatbreezy/holtzman"

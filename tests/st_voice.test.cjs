@@ -31,6 +31,17 @@ test('voice text enters ordinary chat; slash text is not executed as STscript', 
     assert.deepEqual(x.calls, ['ack', 'render', 'save', 'generate']);
 });
 
+test('Pocket playback keeps microphone capture gated until the playback tail finishes', async () => {
+    const x = setup();
+    x.sandbox.document.documentElement = { dataset: { holtPocketSpeaking: 'true' } };
+    x.sandbox.document.getElementById = id => id === 'holt-input-status' ? { textContent: '' } : null;
+    await x.poll();
+    assert.equal(x.requests.at(-1).speaking, true);
+    x.sandbox.document.documentElement.dataset.holtPocketSpeaking = 'false';
+    await x.poll();
+    assert.equal(x.requests.at(-1).speaking, false);
+});
+
 test('a repeated receipt never generates another turn, including after failure', async () => {
     const x = setup(true);
     const packet = { id: 'receipt', chat: 'one', text: 'request docking' };

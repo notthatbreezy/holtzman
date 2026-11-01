@@ -1,4 +1,4 @@
-/* Input only: keep ST's active model, MCP extension and Chatterbox unchanged. */
+/* Input only: use ST's active model, MCP tools and selected speech provider. */
 import { isGenerating } from '/script.js';
 
 const endpoint = 'http://127.0.0.1:8083';
@@ -17,6 +17,7 @@ function chatId() {
 function speaking() {
     const audio = document.getElementById('tts_audio');
     return Boolean(audio && !audio.paused && !audio.ended)
+        || document.documentElement?.dataset.holtPocketSpeaking === 'true'
         || document.getElementById('chatterbox-status')?.textContent === 'Processing';
 }
 

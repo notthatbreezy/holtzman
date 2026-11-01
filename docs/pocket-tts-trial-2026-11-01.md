@@ -2,10 +2,14 @@
 
 ## Status
 
-Pocket TTS is installed in `.local/holt/pocket-env`, separate from Chatterbox's
-working ROCm environment. No persistent Pocket server was started, and ST's voice
-provider, K-2SO mapping, microphone settings and Chatterbox installation were not
-changed.
+**Update:** Pocket is now integrated with ST's automatic narration and continuous
+browser playback. See [operation and live integration checks](pocket-tts-sillytavern.md).
+The sections below retain the earlier engine-only trial measurements.
+
+The initial trial installed Pocket TTS in `.local/holt/pocket-env`, separate from
+Chatterbox's working ROCm environment. At that stage no persistent Pocket server
+was started, and ST's provider and voice mapping were left unchanged. The linked
+integration instructions describe the current running setup.
 
 **The K-2SO clone comparison is complete.** After the user accepted the official
 model's access conditions and authenticated locally, Pocket loaded with
@@ -84,7 +88,8 @@ was added. The final files are under:
 
 The first unnormalized clone run is retained separately. Raw chunk arrivals,
 transcripts and reusable voice states stay private; the committed benchmark
-summary contains measurements and synthetic text only. ST remains on Chatterbox.
+summary contains measurements and synthetic text only. ST was still on Chatterbox
+at the end of this engine-only trial.
 
 ## Completed CPU baseline — stock voice only
 
@@ -164,7 +169,8 @@ To reproduce only the completed baseline:
 
 The command exits when finished; there is no Pocket service to stop. Ctrl+C stops
 a running benchmark. To preserve evidence, use a new `--output` directory on rerun.
-Do not switch ST to Pocket yet: this trial has not integrated streaming playback.
+These commands reproduce engine-only auditions. For normal ST usage, use the
+[integrated service and provider](pocket-tts-sillytavern.md).
 
 ## Installation record
 
