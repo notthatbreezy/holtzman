@@ -157,3 +157,11 @@ Do not mix those two configurations or apply the old gateway advice to this prof
 
 The character and lorebooks supply behaviour and background. They do not register
 tools, change API mode or grant a model capabilities absent from its connection.
+
+## Screenshot compatibility repair
+
+The native MCP screenshot path requires the validator repair and HOLT
+compatibility extension version 1.1.0. This fixes `Invalid URL` for explicit
+JPEG/PNG arguments, stores images before chat token/vector processing, and
+delivers the two latest game-window images to Luna as actual image input.
+See [the installation, root-cause analysis and live verification](holt-screenshot-fix-2026-11-01.md).
