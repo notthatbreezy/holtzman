@@ -47,6 +47,7 @@ pub fn validate_input(input: &str) -> Result<(), String> {
                         | "PageDown"
                         | "Pause"
                         | "ScrollLock"
+                        | "NumpadEnter"
                 )
         }))
         || input.strip_prefix("Joy:").is_some_and(|s| {
@@ -59,8 +60,26 @@ pub fn validate_input(input: &str) -> Result<(), String> {
     if valid {
         Ok(())
     } else {
-        Err("Choose Mouse4/5/Middle, a function/navigation key, or Joy:<HID product name>:<1-based button>; typing keys and modifiers are forbidden".into())
+        Err("Choose Mouse4/5/Middle, Numpad Enter, a function/navigation key, or Joy:<HID product name>:<1-based button>; ordinary typing keys and modifiers are forbidden".into())
     }
+}
+
+/// Decode a Raw Input virtual key without conflating the two Enter keys.
+/// RI_KEY_E0 (0x02) marks keypad Enter; RI_KEY_BREAK (0x01) is independent.
+pub fn keyboard_input(vkey: u16, flags: u16) -> Option<String> {
+    Some(match vkey {
+        0x0d if flags & 0x02 != 0 && flags & 0x04 == 0 => "Key_NumpadEnter".into(),
+        0x70..=0x87 => format!("Key_F{}", vkey - 0x70 + 1),
+        0x21 => "Key_PageUp".into(),
+        0x22 => "Key_PageDown".into(),
+        0x23 => "Key_End".into(),
+        0x24 => "Key_Home".into(),
+        0x2d => "Key_Insert".into(),
+        0x2e => "Key_Delete".into(),
+        0x13 => "Key_Pause".into(),
+        0x91 => "Key_ScrollLock".into(),
+        _ => return None,
+    })
 }
 
 struct State {
@@ -310,6 +329,7 @@ mod windows {
                             "PageDown",
                             "Pause",
                             "ScrollLock",
+                            "NumpadEnter",
                         ] {
                             names.push(format!("Key_{name}"));
                         }
@@ -379,19 +399,7 @@ mod windows {
                                     >= size_of::<RAWINPUTHEADER>() + size_of::<RAWKEYBOARD>() =>
                             {
                                 let k = raw.data.keyboard;
-                                let name = match k.VKey {
-                                    0x70..=0x87 => format!("Key_F{}", k.VKey - 0x70 + 1),
-                                    0x21 => "Key_PageUp".into(),
-                                    0x22 => "Key_PageDown".into(),
-                                    0x23 => "Key_End".into(),
-                                    0x24 => "Key_Home".into(),
-                                    0x2d => "Key_Insert".into(),
-                                    0x2e => "Key_Delete".into(),
-                                    0x13 => "Key_Pause".into(),
-                                    0x91 => "Key_ScrollLock".into(),
-                                    _ => String::new(),
-                                };
-                                if !name.is_empty() {
+                                if let Some(name) = super::keyboard_input(k.VKey, k.Flags) {
                                     reader.edge(&name, k.Flags & 1 == 0);
                                 }
                             }

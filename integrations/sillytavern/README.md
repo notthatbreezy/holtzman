@@ -16,6 +16,11 @@ For standalone ST speech, see [Chatterbox installation, start/stop and reference
 voices](../../docs/chatterbox-sillytavern.md). Its separate speech service is
 controlled by `HOLT-Chatterbox.cmd` and uses ST's built-in Chatterbox provider.
 
+For **Numpad Enter on SKIPPY → microphone on ARCHIE → standalone ST**, see the
+[speech block diagram and PTT setup](../../docs/speech-flow-and-ptt.md). The separate
+`voice-input` extension and `HOLT-ST-Voice.cmd` feed ordinary user messages into ST
+without activating the older gateway below.
+
 Start with the **HOLT Tavern** desktop shortcut or **HOLT-Tavern.cmd** in the repository root. The browser opens after the
 local server becomes ready. Click **Start HOLT**: it selects the HOLT character,
 connects SillyTavern to the gateway, starts the speech services and connects SKIPPY.

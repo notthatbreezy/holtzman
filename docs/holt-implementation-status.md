@@ -57,6 +57,10 @@ button, so choose an input that Elite does not use. Empty `ptt.inputs` registers
 input classes. An older server binary will reject the new configuration sections;
 remove them before rolling back.
 
+The standalone ST speech follow-up adds `Key_NumpadEnter`, distinguished from main
+Enter by Raw Input's E0 flag. See [speech flow and standalone PTT](speech-flow-and-ptt.md)
+for that input-only bridge, deployment steps and validation limits.
+
 The captain's store defaults to `captains_log/` beside the server configuration;
 `captains_log_dir` overrides it. Knowledge writes never grant game-control authority.
 Session date ranges use the server's local calendar; timestamps are UTC. End balances
