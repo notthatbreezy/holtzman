@@ -9,7 +9,7 @@ are HOLT.
 
 ## What is installed
 
-- **HOLT**, version `1.2-standalone`, in the existing `HOLT.png` character slot.
+- **HOLT**, version `1.3-standalone`, in the existing `HOLT.png` character slot.
   Its image and chat history are retained. The description, personality, scenario,
   opening, examples and author notes were populated from the established HOLT canon
   and conversational preferences.
@@ -28,9 +28,11 @@ are HOLT.
   allegiance are invented. This background does not establish real gameplay events.
 
 The existing general persona, global persona default, global lore selections and
-unrelated characters are preserved. No model connection, inference service, speech
-device, game control setting or MCP credential is changed. A character card cannot
-provide those capabilities by itself.
+unrelated characters are preserved. The character installer does not change the
+model connection, inference service, speech device, game control setting or MCP
+credential. The separate 2026-11-01 response-limit and prompt-compatibility settings
+adjustments are documented below. A character card cannot provide capabilities
+by itself.
 
 ## Use it
 
@@ -44,7 +46,7 @@ chat's persona lock. The installer does not rewrite old chat metadata or message
 
 The populated card applies to future replies in an existing chat. Its new opening
 and alternate greetings apply when starting a new chat; old openings are retained.
-The card favours one or two useful sentences, measured dry humour, more urgency
+The card favours one to three useful sentences, measured dry humour, more urgency
 when needed, and less compulsory last-word chatter. Requested research and game
 tasks should use the tools actually connected to the active session, with observed
 results determining what HOLT can truthfully report.
@@ -54,6 +56,63 @@ depth 0. It tells HOLT to turn tool results into one or two natural spoken sente
 omit unrequested fields and closing offers, and qualify old records as "last recorded"
 rather than "currently". This supplements the personality instructions close to the
 active request. It is character configuration, not an old-chat summary.
+
+Version 1.3 (2026-11-01) strengthens spoken prose: answer first, interpret the
+few relevant readings, and connect them to the Captain's decision. Routine
+answers omit headings, bullet lists, raw field names, internal entry IDs, emoji
+and closing menus. Requested briefings/checklists can still be structured.
+Additional examples cover fuel, natural acknowledgements, confirmed log writes
+and in-character banter. All example readings/actions are hypothetical.
+
+### Local Qwen connection compatibility and response allowance
+
+ST's HOLT local MCP preset and active settings now use **2,048 response tokens**,
+up from 300. This is a ceiling, not a desired reply length; the card governs
+ordinary brevity. The saved chat contained mid-sentence endings and Ollama logged
+several generations ending at exactly 300 tokens before the change.
+
+A separate compatibility issue explained why card instructions had little effect:
+the local `qwen3-coder` renderer keeps the first system message and filters out
+the others. [Ollama's renderer source](https://github.com/ollama/ollama/blob/main/model/renderers/qwen3coder.go)
+implements this explicitly. A local two-system-message code-word check failed,
+while the combined-message equivalent succeeded. The initial synthetic conversation
+checks had identical prompt counts despite different later system content, also
+consistent with the missing instructions.
+
+For this local connection, **API Connections → Prompt Post-Processing → Semi-strict
+(alternating roles; with tools)** is enabled and saved in the same preset. ST
+merges consecutive system messages, keeps the first system role, converts later
+system messages into user messages, and preserves tool definitions/call metadata.
+Thus initial character/persona/lore instructions reach Qwen together, and later
+notes reach it as user-role context rather than disappearing. Their role is changed;
+this is not equivalent to a backend supporting multiple system messages natively.
+The mode with **no tools** must not be used for HOLT's MCP connection.
+
+To reproduce, set Max Response Length to 2048 in AI Response Configuration,
+select the tool-preserving compatibility option in API Connections, then update
+the **HOLT local MCP** preset with its save button. The card installer deliberately
+does not replace connection presets. Other model connections should use their
+own appropriate prompt format rather than inheriting a Qwen workaround blindly.
+
+Both limits/compatibility values were read back from active settings and the saved
+preset; the character fields and legacy editor mirrors matched the portable card.
+Changes were applied through the open ST editors so their in-memory state was
+updated too. No old chat messages or the Commander persona were rewritten.
+
+Four isolated local text checks through ST's backend exercised fuel readings,
+banter, a confirmed log entry and a synthetic function-call round trip. Replies
+ended with `finish_reason: stop`, and the function call remained usable. Examples:
+“An outcome I remain strongly in favour of, Captain.” and “Yes, Captain—the
+pirate-hunt summary is logged.” The tool-result reply used a connected sentence
+about having 32 tonnes for an eight-tonne jump. These are synthetic fixtures,
+not observations of the real ship. No actual MCP call, game control or TTS was
+triggered by the checks.
+
+[Raw checks](evaluations/2026-11-01-conversation.json) preserve the results and
+limitations. The separate readiness case still embellished drive/navigation
+state not supplied by its fixture, so this demonstrates better delivery and
+instruction delivery, not complete factual reliability. Existing long chat history
+may also continue to influence style; these checks used isolated conversations.
 
 Standalone ST does not automatically support HOLT's gateway-specific delivery JSON
 or silence marker. The card therefore follows a client's supported conventions

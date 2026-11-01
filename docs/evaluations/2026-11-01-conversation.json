@@ -1,0 +1,128 @@
+{
+  "before_compatibility": {
+    "model": "qwen3-coder-next:q8_0",
+    "limit": 2048,
+    "type": "isolated synthetic text checks through ST backend; no chat history, MCP calls or TTS",
+    "results": [
+      {
+        "case": "fuel",
+        "question": "Are we ready for the next jump?",
+        "fixture": "Verified readings for this fictional test: fuel 32 tonnes, next jump needs 8 tonnes, hull 100 percent, shields 100 percent, cargo 96 tonnes capacity, credits 332 million. No action has been requested or performed.",
+        "response": "Fuel reserves are nominal, systems are green, and the jump destination is keyed in\u2014provided you\u2019ve already selected a system, Captain. Let me know if you\u2019d like me to verify the route or confirm jump readiness.",
+        "finish_reason": "stop",
+        "seconds": 3.0,
+        "usage": {
+          "prompt_tokens": 1603,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens": 45,
+          "total_tokens": 1648
+        }
+      },
+      {
+        "case": "banter",
+        "question": "Well, HOLT, we survived.",
+        "fixture": "The Captain is making a conversational remark, not requesting a report or action. No new telemetry is supplied.",
+        "response": "An outcome I remain strongly in favour of, Captain.  \nAny further recalibrations needed before we plot the next course?",
+        "finish_reason": "stop",
+        "seconds": 1.23,
+        "usage": {
+          "prompt_tokens": 1603,
+          "prompt_tokens_details": {
+            "cached_tokens": 1091
+          },
+          "completion_tokens": 26,
+          "total_tokens": 1629
+        }
+      },
+      {
+        "case": "saved_entry",
+        "question": "Did you save that in the log?",
+        "fixture": "For this fictional test only, a log_entry tool has already returned success=true, entry_id=test-42. The text of the entry was the Captain's requested pirate-hunt summary. No other action has been requested.",
+        "response": "I\u2019ll check the log\u2014*pause*\u2014yes, your request and my confirmation are both recorded. No extra steps needed unless you want me to retrieve or expand it.",
+        "finish_reason": "stop",
+        "seconds": 1.49,
+        "usage": {
+          "prompt_tokens": 1603,
+          "prompt_tokens_details": {
+            "cached_tokens": 1091
+          },
+          "completion_tokens": 36,
+          "total_tokens": 1639
+        }
+      }
+    ]
+  },
+  "after_compatibility": {
+    "model": "qwen3-coder-next:q8_0",
+    "limit": 2048,
+    "post_processing": "semi_tools",
+    "type": "isolated synthetic checks through ST backend; no existing chat history, actual MCP calls, game controls or TTS",
+    "results": [
+      {
+        "case": "fuel",
+        "question": "Are we ready for the next jump?",
+        "fixture": "Verified readings for this fictional test: fuel 32 tonnes, next jump needs 8 tonnes, hull 100 percent, shields 100 percent, cargo 96 tonnes capacity, credits 332 million. No action has been requested or performed.",
+        "response": "We\u2019re ready, Captain\u2014fuel at 32 tonnes, jump need is 8, and both hull and shields are green.  \nJump drive\u2019s online and Nav is synced. Just say the word.",
+        "finish_reason": "stop",
+        "seconds": 1.8,
+        "usage": {
+          "prompt_tokens": 1965,
+          "prompt_tokens_details": {
+            "cached_tokens": 1421
+          },
+          "completion_tokens": 43,
+          "total_tokens": 2008
+        }
+      },
+      {
+        "case": "banter",
+        "question": "Well, HOLT, we survived.",
+        "fixture": "The Captain is making a conversational remark, not requesting a report or action. No new telemetry is supplied.",
+        "response": "An outcome I remain strongly in favour of, Captain.",
+        "finish_reason": "stop",
+        "seconds": 0.86,
+        "usage": {
+          "prompt_tokens": 1931,
+          "prompt_tokens_details": {
+            "cached_tokens": 1453
+          },
+          "completion_tokens": 12,
+          "total_tokens": 1943
+        }
+      },
+      {
+        "case": "saved_entry",
+        "question": "Did you save that in the log?",
+        "fixture": "For this fictional test only, a log_entry tool has already returned success=true, entry_id=test-42. The text of the entry was the Captain's requested pirate-hunt summary. No other action has been requested.",
+        "response": "Yes, Captain\u2014the pirate-hunt summary is logged.",
+        "finish_reason": "stop",
+        "seconds": 0.89,
+        "usage": {
+          "prompt_tokens": 1954,
+          "prompt_tokens_details": {
+            "cached_tokens": 1453
+          },
+          "completion_tokens": 12,
+          "total_tokens": 1966
+        }
+      },
+      {
+        "case": "synthetic_tool_round_trip",
+        "tool_name": "test_reading",
+        "response": "Yes, Captain. We have 32 tonnes of fuel, and the next jump only needs 8\u2014more than enough.",
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 2210,
+          "prompt_tokens_details": {
+            "cached_tokens": 2133
+          },
+          "completion_tokens": 27,
+          "total_tokens": 2237
+        }
+      }
+    ]
+  },
+  "limits": "Small synthetic text checks; no real game actions, voice playback, or old chat history. The fuel-readiness answer still invented drive/nav state; prose improvement is not proof of factual reliability."
+}
