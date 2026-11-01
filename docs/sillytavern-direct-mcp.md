@@ -165,3 +165,6 @@ compatibility extension version 1.1.0. This fixes `Invalid URL` for explicit
 JPEG/PNG arguments, stores images before chat token/vector processing, and
 delivers the two latest game-window images to Luna as actual image input.
 See [the installation, root-cause analysis and live verification](holt-screenshot-fix-2026-11-01.md).
+
+The separate recurring Vector Storage console notice is addressed by the
+[retrieval query and embedding-limit repair](holt-retrieval-fix-2026-11-01.md).
