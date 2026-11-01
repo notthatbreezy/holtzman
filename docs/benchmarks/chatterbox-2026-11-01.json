@@ -1,0 +1,755 @@
+{
+  "date": "2026-11-01",
+  "hardware": "Radeon 8060S on ARCHIE",
+  "runs": [
+    {
+      "metadata": {
+        "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+        "torch": "2.9.1+rocm7.2.1",
+        "hip": "7.2.53211-158bd99533",
+        "device": "AMD Radeon(TM) 8060S Graphics",
+        "bf16_supported": true,
+        "model_load_seconds": 7.679,
+        "sample_rate": 24000,
+        "postprocess_speed_factor": 1.0,
+        "note": "Direct engine timings; first run per case excluded from warm comparisons.",
+        "chatterbox": "0.1.1"
+      },
+      "results": [
+        {
+          "precision": "fp32",
+          "voice": "clone",
+          "repeat": 0,
+          "warm": false,
+          "seconds": 21.889,
+          "stages": {
+            "conditioning": 6.1306,
+            "tokens": 5.5757,
+            "speech_token_count": 147,
+            "waveform": 9.827,
+            "watermark": 0.0193
+          },
+          "audio_seconds": 5.84,
+          "realtime_factor": 3.7481,
+          "peak": 1.1492,
+          "audio_file": "fp32-clone-0.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "clone",
+          "repeat": 1,
+          "warm": true,
+          "seconds": 10.1011,
+          "stages": {
+            "tokens": 4.5184,
+            "speech_token_count": 147,
+            "waveform": 5.5454,
+            "watermark": 0.0333
+          },
+          "audio_seconds": 5.84,
+          "realtime_factor": 1.7296,
+          "peak": 1.1492,
+          "audio_file": "fp32-clone-1.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "clone",
+          "repeat": 2,
+          "warm": true,
+          "seconds": 10.2072,
+          "stages": {
+            "tokens": 4.5521,
+            "speech_token_count": 147,
+            "waveform": 5.6175,
+            "watermark": 0.0334
+          },
+          "audio_seconds": 5.84,
+          "realtime_factor": 1.7478,
+          "peak": 1.1492,
+          "audio_file": "fp32-clone-2.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "predefined",
+          "repeat": 0,
+          "warm": false,
+          "seconds": 18.7852,
+          "stages": {
+            "conditioning": 2.872,
+            "tokens": 3.9357,
+            "speech_token_count": 128,
+            "waveform": 11.9601,
+            "watermark": 0.0153
+          },
+          "audio_seconds": 5.08,
+          "realtime_factor": 3.6979,
+          "peak": 1.0414,
+          "audio_file": "fp32-predefined-0.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "predefined",
+          "repeat": 1,
+          "warm": true,
+          "seconds": 8.7,
+          "stages": {
+            "tokens": 4.0039,
+            "speech_token_count": 128,
+            "waveform": 4.6616,
+            "watermark": 0.0307
+          },
+          "audio_seconds": 5.08,
+          "realtime_factor": 1.7126,
+          "peak": 1.0414,
+          "audio_file": "fp32-predefined-1.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "predefined",
+          "repeat": 2,
+          "warm": true,
+          "seconds": 8.7254,
+          "stages": {
+            "tokens": 4.0016,
+            "speech_token_count": 128,
+            "waveform": 4.69,
+            "watermark": 0.03
+          },
+          "audio_seconds": 5.08,
+          "realtime_factor": 1.7176,
+          "peak": 1.0414,
+          "audio_file": "fp32-predefined-2.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "builtin",
+          "repeat": 0,
+          "warm": false,
+          "seconds": 17.243,
+          "stages": {
+            "tokens": 4.2822,
+            "speech_token_count": 137,
+            "waveform": 12.9379,
+            "watermark": 0.0193
+          },
+          "audio_seconds": 5.44,
+          "realtime_factor": 3.1697,
+          "peak": 1.0074,
+          "audio_file": "fp32-builtin-0.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "builtin",
+          "repeat": 1,
+          "warm": true,
+          "seconds": 8.6195,
+          "stages": {
+            "tokens": 4.3125,
+            "speech_token_count": 137,
+            "waveform": 4.2897,
+            "watermark": 0.0145
+          },
+          "audio_seconds": 5.44,
+          "realtime_factor": 1.5845,
+          "peak": 1.0074,
+          "audio_file": "fp32-builtin-1.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "builtin",
+          "repeat": 2,
+          "warm": true,
+          "seconds": 8.6175,
+          "stages": {
+            "tokens": 4.3054,
+            "speech_token_count": 137,
+            "waveform": 4.2861,
+            "watermark": 0.0225
+          },
+          "audio_seconds": 5.44,
+          "realtime_factor": 1.5841,
+          "peak": 1.0074,
+          "audio_file": "fp32-builtin-2.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 0,
+          "warm": false,
+          "seconds": 29.1637,
+          "stages": {
+            "conditioning": 10.3561,
+            "tokens": 3.7829,
+            "speech_token_count": 162,
+            "waveform": 14.9994,
+            "watermark": 0.0214
+          },
+          "audio_seconds": 6.44,
+          "realtime_factor": 4.5285,
+          "peak": 1.1736,
+          "audio_file": "bf16-clone-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 1,
+          "warm": true,
+          "seconds": 6.7743,
+          "stages": {
+            "tokens": 3.7473,
+            "speech_token_count": 162,
+            "waveform": 3.0008,
+            "watermark": 0.0217
+          },
+          "audio_seconds": 6.44,
+          "realtime_factor": 1.0519,
+          "peak": 1.1736,
+          "audio_file": "bf16-clone-1.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 2,
+          "warm": true,
+          "seconds": 6.8971,
+          "stages": {
+            "tokens": 3.7863,
+            "speech_token_count": 162,
+            "waveform": 3.0734,
+            "watermark": 0.0328
+          },
+          "audio_seconds": 6.44,
+          "realtime_factor": 1.071,
+          "peak": 1.1736,
+          "audio_file": "bf16-clone-2.wav"
+        }
+      ],
+      "configuration": "original",
+      "transcripts": [
+        {
+          "file": "fp32-clone-1.wav",
+          "text": " Captain, docking clearance is confirmed.\n Try to arrive with the same number of hull panels we left with.\n"
+        },
+        {
+          "file": "fp32-predefined-1.wav",
+          "text": " Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.\n"
+        },
+        {
+          "file": "fp32-builtin-1.wav",
+          "text": " Captain, docking clearance is confirmed. Try to arrive with the same number of whole panels we left with.\n"
+        },
+        {
+          "file": "bf16-clone-1.wav",
+          "text": " Captain, docking clearance is confirmed.\n Try to arrive with the same number of hull panels we left with.\n"
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+        "model": "turbo",
+        "torch": "2.9.1+rocm7.2.1",
+        "hip": "7.2.53211-158bd99533",
+        "device": "AMD Radeon(TM) 8060S Graphics",
+        "bf16_supported": true,
+        "model_load_seconds": 8.388,
+        "sample_rate": 24000,
+        "postprocess_speed_factor": 1.0,
+        "note": "Direct engine timings; first run per case excluded from warm comparisons.",
+        "chatterbox": "0.1.6"
+      },
+      "results": [
+        {
+          "precision": "fp32",
+          "voice": "clone",
+          "repeat": 0,
+          "warm": false,
+          "seconds": 22.6333,
+          "stages": {
+            "conditioning": 4.7511,
+            "tokens": 11.3796,
+            "speech_token_count": 142,
+            "waveform": 6.1447,
+            "watermark": 0.0283
+          },
+          "audio_seconds": 5.8,
+          "realtime_factor": 3.9023,
+          "peak": 0.4791,
+          "audio_file": "fp32-clone-0.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "clone",
+          "repeat": 1,
+          "warm": true,
+          "seconds": 10.6307,
+          "stages": {
+            "tokens": 9.264,
+            "speech_token_count": 142,
+            "waveform": 1.3451,
+            "watermark": 0.0192
+          },
+          "audio_seconds": 5.8,
+          "realtime_factor": 1.8329,
+          "peak": 0.4791,
+          "audio_file": "fp32-clone-1.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "clone",
+          "repeat": 2,
+          "warm": true,
+          "seconds": 10.6541,
+          "stages": {
+            "tokens": 9.2859,
+            "speech_token_count": 142,
+            "waveform": 1.3474,
+            "watermark": 0.0185
+          },
+          "audio_seconds": 5.8,
+          "realtime_factor": 1.8369,
+          "peak": 0.4791,
+          "audio_file": "fp32-clone-2.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "predefined",
+          "repeat": 0,
+          "warm": false,
+          "seconds": 18.3587,
+          "stages": {
+            "conditioning": 0.3001,
+            "tokens": 8.4603,
+            "speech_token_count": 129,
+            "waveform": 9.5755,
+            "watermark": 0.0208
+          },
+          "audio_seconds": 5.28,
+          "realtime_factor": 3.477,
+          "peak": 0.588,
+          "audio_file": "fp32-predefined-0.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "predefined",
+          "repeat": 1,
+          "warm": true,
+          "seconds": 9.7947,
+          "stages": {
+            "tokens": 8.533,
+            "speech_token_count": 129,
+            "waveform": 1.2408,
+            "watermark": 0.0182
+          },
+          "audio_seconds": 5.28,
+          "realtime_factor": 1.8551,
+          "peak": 0.588,
+          "audio_file": "fp32-predefined-1.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "predefined",
+          "repeat": 2,
+          "warm": true,
+          "seconds": 9.7338,
+          "stages": {
+            "tokens": 8.4918,
+            "speech_token_count": 129,
+            "waveform": 1.2213,
+            "watermark": 0.018
+          },
+          "audio_seconds": 5.28,
+          "realtime_factor": 1.8435,
+          "peak": 0.588,
+          "audio_file": "fp32-predefined-2.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "builtin",
+          "repeat": 0,
+          "warm": false,
+          "seconds": 10.8369,
+          "stages": {
+            "tokens": 9.4659,
+            "speech_token_count": 142,
+            "waveform": 1.3476,
+            "watermark": 0.0211
+          },
+          "audio_seconds": 5.8,
+          "realtime_factor": 1.8684,
+          "peak": 0.4529,
+          "audio_file": "fp32-builtin-0.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "builtin",
+          "repeat": 1,
+          "warm": true,
+          "seconds": 10.7012,
+          "stages": {
+            "tokens": 9.3328,
+            "speech_token_count": 142,
+            "waveform": 1.3474,
+            "watermark": 0.0185
+          },
+          "audio_seconds": 5.8,
+          "realtime_factor": 1.845,
+          "peak": 0.4529,
+          "audio_file": "fp32-builtin-1.wav"
+        },
+        {
+          "precision": "fp32",
+          "voice": "builtin",
+          "repeat": 2,
+          "warm": true,
+          "seconds": 10.7679,
+          "stages": {
+            "tokens": 9.3703,
+            "speech_token_count": 142,
+            "waveform": 1.3755,
+            "watermark": 0.0193
+          },
+          "audio_seconds": 5.8,
+          "realtime_factor": 1.8565,
+          "peak": 0.4529,
+          "audio_file": "fp32-builtin-2.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 0,
+          "warm": false,
+          "seconds": 17.7058,
+          "stages": {
+            "conditioning": 3.5765,
+            "tokens": 2.5827,
+            "speech_token_count": 175,
+            "waveform": 11.5178,
+            "watermark": 0.0245
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 2.4868,
+          "peak": 0.4694,
+          "audio_file": "bf16-clone-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 1,
+          "warm": true,
+          "seconds": 3.4677,
+          "stages": {
+            "tokens": 2.4281,
+            "speech_token_count": 175,
+            "waveform": 1.0135,
+            "watermark": 0.0225
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 0.487,
+          "peak": 0.4694,
+          "audio_file": "bf16-clone-1.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 2,
+          "warm": true,
+          "seconds": 3.3976,
+          "stages": {
+            "tokens": 2.3751,
+            "speech_token_count": 175,
+            "waveform": 0.9974,
+            "watermark": 0.0217
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 0.4772,
+          "peak": 0.4694,
+          "audio_file": "bf16-clone-2.wav"
+        }
+      ],
+      "configuration": "turbo-default",
+      "transcripts": [
+        {
+          "file": "fp32-clone-1.wav",
+          "text": " Captain, docking clearance is confirmed.\n Try to arrive at the same number of whole panels we left with.\n"
+        },
+        {
+          "file": "bf16-clone-1.wav",
+          "text": " Captain, docking clearance is confirmed.\n Try to arrive with the same number of hull panels we left with.\n"
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+        "model": "turbo",
+        "torch": "2.9.1+rocm7.2.1",
+        "hip": "7.2.53211-158bd99533",
+        "device": "AMD Radeon(TM) 8060S Graphics",
+        "bf16_supported": true,
+        "model_load_seconds": 8.068,
+        "sample_rate": 24000,
+        "postprocess_speed_factor": 1.0,
+        "miopen_find_mode": "FAST",
+        "cudnn_benchmark": false,
+        "note": "Direct engine timings; first run per case excluded from warm comparisons.",
+        "chatterbox": "0.1.6"
+      },
+      "results": [
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 0,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": false,
+          "seconds": 10.9076,
+          "stages": {
+            "conditioning": 4.2048,
+            "tokens": 4.016,
+            "speech_token_count": 175,
+            "waveform": 2.2776,
+            "watermark": 0.0261
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 1.532,
+          "peak": 0.4702,
+          "audio_file": "bf16-clone-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 1,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": true,
+          "seconds": 2.9354,
+          "stages": {
+            "tokens": 2.5201,
+            "speech_token_count": 175,
+            "waveform": 0.3905,
+            "watermark": 0.0211
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 0.4123,
+          "peak": 0.4702,
+          "audio_file": "bf16-clone-1.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-0",
+          "repeat": 0,
+          "text": "Systems online, Captain. Ready when you are.",
+          "warm": false,
+          "seconds": 1.5004,
+          "stages": {
+            "tokens": 1.0542,
+            "speech_token_count": 73,
+            "waveform": 0.4314,
+            "watermark": 0.0114
+          },
+          "audio_seconds": 3.04,
+          "realtime_factor": 0.4936,
+          "peak": 0.4225,
+          "audio_file": "bf16-clone-varied-0-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-1",
+          "repeat": 0,
+          "text": "Your fuel is at sixty percent. We have enough for the next jump.",
+          "warm": false,
+          "seconds": 1.7155,
+          "stages": {
+            "tokens": 1.2577,
+            "speech_token_count": 88,
+            "waveform": 0.4421,
+            "watermark": 0.0126
+          },
+          "audio_seconds": 3.64,
+          "realtime_factor": 0.4713,
+          "peak": 0.5635,
+          "audio_file": "bf16-clone-varied-1-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-2",
+          "repeat": 0,
+          "text": "Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.",
+          "warm": false,
+          "seconds": 2.2418,
+          "stages": {
+            "tokens": 1.7373,
+            "speech_token_count": 121,
+            "waveform": 0.4841,
+            "watermark": 0.0172
+          },
+          "audio_seconds": 4.96,
+          "realtime_factor": 0.452,
+          "peak": 0.3946,
+          "audio_file": "bf16-clone-varied-2-0.wav"
+        }
+      ],
+      "configuration": "turbo-fast",
+      "transcripts": [
+        {
+          "file": "bf16-clone-1.wav",
+          "text": " Captain, docking clearance is confirmed.\n Try to arrive with the same number of hull panels we left with.\n"
+        },
+        {
+          "file": "bf16-clone-varied-0-0.wav",
+          "text": " Systems online, Captain. Ready when you are.\n"
+        },
+        {
+          "file": "bf16-clone-varied-1-0.wav",
+          "text": " Your fuel is at 60%.\n We have enough for the next jump.\n"
+        },
+        {
+          "file": "bf16-clone-varied-2-0.wav",
+          "text": " \"Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.\"\n"
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+        "model": "turbo",
+        "torch": "2.9.1+rocm7.2.1",
+        "hip": "7.2.53211-158bd99533",
+        "device": "AMD Radeon(TM) 8060S Graphics",
+        "bf16_supported": true,
+        "model_load_seconds": 7.928,
+        "sample_rate": 24000,
+        "postprocess_speed_factor": 1.0,
+        "miopen_find_mode": "default",
+        "cudnn_benchmark": false,
+        "note": "Direct engine timings; first run per case excluded from warm comparisons.",
+        "chatterbox": "0.1.6"
+      },
+      "results": [
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 0,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": false,
+          "seconds": 15.1955,
+          "stages": {
+            "conditioning": 4.9925,
+            "tokens": 3.7525,
+            "speech_token_count": 175,
+            "waveform": 6.1231,
+            "watermark": 0.0273
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 2.1342,
+          "peak": 0.4694,
+          "audio_file": "bf16-clone-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone",
+          "repeat": 1,
+          "text": "Captain, docking clearance is confirmed. Try to arrive with the same number of hull panels we left with.",
+          "warm": true,
+          "seconds": 3.4908,
+          "stages": {
+            "tokens": 2.4545,
+            "speech_token_count": 175,
+            "waveform": 1.0111,
+            "watermark": 0.0215
+          },
+          "audio_seconds": 7.12,
+          "realtime_factor": 0.4903,
+          "peak": 0.4694,
+          "audio_file": "bf16-clone-1.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-0",
+          "repeat": 0,
+          "text": "Systems online, Captain. Ready when you are.",
+          "warm": false,
+          "seconds": 7.0399,
+          "stages": {
+            "tokens": 1.0408,
+            "speech_token_count": 73,
+            "waveform": 5.9832,
+            "watermark": 0.0127
+          },
+          "audio_seconds": 3.04,
+          "realtime_factor": 2.3158,
+          "peak": 0.4172,
+          "audio_file": "bf16-clone-varied-0-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-1",
+          "repeat": 0,
+          "text": "Your fuel is at sixty percent. We have enough for the next jump.",
+          "warm": false,
+          "seconds": 8.0603,
+          "stages": {
+            "tokens": 1.2497,
+            "speech_token_count": 88,
+            "waveform": 6.793,
+            "watermark": 0.0144
+          },
+          "audio_seconds": 3.64,
+          "realtime_factor": 2.2144,
+          "peak": 0.5729,
+          "audio_file": "bf16-clone-varied-1-0.wav"
+        },
+        {
+          "precision": "bf16",
+          "voice": "clone-varied-2",
+          "repeat": 0,
+          "text": "Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.",
+          "warm": false,
+          "seconds": 10.2383,
+          "stages": {
+            "tokens": 1.7074,
+            "speech_token_count": 121,
+            "waveform": 8.5099,
+            "watermark": 0.0174
+          },
+          "audio_seconds": 4.96,
+          "realtime_factor": 2.0642,
+          "peak": 0.4094,
+          "audio_file": "bf16-clone-varied-2-0.wav"
+        }
+      ],
+      "configuration": "turbo-default-varied"
+    }
+  ],
+  "http_service_checks": [
+    {
+      "voice": "HOLT-K2SO.wav",
+      "voice_mode": "clone",
+      "text": "Systems online, Captain. Ready when you are.",
+      "elapsed_seconds": 8.625,
+      "audio_seconds": 2.764,
+      "sample_rate": 24000,
+      "realtime_factor": 3.121,
+      "output": "chatterbox-turbo-api-startup.wav"
+    },
+    {
+      "voice": "HOLT-K2SO.wav",
+      "voice_mode": "clone",
+      "text": "Your fuel is at sixty percent. We have enough for the next jump.",
+      "elapsed_seconds": 1.875,
+      "audio_seconds": 3.309,
+      "sample_rate": 24000,
+      "realtime_factor": 0.567,
+      "output": "chatterbox-turbo-api-fuel.wav"
+    },
+    {
+      "voice": "HOLT-K2SO.wav",
+      "voice_mode": "clone",
+      "text": "Hull integrity is falling, Captain. Stop demonstrating the docking clamps with the rest of the ship.",
+      "elapsed_seconds": 2.39,
+      "audio_seconds": 4.509,
+      "sample_rate": 24000,
+      "realtime_factor": 0.53,
+      "output": "chatterbox-turbo-api-hull.wav"
+    }
+  ]
+}

@@ -1,9 +1,14 @@
-param([ValidateSet('start', 'stop', 'status')][string]$Action = 'start')
+param(
+    [ValidateSet('start', 'stop', 'status')][string]$Action = 'start',
+    [ValidateSet('auto', 'on', 'off')][string]$Precision = 'auto',
+    [ValidateSet('FAST', 'DEFAULT')][string]$KernelMode = 'FAST'
+)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 $serverDir = Join-Path $repo '.local/holt/chatterbox-server'
 $python = Join-Path $serverDir 'venv/Scripts/python.exe'
 $serverScript = Join-Path $serverDir 'server.py'
+$runtimeScript = Join-Path $PSScriptRoot 'run-chatterbox.py'
 $recordPath = Join-Path $repo '.local/holt/run/chatterbox.json'
 $record = if (Test-Path -LiteralPath $recordPath) { Get-Content -LiteralPath $recordPath -Raw | ConvertFrom-Json }
 $running = $null
@@ -20,10 +25,12 @@ if ($Action -eq 'stop') {
     if ($running) {
         # Windows venv Python may launch a second Python process. Stop only its
         # direct Python child with this exact server script, then the launcher.
-        Get-CimInstance Win32_Process -Filter "ParentProcessId=$($running.Id)" |
-            Where-Object { $_.Name -eq 'python.exe' -and $_.CommandLine.Contains($serverScript) } |
-            ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
+        $managedChildren = @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($running.Id)" |
+            Where-Object { $_.Name -eq 'python.exe' -and $_.CommandLine.Contains($serverScript) })
+        $stoppingIds = @($running.Id) + @($managedChildren | ForEach-Object { [int]$_.ProcessId })
+        $managedChildren | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
         Stop-Process -Id $running.Id -ErrorAction SilentlyContinue
+        Wait-Process -Id $stoppingIds -Timeout 10 -ErrorAction SilentlyContinue
         Write-Output 'Chatterbox stopped.'
     } else { Write-Output 'No managed Chatterbox process is running.' }
     exit 0
@@ -36,10 +43,13 @@ if ($Action -eq 'start' -and -not $running) {
     $env:HF_HOME = Join-Path $serverDir 'hf-cache'
     $env:OMP_NUM_THREADS = '8'
     $env:MKL_NUM_THREADS = '8'
+    $env:TTS_BF16 = $Precision
+    if ($KernelMode -eq 'FAST') { $env:MIOPEN_FIND_MODE = 'FAST' }
+    else { Remove-Item Env:\MIOPEN_FIND_MODE -ErrorAction SilentlyContinue }
     New-Item -ItemType Directory -Force (Split-Path $recordPath -Parent) | Out-Null
     $resultsDir = Join-Path $repo '.local/holt/results'
     New-Item -ItemType Directory -Force $resultsDir | Out-Null
-    $running = Start-Process -FilePath $python -ArgumentList ('"' + $serverScript + '"') -WorkingDirectory $serverDir -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $resultsDir 'chatterbox-stdout.log') -RedirectStandardError (Join-Path $resultsDir 'chatterbox-stderr.log')
+    $running = Start-Process -FilePath $python -ArgumentList ('"' + $runtimeScript + '" --server-script "' + $serverScript + '"') -WorkingDirectory $serverDir -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $resultsDir 'chatterbox-stdout.log') -RedirectStandardError (Join-Path $resultsDir 'chatterbox-stderr.log')
     @{processId=$running.Id; startTicks=$running.StartTime.ToUniversalTime().Ticks.ToString()} | ConvertTo-Json | Set-Content -LiteralPath $recordPath
     Write-Output 'Chatterbox starting. Initial model loading can take a little time.'
 }

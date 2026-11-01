@@ -4,6 +4,13 @@ Setup on Archie, 2026-10-31. This serves speech locally at
 `http://127.0.0.1:8004`; SillyTavern remains at `http://127.0.0.1:8000`.
 It is independent of the old HOLT desktop/gateway speech service.
 
+Updated 2026-11-01: the active engine is **Turbo + BF16 + MIOpen FAST**, keeping
+the K-2SO reference. Warm short replies measured **1.88–2.39 seconds**; the first
+request after startup took **8.63 seconds**. See the
+[performance investigation](chatterbox-performance-2026-11-01.md) for comparisons
+and raw measurements. The installation instructions below describe this setup;
+the testing record retains the earlier original-model results for history.
+
 ## Everyday start and stop
 
 From the repository folder in PowerShell:
@@ -38,18 +45,19 @@ keep them private. Launcher output logs are replaced on each start.
 | Component | Location / version |
 | --- | --- |
 | Server | `.local/holt/chatterbox-server`, devnen/Chatterbox-TTS-Server commit `915ae289340e10c6047f27f47e22eae9bf350c32` |
-| Engine source | `.local/holt/chatterbox-engine`, devnen/chatterbox-v2 commit `df73ac81662c9354e0d408832a876ddd72a42480` |
+| Engine | Published `chatterbox-tts==0.1.6`; original devnen source retained under `.local/holt/chatterbox-engine` for rollback |
 | Python | Private Python 3.12.15; server's single `venv` |
-| Model | Original English Chatterbox, `ResembleAI/chatterbox` |
-| Weight revision downloaded | `5bb1f6ee58e50c3b8d408bc82a6d3740c2db6e18` |
+| Model | English Chatterbox Turbo, `ResembleAI/chatterbox-turbo` |
+| Weight revision | `749d1c1a46eb10492095d68fbcf55691ccf137cd` (original weights retained in cache) |
 | Execution | Radeon 8060S via native Windows ROCm 7.2.1 / PyTorch 2.9.1; 8 OpenMP/MKL threads for CPU work |
 | Model cache | `.local/holt/chatterbox-server/hf-cache` |
 | Voice references | `.local/holt/chatterbox-server/reference_audio` |
 
-This uses the original English model because the server's recommended engine fork
-at the pinned commit supplies that model. The server UI also advertises Turbo and
-Multilingual, but those classes are absent from this engine build. Do not select
-them and assume they were installed. The server's own Strix Halo instructions
+The original engine fork was replaced in the same environment with the published
+0.1.6 package to supply Turbo. `scripts/run-chatterbox.py` loads the pinned public
+checkpoint and avoids that release's unnecessary HF token requirement and unused
+decoder download. The launcher uses automatic BF16 precision and MIOpen FAST;
+these process settings apply only to Chatterbox. The server's own Strix Halo instructions
 describe Linux/Docker ROCm. This installation instead uses AMD's documented native
 Windows PyTorch packages, which list the Ryzen AI Max+ 395 as supported. The
 installed Radeon driver was `32.0.32015.7029`; no driver change was required for
@@ -86,9 +94,8 @@ git -C .local/holt/chatterbox-engine checkout df73ac81662c9354e0d408832a876ddd72
 
 & $uv venv --python 3.12.15 .local/holt/chatterbox-server/venv
 $python = '.local/holt/chatterbox-server/venv/Scripts/python.exe'
-& $uv pip install --python $python --no-deps -r integrations/sillytavern/chatterbox-windows-rocm.lock.txt
-& $uv pip install --python $python --no-deps .local/holt/chatterbox-engine
-& $python -c 'import chatterbox.tts, torch, perth; assert callable(perth.PerthImplicitWatermarker); print(torch.__version__); assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0)); x=torch.randn(256,256,device="cuda"); print(float((x@x.T).mean()))'
+& $uv pip install --python $python --no-deps -r integrations/sillytavern/chatterbox-turbo-windows-rocm.lock.txt
+& $python -c 'import chatterbox.tts_turbo, torch, perth; assert callable(perth.PerthImplicitWatermarker); print(torch.__version__); assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0)); x=torch.randn(256,256,device="cuda"); print(float((x@x.T).mean()))'
 ```
 
 The lock records the installed dependency versions. `--no-deps` is deliberate:
@@ -108,7 +115,7 @@ server:
   host: 127.0.0.1
   port: 8004
 model:
-  repo_id: chatterbox
+  repo_id: chatterbox-turbo
 tts_engine:
   device: cuda
   default_voice_id: Thomas.wav
@@ -123,10 +130,10 @@ generation_defaults:
 Merge those values into the existing sections; retain the other upstream paths
 and audio settings. Then run `HOLT-Chatterbox.cmd start`. First startup downloads
 the model weights from Hugging Face. Later starts reuse the cache. The download
-needs no API key. If startup waits on model downloads, inspect the logs and cache;
-do not start multiple servers against the same cache. `hf-xet` is included in the
-lock because the initial plain HTTP weight download stalled during setup and the
-accelerated retry completed.
+needs no API key. Turbo's required files total about 3 GB. If startup waits on
+downloads, inspect the logs and cache; do not start multiple servers against the
+same cache. The wrapper defaults to plain HTTP downloads rather than Xet, which
+failed during the Turbo download on this network.
 
 ### CPU reinstall fallback
 
@@ -148,9 +155,11 @@ $python = '.local/holt/chatterbox-server/venv/Scripts/python.exe'
 & $uv pip install --python $python --no-deps .local/holt/chatterbox-engine
 ```
 
-Then change `tts_engine.device` to `cpu` in `config.yaml` and start the service.
+Then change `tts_engine.device` to `cpu` and `model.repo_id` to `chatterbox` in
+`config.yaml`, and start with `-Precision off -KernelMode DEFAULT`.
 To return to GPU later, repeat the venv rebuild with Python 3.12.15 and the ROCm
-lock instead, and set the device to `cuda`. No model re-download is needed while
+Turbo lock instead, omit the old engine-source install, and set the device to
+`cuda` and model to `chatterbox-turbo`. No model re-download is needed while
 the `hf-cache` folder is retained. Do not run the venv-replacement commands against
 the older HOLT `voice-env`, which is a different service's environment.
 
@@ -172,7 +181,8 @@ they are not committed to the repository. No external voice-cloning service is
 used. Background effects in a reference may carry into the generated voice.
 
 For a different reference, use clear speech, little background music/effects and
-one speaker. The original model uses the beginning of the clip for conditioning
+one speaker. Turbo requires more than five seconds of reference speech: use the
+10.91-second composite, not the 4.14-second single clip. The original model used the beginning of the clip for conditioning
 (first 6 seconds for encoder tokens and up to 10 seconds for decoder conditioning
 in the pinned engine). A long compilation is not automatically better.
 
@@ -201,7 +211,12 @@ In **Extensions → TTS**:
    and user-message narration off if only HOLT should speak.
 4. Enable TTS and Auto Generation for automatic playback of future replies.
 5. Start with temperature 0.7, exaggeration 0.4, CFG 0.5, speed 1.1 and WAV output.
-   These are ST provider settings and override server defaults when sent.
+   Turbo ignores exaggeration and CFG. These controls remain useful for the
+   original model. Enable both **Narrate by paragraphs** options to start playing
+   portions of longer replies sooner.
+
+The current setup maps both HOLT and the generic Assistant speaker to the K-2SO
+reference; a speaker inheriting a disabled default voice will remain silent.
 
 The reference voice's internal ID is `ref_HOLT-K2SO.wav`; the `ref_` prefix tells
 ST's provider to send clone mode and the reference filename to `/tts`. A successful
