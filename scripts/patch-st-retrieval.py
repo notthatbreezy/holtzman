@@ -18,6 +18,13 @@ EMBED_AFTER = """    const pipe = await getPipeline(TASK);
     const result = await pipe(text, { pooling: 'mean', normalize: true });"""
 PATCHES = {"public/scripts/extensions/vectors/index.js": (QUERY_BEFORE, QUERY_AFTER),
            "src/vectors/embedding.js": (EMBED_BEFORE, EMBED_AFTER)}
+INDEX_BEFORE = "context.chat.filter(x => settings.keep_hidden || !x.is_system).map(x =>"
+INDEX_AFTER = "context.chat.filter(x => !x.extra?.tool_invocations?.length && (settings.keep_hidden || !x.is_system)).map(x =>"
+RETRIEVE_BEFORE = "            if (retainMessages.includes(message) || !message.mes) {"
+RETRIEVE_AFTER = "            if (retainMessages.includes(message) || !message.mes || message.extra?.tool_invocations?.length) {"
+PATCH_GROUPS = {relative: [pair] for relative, pair in PATCHES.items()}
+PATCH_GROUPS["public/scripts/extensions/vectors/index.js"].extend([
+    (INDEX_BEFORE, INDEX_AFTER), (RETRIEVE_BEFORE, RETRIEVE_AFTER)])
 
 
 def prepare(st_dir):
@@ -25,17 +32,21 @@ def prepare(st_dir):
     if package.get("version") != "1.19.0":
         raise ValueError("Unsupported ST version; inspect before patching")
     changes = []
-    for relative, (before, after) in PATCHES.items():
+    for relative, pairs in PATCH_GROUPS.items():
         path = st_dir / relative
         original = path.read_bytes()
         newline = "\r\n" if b"\r\n" in original else "\n"
-        before = before.replace("\n", newline).encode()
-        after = after.replace("\n", newline).encode()
-        if original.count(after) == 1 and before not in original:
-            continue
-        if original.count(before) != 1 or after in original:
-            raise ValueError(f"Unrecognized retrieval code in {relative}; no changes made")
-        changes.append((relative, path, original, original.replace(before, after)))
+        updated = original
+        for before, after in pairs:
+            before = before.replace("\n", newline).encode()
+            after = after.replace("\n", newline).encode()
+            if updated.count(after) == 1 and before not in updated:
+                continue
+            if updated.count(before) != 1 or after in updated:
+                raise ValueError(f"Unrecognized retrieval code in {relative}; no changes made")
+            updated = updated.replace(before, after)
+        if updated != original:
+            changes.append((relative, path, original, updated))
     return changes
 
 

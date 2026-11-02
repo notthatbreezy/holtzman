@@ -12,6 +12,11 @@ For **standalone ST using its MCP extension directly**, use the
 on Ollama and requires ST function calling **on**. The gateway instructions below
 describe a different tool loop and keep ST function calling off.
 
+For the optional **HOLT context control** extension, installation, rollback and
+warm-model measurements, see [old-result compaction and the Nemotron trial](../../docs/holt-context-compaction-2026-11-02.md).
+It reduces historical tool payloads in outgoing prompts while preserving full
+saved receipts and all available tools.
+
 For standalone ST speech, see [Chatterbox installation, start/stop and reference
 voices](../../docs/chatterbox-sillytavern.md). Its separate speech service is
 controlled by `HOLT-Chatterbox.cmd` and uses ST's built-in Chatterbox provider.

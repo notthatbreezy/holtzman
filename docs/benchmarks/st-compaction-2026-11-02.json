@@ -1,0 +1,221 @@
+{
+  "date": "2026-11-02",
+  "model": "nemotron-3.5-lightning:30b",
+  "method": "History-only replay; warm weights, fresh prefix, same final synthetic status, no tools/executor. Not full ST latency.",
+  "options": {
+    "keep_alive": "4h",
+    "seed": 42,
+    "num_ctx": 131072,
+    "think": false,
+    "temperature": 0
+  },
+  "tool_result_chars": {
+    "after": 80013,
+    "before": 277279,
+    "compacted": 4
+  },
+  "first_pair": {
+    "raw": {
+      "answer": "We are docked at Galileo in the Sol system with 37.5 tonnes of fuel aboard.",
+      "first_token_seconds": 142.416,
+      "wall_seconds": 142.775,
+      "prompt_tokens": 101126,
+      "prompt_seconds": 141.834,
+      "output_tokens": 22,
+      "output_seconds": 0.352,
+      "load_seconds": 0.01,
+      "current_fact_check": true
+    },
+    "compact": {
+      "answer": "We are docked at Galileo in the Sol system with 37.5 tonnes of fuel aboard.",
+      "first_token_seconds": 41.556,
+      "wall_seconds": 41.874,
+      "prompt_tokens": 35208,
+      "prompt_seconds": 41.212,
+      "output_tokens": 22,
+      "output_seconds": 0.313,
+      "load_seconds": 0.005,
+      "current_fact_check": true
+    }
+  },
+  "reverse_pair": {
+    "compact": {
+      "answer": "We are docked at Galileo in the Sol system with 37.5 tonnes of fuel aboard.",
+      "first_token_seconds": 40.704,
+      "wall_seconds": 41.015,
+      "prompt_tokens": 35209,
+      "prompt_seconds": 40.529,
+      "output_tokens": 22,
+      "output_seconds": 0.307,
+      "load_seconds": 0.005,
+      "current_fact_check": true
+    },
+    "raw": {
+      "answer": "We are docked at Galileo in the Sol system with 37.5 tonnes of fuel aboard.",
+      "first_token_seconds": 142.644,
+      "wall_seconds": 142.999,
+      "prompt_tokens": 101123,
+      "prompt_seconds": 142.053,
+      "output_tokens": 22,
+      "output_seconds": 0.345,
+      "load_seconds": 0.008,
+      "current_fact_check": true
+    }
+  },
+  "residency_run": {
+    "model": "nemotron-3.5-lightning:30b",
+    "method": "History-only replay; warm weights, fresh prefix, same final synthetic status, no tools/executor. Not full ST latency.",
+    "warmup": {
+      "answer": "Ready.",
+      "started_at_utc": "2026-11-02T12:30:04.985599-05:00",
+      "completed_at_utc": "2026-11-02T12:30:05.397345-05:00",
+      "resident_models_before": [
+        {
+          "name": "nemotron-3.5-lightning:30b",
+          "digest": "e6905fffe2e2d9bbe325a9a2d2e074e3bd32683721bc6dfba409dede2f17f4dc",
+          "size": 25715298794,
+          "size_vram": 25715298794,
+          "context_length": 131072,
+          "expires_at": "2026-11-02T16:29:20.0572981-05:00"
+        }
+      ],
+      "resident_models_after": [
+        {
+          "name": "nemotron-3.5-lightning:30b",
+          "digest": "e6905fffe2e2d9bbe325a9a2d2e074e3bd32683721bc6dfba409dede2f17f4dc",
+          "size": 25715298794,
+          "size_vram": 25715298794,
+          "context_length": 131072,
+          "expires_at": "2026-11-02T16:30:05.396541-05:00"
+        }
+      ],
+      "first_token_seconds": 0.381,
+      "wall_seconds": 0.43,
+      "prompt_tokens": 87,
+      "prompt_seconds": 0.201,
+      "output_tokens": 3,
+      "output_seconds": 0.031,
+      "load_seconds": 0.003
+    },
+    "cases": {
+      "compact": {
+        "answer": "We are docked at Galileo in the Sol system with 37.5 tonnes of fuel aboard.",
+        "started_at_utc": "2026-11-02T12:30:05.418787-05:00",
+        "completed_at_utc": "2026-11-02T12:30:46.401922-05:00",
+        "resident_models_before": [
+          {
+            "name": "nemotron-3.5-lightning:30b",
+            "digest": "e6905fffe2e2d9bbe325a9a2d2e074e3bd32683721bc6dfba409dede2f17f4dc",
+            "size": 25715298794,
+            "size_vram": 25715298794,
+            "context_length": 131072,
+            "expires_at": "2026-11-02T16:30:05.396541-05:00"
+          }
+        ],
+        "resident_models_after": [
+          {
+            "name": "nemotron-3.5-lightning:30b",
+            "digest": "e6905fffe2e2d9bbe325a9a2d2e074e3bd32683721bc6dfba409dede2f17f4dc",
+            "size": 25715298794,
+            "size_vram": 25715298794,
+            "context_length": 131072,
+            "expires_at": "2026-11-02T16:30:46.4013791-05:00"
+          }
+        ],
+        "first_token_seconds": 40.671,
+        "wall_seconds": 41.002,
+        "prompt_tokens": 35208,
+        "prompt_seconds": 40.499,
+        "output_tokens": 22,
+        "output_seconds": 0.308,
+        "load_seconds": 0.004,
+        "current_fact_check": true,
+        "cached_followup": {
+          "answer": "37.5",
+          "started_at_utc": "2026-11-02T12:30:46.422799-05:00",
+          "completed_at_utc": "2026-11-02T12:30:46.779062-05:00",
+          "resident_models_before": [
+            {
+              "name": "nemotron-3.5-lightning:30b",
+              "digest": "e6905fffe2e2d9bbe325a9a2d2e074e3bd32683721bc6dfba409dede2f17f4dc",
+              "size": 25715298794,
+              "size_vram": 25715298794,
+              "context_length": 131072,
+              "expires_at": "2026-11-02T16:30:46.4013791-05:00"
+            }
+          ],
+          "resident_models_after": [
+            {
+              "name": "nemotron-3.5-lightning:30b",
+              "digest": "e6905fffe2e2d9bbe325a9a2d2e074e3bd32683721bc6dfba409dede2f17f4dc",
+              "size": 25715298794,
+              "size_vram": 25715298794,
+              "context_length": 131072,
+              "expires_at": "2026-11-02T16:30:46.7790627-05:00"
+            }
+          ],
+          "first_token_seconds": 0.279,
+          "wall_seconds": 0.373,
+          "prompt_tokens": 35255,
+          "prompt_seconds": 0.142,
+          "output_tokens": 5,
+          "output_seconds": 0.076,
+          "load_seconds": 0.004,
+          "current_fact_check": true
+        }
+      },
+      "raw": {
+        "answer": "We are docked at Galileo in the Sol system with 37.5 tonnes of fuel aboard.",
+        "started_at_utc": "2026-11-02T12:30:46.801896-05:00",
+        "completed_at_utc": "2026-11-02T12:33:09.930998-05:00",
+        "resident_models_before": [
+          {
+            "name": "nemotron-3.5-lightning:30b",
+            "digest": "e6905fffe2e2d9bbe325a9a2d2e074e3bd32683721bc6dfba409dede2f17f4dc",
+            "size": 25715298794,
+            "size_vram": 25715298794,
+            "context_length": 131072,
+            "expires_at": "2026-11-02T16:30:46.7790627-05:00"
+          }
+        ],
+        "resident_models_after": [],
+        "first_token_seconds": 142.77,
+        "wall_seconds": 143.672,
+        "prompt_tokens": 101125,
+        "prompt_seconds": 142.154,
+        "output_tokens": 22,
+        "output_seconds": 0.349,
+        "load_seconds": 0.009,
+        "current_fact_check": true,
+        "cached_followup": {
+          "answer": "37.5",
+          "started_at_utc": "2026-11-02T12:33:10.494667-05:00",
+          "completed_at_utc": "2026-11-02T12:36:18.696981-05:00",
+          "resident_models_before": [],
+          "resident_models_after": [
+            {
+              "name": "nemotron-3.5-lightning:30b",
+              "digest": "e6905fffe2e2d9bbe325a9a2d2e074e3bd32683721bc6dfba409dede2f17f4dc",
+              "size": 25715298794,
+              "size_vram": 25715298794,
+              "context_length": 131072,
+              "expires_at": "2026-11-02T16:36:18.6964541-05:00"
+            }
+          ],
+          "first_token_seconds": 188.07,
+          "wall_seconds": 188.215,
+          "prompt_tokens": 101172,
+          "prompt_seconds": 142.218,
+          "output_tokens": 5,
+          "output_seconds": 0.113,
+          "load_seconds": 45.321,
+          "current_fact_check": true
+        }
+      }
+    }
+  },
+  "exclusions": [
+    "residency_run.cases.raw.cached_followup is invalid as a warm-cache comparison: empty residency before it and 45.321 seconds model load. Unload cause unknown."
+  ],
+  "quality_scope": "Manually verified synthetic Galileo/Sol/37.5 status answers only; not a general model or full ST benchmark."
+}

@@ -1,0 +1,9 @@
+{
+  "display_name": "HOLT context control",
+  "author": "Holtzman",
+  "version": "1.0.0",
+  "loading_order": 90,
+  "generate_interceptor": "holtCompactContext",
+  "js": "index.js",
+  "homePage": "https://github.com/notthatbreezy/holtzman"
+}
