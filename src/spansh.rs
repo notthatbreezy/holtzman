@@ -14,6 +14,9 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
 use tokio::sync::{Mutex, Semaphore};
 
+mod stations;
+pub use stations::{StationOptions, StationSearch};
+
 const ORIGIN: &str = "https://spansh.co.uk";
 const MAX_BODY: usize = 8 * 1024 * 1024;
 const WARNING: &str = "Community market reports can be stale or depleted. Verify price, stock, access and legality in-game. Trade-leg distance is not a hyperspace jump count. Planning never sends game input.";
@@ -129,6 +132,12 @@ fn name<'a>(value: &'a str, label: &str) -> Result<&'a str> {
 }
 
 fn constraints(distance: f64, arrival: u32, age: u32) -> Result<()> {
+    distance_constraints(distance, arrival)?;
+    ensure!((1..=720).contains(&age), "max_age_hours must be 1..720");
+    Ok(())
+}
+
+fn distance_constraints(distance: f64, arrival: u32) -> Result<()> {
     ensure!(
         distance.is_finite() && distance > 0.0 && distance <= 500.0,
         "distance must be greater than 0 and at most 500 ly"
@@ -137,7 +146,6 @@ fn constraints(distance: f64, arrival: u32, age: u32) -> Result<()> {
         (1..=1_000_000).contains(&arrival),
         "max_arrival_ls must be 1..1000000"
     );
-    ensure!((1..=720).contains(&age), "max_age_hours must be 1..720");
     Ok(())
 }
 
@@ -218,6 +226,7 @@ pub struct Spansh {
     client: Client,
     origin: String,
     references: Arc<Mutex<Option<References>>>,
+    station_references: Arc<Mutex<Option<stations::ReferenceCache>>>,
     requests: Arc<Semaphore>,
     deadline: Duration,
     poll: Duration,
@@ -244,6 +253,7 @@ impl Spansh {
                 .build()?,
             origin: origin.into(),
             references: Arc::new(Mutex::new(None)),
+            station_references: Arc::new(Mutex::new(None)),
             requests: Arc::new(Semaphore::new(2)),
             deadline: Duration::from_secs(45),
             poll: Duration::from_secs(1),

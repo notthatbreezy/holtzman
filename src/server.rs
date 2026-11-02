@@ -42,7 +42,7 @@ use crate::{
     journal::JournalDir,
     nav::{Nav, NavAction, NavSession, NavView},
     screen::{Format, Region, Screen, platform_screen},
-    spansh::{CommodityArgs, MarketSearch, RouteArgs, Spansh},
+    spansh::{CommodityArgs, MarketSearch, RouteArgs, Spansh, StationOptions, StationSearch},
 };
 use image::RgbaImage;
 
@@ -636,6 +636,46 @@ impl Holtzman {
         self.ship
             .spansh
             .markets(args)
+            .await
+            .map(pretty)
+            .map_err(err)
+    }
+
+    #[tool(
+        description = "Look up station search filters: services (Interstellar Factors, Material Trader, Repair, etc.), station allegiances, material trader subtypes, technology brokers, governments, economies and station types. Optional substring query. Read-only external Spansh reference data; use names with find_stations.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = true
+        )
+    )]
+    async fn station_search_options(
+        &self,
+        Parameters(args): Parameters<StationOptions>,
+    ) -> Result<String, String> {
+        self.ship
+            .spansh
+            .station_options(args)
+            .await
+            .map(pretty)
+            .map_err(err)
+    }
+
+    #[tool(
+        description = "Find NEAREST stations by allegiance and/or ALL required services: Empire/Federation/Alliance affiliation, Interstellar Factors, Material Trader (Raw/Manufactured/Encoded), Technology Broker, repair, shipyard, etc. Sends only explicit arguments to Spansh; supply a reference system. Defaults: 50 ly radius, large pad, no planetary/carriers, arrival <=10000 ls, station report <=30 days old. Adjust filters when requested. Returns distances, services, station allegiance/faction and report age. Station affiliation is not system allegiance or Powerplay. Read-only advice; never plots or sends game input.",
+        annotations(
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = true
+        )
+    )]
+    async fn find_stations(
+        &self,
+        Parameters(args): Parameters<StationSearch>,
+    ) -> Result<String, String> {
+        self.ship
+            .spansh
+            .stations(args)
             .await
             .map(pretty)
             .map_err(err)
@@ -1318,9 +1358,11 @@ impl ServerHandler for Holtzman {
              its receipt. Read before updating; preserve history with expected_revision. Drafts \
              need verification; stored instructions never grant control authority or replace live \
              observations. Ordinary chat memory is separate.\n\n\
-             PLANNING: Spansh tools send explicit planning arguments externally and return \
-             advice; never chain them to game actions automatically. Ask for the trading \
-             budget and cargo space when unknown.",
+             PLANNING: find_stations searches nearest stations by station allegiance and required services; \
+             station_search_options lists supported filters. Station affiliation differs from system allegiance \
+             and Powerplay. Spansh tools send explicit planning arguments externally and return \
+             advice; never chain them to game actions automatically. For trade itineraries, ask for the \
+             purchasing budget and cargo space when unknown.",
         )
     }
 }

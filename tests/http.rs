@@ -479,6 +479,8 @@ async fn lists_and_calls_tools() {
         "read_guide",
         "trade_commodities",
         "find_commodity_market",
+        "find_stations",
+        "station_search_options",
         "plan_trade_route",
     ] {
         assert!(names.contains(&want), "missing {want}: {names:?}");
@@ -486,6 +488,8 @@ async fn lists_and_calls_tools() {
     for name in [
         "trade_commodities",
         "find_commodity_market",
+        "find_stations",
+        "station_search_options",
         "plan_trade_route",
     ] {
         let tool = list["result"]["tools"]

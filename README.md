@@ -38,6 +38,8 @@ plotting a route, by pressing your own key bindings.
 | `record_click_target` | Save the hovered position as a named click target in `holtzman.toml` |
 | `trade_commodities` | Look up Spansh commodity names |
 | `find_commodity_market` | Find nearby stations buying or selling a commodity, with prices and market ages |
+| `find_stations` | Nearest stations by allegiance and required services, including Interstellar Factors and material-trader subtypes; [search examples](docs/station-search.md) |
+| `station_search_options` | Discover supported station services, allegiances, trader/broker subtypes, governments, economies and station types |
 | `plan_trade_route` | Get a short Spansh trade itinerary for a specified station, cargo space and budget |
 
 holtzman also serves one MCP prompt, `ship_computer`: the personality and
